@@ -1,3 +1,29 @@
+/*
+ * zorbage-viewer: utility app for loading and viewing various image data formats
+ *
+ * Copyright (C) 2020 Barry DeZonia
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *	this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *	this list of conditions and the following disclaimer in the documentation
+ *	and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 package nom.bdezonia.zorbage.viewer;
 
 import java.awt.FlowLayout;
@@ -27,6 +53,11 @@ import nom.bdezonia.zorbage.scifio.Scifio;
 import nom.bdezonia.zorbage.type.highprec.real.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.highprec.real.HighPrecisionMember;
 
+/**
+ * 
+ * @author Barry DeZonia
+ *
+ */
 public class Main {
 
 	@SuppressWarnings("unused")
@@ -40,35 +71,35 @@ public class Main {
 
 	private static JFrame frame = null;
 	
-    public static void main(String[] args) {
+	public static void main(String[] args) {
 
-    	Gdal.init();
+		Gdal.init();
 		
-        //Schedule a job for the event-dispatching thread:
-        //creating and showing this application's GUI.
-        javax.swing.SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
-    }
+		//Schedule a job for the event-dispatching thread:
+		//creating and showing this application's GUI.
+		javax.swing.SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				createAndShowGUI();
+			}
+		});
+	}
 
-    /**
-     * Create the GUI and show it.  For thread safety,
-     * this method should be invoked from the
-     * event-dispatching thread.
-     */
-    private static void createAndShowGUI() {
+	/**
+	 * Create the GUI and show it. For thread safety,
+	 * this method should be invoked from the
+	 * event-dispatching thread.
+	 */
+	private static void createAndShowGUI() {
 
-    	//Make sure we have nice window decorations.
-        JFrame.setDefaultLookAndFeelDecorated(true);
+		//Make sure we have nice window decorations.
+		JFrame.setDefaultLookAndFeelDecorated(true);
  
-        //Create and set up the window.
-        frame = new JFrame("Zorbage Data Viewer");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		//Create and set up the window.
+		frame = new JFrame("Zorbage Data Viewer");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
  
-        JButton loadGdal   = new JButton("Load using gdal");
-        loadGdal.addMouseListener(new MouseListener() {
+		JButton loadGdal = new JButton("Load using gdal");
+		loadGdal.addMouseListener(new MouseListener() {
 			
 			@Override
 			public void mouseReleased(MouseEvent e) {
@@ -110,8 +141,8 @@ public class Main {
 			}
 		});
 
-        JButton loadNetcdf = new JButton("Load using netcdf");
-        loadNetcdf.addMouseListener(new MouseListener() {
+		JButton loadNetcdf = new JButton("Load using netcdf");
+		loadNetcdf.addMouseListener(new MouseListener() {
 			
 			@Override
 			public void mouseReleased(MouseEvent e) {
@@ -162,8 +193,8 @@ public class Main {
 			}
 		});
 
-        JButton loadScifio = new JButton("Load using scifio");
-        loadScifio.addMouseListener(new MouseListener() {
+		JButton loadScifio = new JButton("Load using scifio");
+		loadScifio.addMouseListener(new MouseListener() {
 			
 			@Override
 			public void mouseReleased(MouseEvent e) {
@@ -245,60 +276,60 @@ public class Main {
 			}
 		});
 
-        frame.getContentPane().setLayout(new FlowLayout());
-        frame.getContentPane().add(loadGdal);
-        frame.getContentPane().add(loadNetcdf);
-        frame.getContentPane().add(loadScifio);
+		frame.getContentPane().setLayout(new FlowLayout());
+		frame.getContentPane().add(loadGdal);
+		frame.getContentPane().add(loadNetcdf);
+		frame.getContentPane().add(loadScifio);
  
-        //Display the window.
-        frame.pack();
-        frame.setVisible(true);
-    }
+		//Display the window.
+		frame.pack();
+		frame.setVisible(true);
+	}
 
-    // how would you display complex data? a channel for r and i? otherwise it's not
-    //   bounded and it's not ordered
-    
-    private static <T extends Algebra<T,U>, U>
-    void displayImage(T alg, boolean preferDataBounds, DimensionedDataSource<U> data) {
-    	U min = alg.construct();
-    	U max = alg.construct();
-    	if (preferDataBounds) {
-    		pixelDataBound(alg, data.rawData(), min, max);
-        	if (alg.isEqual().call(min, max)) {
-            	pixelTypeBounds(alg, min, max);
-        	}
-    	}
-    	if (!preferDataBounds) {
-        	pixelTypeBounds(alg, min, max);
-        	if (alg.isEqual().call(min, max)) {
-        		pixelDataBound(alg, data.rawData(), min, max);
-        	}
-    	}
-    	if (alg.isEqual().call(min, max)) {
-    		// kinda pooched here. throw exception? or fake the range?
-    		alg.assign().call(alg.construct("0"), min);
-    		alg.assign().call(alg.construct("255"), max);
-    	}
-    	U value = alg.construct();
-    	boolean useCast = value instanceof HighPrecRepresentation;
-    	if (data.numDimensions() < 1)
-    		throw new IllegalArgumentException("dataset is completely void: nothing to display");
-    	long width = data.dimension(0);
-    	long height = data.numDimensions() == 1 ? 1 : data.dimension(1);
-    	IntegerIndex idx = new IntegerIndex(data.numDimensions());
-    	long[] minPt = new long[data.numDimensions()];
-    	long[] maxPt = new long[data.numDimensions()];
-    	for (int i = 0; i < data.numDimensions(); i++) {
-    		maxPt[i] = data.dimension(i) - 1;
-    	}
-    	if (data.numDimensions() > 2) {
-    		// maybe we want to choose the right plane
-    		// for now additional coords are 0's so we are getting 1st plane
-    	}
+	// how would you display complex data? a channel for r and i? otherwise it's not
+	//   bounded and it's not ordered
+	
+	private static <T extends Algebra<T,U>, U>
+	void displayImage(T alg, boolean preferDataBounds, DimensionedDataSource<U> data) {
+		U min = alg.construct();
+		U max = alg.construct();
+		if (preferDataBounds) {
+			pixelDataBounds(alg, data.rawData(), min, max);
+			if (alg.isEqual().call(min, max)) {
+				pixelTypeBounds(alg, min, max);
+			}
+		}
+		if (!preferDataBounds) {
+			pixelTypeBounds(alg, min, max);
+			if (alg.isEqual().call(min, max)) {
+				pixelDataBounds(alg, data.rawData(), min, max);
+			}
+		}
+		if (alg.isEqual().call(min, max)) {
+			// kinda pooched here. throw exception? or fake the range?
+			alg.assign().call(alg.construct("0"), min);
+			alg.assign().call(alg.construct("255"), max);
+		}
+		U value = alg.construct();
+		boolean useCast = value instanceof HighPrecRepresentation;
+		if (data.numDimensions() < 1)
+			throw new IllegalArgumentException("dataset is completely void: nothing to display");
+		long width = data.dimension(0);
+		long height = data.numDimensions() == 1 ? 1 : data.dimension(1);
+		IntegerIndex idx = new IntegerIndex(data.numDimensions());
+		long[] minPt = new long[data.numDimensions()];
+		long[] maxPt = new long[data.numDimensions()];
+		for (int i = 0; i < data.numDimensions(); i++) {
+			maxPt[i] = data.dimension(i) - 1;
+		}
+		if (data.numDimensions() > 2) {
+			// maybe we want to choose the right plane
+			// for now additional coords are 0's so we are getting 1st plane
+		}
 		
-    	BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_USHORT_GRAY);
-    	
-    	DataBufferUShort buffer = (DataBufferUShort) img.getRaster().getDataBuffer(); // Safe cast as img is of type TYPE_USHORT_GRAY 
+		BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_USHORT_GRAY);
+		
+		DataBufferUShort buffer = (DataBufferUShort) img.getRaster().getDataBuffer(); // Safe cast as img is of type TYPE_USHORT_GRAY 
 
 		// Conveniently, the buffer already contains the data array
 		short[] arrayUShort = buffer.getData();
@@ -318,68 +349,68 @@ public class Main {
 			hpMax = new HighPrecisionMember(max.toString());
 		}
 
-    	SamplingIterator<IntegerIndex> iter = GridIterator.compute(minPt, maxPt);
-    	while (iter.hasNext()) {
-    		iter.next(idx);
-    		data.get(idx, value);
+		SamplingIterator<IntegerIndex> iter = GridIterator.compute(minPt, maxPt);
+		while (iter.hasNext()) {
+			iter.next(idx);
+			data.get(idx, value);
 
-    		// scale pixel to 0-65535
-    		if (useCast) {
-    			((HighPrecRepresentation) value).toHighPrec(hpPix);
-    		}
-    		else {
-    			// expensive here
-    			String pxStrValue = value.toString();
-        		hpPix = new HighPrecisionMember(pxStrValue);
-    		}
+			// scale pixel to 0-65535
+			if (useCast) {
+				((HighPrecRepresentation) value).toHighPrec(hpPix);
+			}
+			else {
+				// expensive here
+				String pxStrValue = value.toString();
+				hpPix = new HighPrecisionMember(pxStrValue);
+			}
 
-    		BigDecimal numer = hpPix.v().subtract(hpMin.v());
-    		BigDecimal denom = hpMax.v().subtract(hpMin.v());
-    		BigDecimal ratio = numer.divide(denom, HighPrecisionAlgebra.getContext());
-    		if (ratio.compareTo(BigDecimal.ZERO) < 0)
-    			ratio = BigDecimal.ZERO;
-    		if (ratio.compareTo(BigDecimal.ONE) > 0)
-    			ratio = BigDecimal.ONE;
-    		int pixelValue = BigDecimal.valueOf(65535.0).multiply(ratio).intValue();
-    		
-    		// put in canvas
-    		long x = idx.get(0);
-    		long y = (data.numDimensions() == 1 ? 0 : idx.get(1));
-    		int pos = (int) (x + y * width);
-    		
-    		arrayUShort[pos] = (short) pixelValue;
-    	}
-    	frame.getContentPane().add(new JLabel(new ImageIcon(img)));
-    	frame.pack();
+			BigDecimal numer = hpPix.v().subtract(hpMin.v());
+			BigDecimal denom = hpMax.v().subtract(hpMin.v());
+			BigDecimal ratio = numer.divide(denom, HighPrecisionAlgebra.getContext());
+			if (ratio.compareTo(BigDecimal.ZERO) < 0)
+				ratio = BigDecimal.ZERO;
+			if (ratio.compareTo(BigDecimal.ONE) > 0)
+				ratio = BigDecimal.ONE;
+			int pixelValue = BigDecimal.valueOf(65535.0).multiply(ratio).intValue();
+			
+			// put in canvas
+			long x = idx.get(0);
+			long y = (data.numDimensions() == 1 ? 0 : idx.get(1));
+			int pos = (int) (x + y * width);
+			
+			arrayUShort[pos] = (short) pixelValue;
+		}
+		frame.getContentPane().add(new JLabel(new ImageIcon(img)));
+		frame.pack();
 		frame.repaint();
-    }
-    
-    private static <T extends Algebra<T,U>, U, V extends Algebra<V,U> & Bounded<U>>
-    void pixelTypeBounds(T alg, U min, U max)
-    {
-    	if (alg instanceof Bounded) {
-    		@SuppressWarnings("unchecked")
-    		V enhancedAlg = (V) alg;
-    		enhancedAlg.minBound().call(min);
-    		enhancedAlg.maxBound().call(max);
-    	}
-    	else {
-    		alg.zero().call(min);
-    		alg.zero().call(max);
-    	}
-    }
-    
-    private static <T extends Algebra<T,U>, U, V extends Algebra<V,U> & Ordered<U>>
-    void pixelDataBound(T alg, IndexedDataSource<U> data, U min, U max)
-    {
-    	if (alg instanceof Ordered) {
-    		@SuppressWarnings("unchecked")
-    		V enhancedAlg = (V) alg;
-    		MinMaxElement.compute(enhancedAlg, data, min, max);
-    	}
-    	else {
-    		alg.zero().call(min);
-    		alg.zero().call(max);
-    	}
-    }
+	}
+	
+	private static <T extends Algebra<T,U>, U, V extends Algebra<V,U> & Bounded<U>>
+	void pixelTypeBounds(T alg, U min, U max)
+	{
+		if (alg instanceof Bounded) {
+			@SuppressWarnings("unchecked")
+			V enhancedAlg = (V) alg;
+			enhancedAlg.minBound().call(min);
+			enhancedAlg.maxBound().call(max);
+		}
+		else {
+			alg.zero().call(min);
+			alg.zero().call(max);
+		}
+	}
+	
+	private static <T extends Algebra<T,U>, U, V extends Algebra<V,U> & Ordered<U>>
+	void pixelDataBounds(T alg, IndexedDataSource<U> data, U min, U max)
+	{
+		if (alg instanceof Ordered) {
+			@SuppressWarnings("unchecked")
+			V enhancedAlg = (V) alg;
+			MinMaxElement.compute(enhancedAlg, data, min, max);
+		}
+		else {
+			alg.zero().call(min);
+			alg.zero().call(max);
+		}
+	}
 }

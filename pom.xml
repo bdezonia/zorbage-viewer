@@ -27,7 +27,7 @@
     <package-name>nom.bdezonia</package-name>
     <license.licenseName>bsd_2</license.licenseName>
     <license.projectName>zorbage-viewer: utility app for loading and viewing various image data formats</license.projectName>
-    <license.organizationName>zorbage-netviewer authors</license.organizationName>
+    <license.organizationName>zorbage-viewer authors</license.organizationName>
     <license.copyrightOwners>Barry DeZonia</license.copyrightOwners>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

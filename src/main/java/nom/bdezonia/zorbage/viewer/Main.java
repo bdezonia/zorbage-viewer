@@ -43,7 +43,6 @@ import javax.swing.*;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Bounded;
-import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
 import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algorithm.GridIterator;
@@ -51,6 +50,7 @@ import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.gdal.Gdal;
+import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
@@ -77,6 +77,8 @@ public class Main<T extends Algebra<T,U>, U> {
 	private int imgNumber = -1;
 
 	private boolean preferDataRange = true;
+	
+	private JLabel label = null;
 	
 	public static void main(String[] args) {
 
@@ -128,61 +130,21 @@ public class Main<T extends Algebra<T,U>, U> {
 			}
 			
 			@Override
-			@SuppressWarnings("unchecked")
 			public void mouseClicked(MouseEvent e) {
+
 				JFileChooser chooser = new JFileChooser();
+				
 				chooser.showOpenDialog(frame);
+				
 				File f = chooser.getSelectedFile();
 
-				nom.bdezonia.zorbage.gdal.DataBundle gBundle =
-						Gdal.loadAllDatasets(f.getAbsolutePath());
+				DataBundle bundle = Gdal.loadAllDatasets(f.getAbsolutePath());
+	
+				dataSources.addAll(bundle.bundle());
 				
-				for (DimensionedDataSource<?> source : gBundle.cdoubles) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.CDBL, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : gBundle.cfloats) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.CFLT, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : gBundle.doubles) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.DBL, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : gBundle.floats) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.FLT, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : gBundle.int16s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.INT16, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : gBundle.int32s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.INT32, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : gBundle.uint8s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT8, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : gBundle.uint16s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT16, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : gBundle.uint32s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT32, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
 				System.out.println("gdal files loaded");
+				
+				displayImage(dataSources.get(0));
 			}
 		});
 
@@ -205,71 +167,21 @@ public class Main<T extends Algebra<T,U>, U> {
 			}
 			
 			@Override
-			@SuppressWarnings("unchecked")
 			public void mouseClicked(MouseEvent e) {
+
 				JFileChooser chooser = new JFileChooser();
+				
 				chooser.showOpenDialog(frame);
+				
 				File f = chooser.getSelectedFile();
+
+				DataBundle bundle = NetCDF.loadAllDatasets(f.getAbsolutePath());
+	
+				dataSources.addAll(bundle.bundle());
 				
-				nom.bdezonia.zorbage.netcdf.DataBundle nBundle =
-						NetCDF.loadAllDatasets(f.getAbsolutePath());
-				
-				for (DimensionedDataSource<?> source : nBundle.doubles) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.DBL, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : nBundle.floats) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.FLT, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : nBundle.int8s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.INT8, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : nBundle.int16s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.INT16, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : nBundle.int32s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.INT32, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : nBundle.int64s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.INT64, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : nBundle.uint1s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT1, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : nBundle.uint8s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT8, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : nBundle.uint16s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT16, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : nBundle.uint32s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT32, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : nBundle.uint64s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT64, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
 				System.out.println("netcdf files loaded");
+				
+				displayImage(dataSources.get(0));
 			}
 		});
 
@@ -293,168 +205,42 @@ public class Main<T extends Algebra<T,U>, U> {
 			}
 			
 			@Override
-			@SuppressWarnings("unchecked")
 			public void mouseClicked(MouseEvent e) {
+
 				JFileChooser chooser = new JFileChooser();
+				
 				chooser.showOpenDialog(frame);
+				
 				File f = chooser.getSelectedFile();
 
-				nom.bdezonia.zorbage.scifio.DataBundle sBundle =
-						Scifio.loadAllDatasets(f.getAbsolutePath());
-
-				for (DimensionedDataSource<?> source : sBundle.uint1s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT1, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint2s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT2, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint3s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT3, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint4s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT4, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint5s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT5, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint6s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT6, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint7s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT7, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint8s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT8, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint9s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT9, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint10s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT10, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint11s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT11, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint12s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT12, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint13s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT13, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint14s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT14, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint15s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT15, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint16s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT16, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint32s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT32, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint64s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT64, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.uint128s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UINT128, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.int8s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.INT8, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.int16s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.INT16, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.int32s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.INT32, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.int64s) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.INT64, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.argbs) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.ARGB, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.bigs) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.UNBOUND, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.cdoubles) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.CDBL, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.cfloats) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.CFLT, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.doubles) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.DBL, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
-				for (DimensionedDataSource<?> source : sBundle.floats) {
-					Tuple2<T,DimensionedDataSource<U>> tuple =
-							new Tuple2<T, DimensionedDataSource<U>>((T) G.FLT, (DimensionedDataSource<U>) source);
-					dataSources.add(tuple);
-				}
+				DataBundle bundle = Scifio.loadAllDatasets(f.getAbsolutePath());
+	
+				dataSources.addAll(bundle.bundle());
+				
 				System.out.println("scifio files loaded");
+				
+				displayImage(dataSources.get(0));
 			}
 		});
 
+		BufferedImage img = new BufferedImage(512, 512, BufferedImage.TYPE_USHORT_GRAY);
+		
+		label = new JLabel(new ImageIcon(img));
+				
+		Container pane = frame.getContentPane();
+		
+		pane.setLayout(new BorderLayout());
+		pane.add(loadGdal, BorderLayout.NORTH);
+		pane.add(loadNetcdf, BorderLayout.EAST);
+		pane.add(loadScifio, BorderLayout.WEST);
+		pane.add(new JLabel("Press arrow keys to switch datasets"),BorderLayout.SOUTH);
+		pane.add(label, BorderLayout.CENTER);
+		
 		frame.addKeyListener(new KeyListener() {
 			
 			@Override
 			public void keyTyped(KeyEvent e) {
+				System.out.println("key typed "+e);
 				if (e.getKeyChar() == KeyEvent.VK_UP) {
 					if (imgNumber >= dataSources.size())
 						java.awt.Toolkit.getDefaultToolkit().beep();
@@ -485,19 +271,10 @@ public class Main<T extends Algebra<T,U>, U> {
 			public void keyPressed(KeyEvent e) {
 			}
 		});
-		BorderLayout screenLayout = new BorderLayout();
-		Container buttonContainer = new Container();
-		buttonContainer.add(loadGdal);
-		buttonContainer.add(loadNetcdf);
-		buttonContainer.add(loadScifio);
-		screenLayout.addLayoutComponent(buttonContainer, BorderLayout.NORTH);
-		screenLayout.addLayoutComponent(
-				new JLabel("Press arrow keys to switch datasets"),
-				BorderLayout.SOUTH);
-		
-		frame.getContentPane().setLayout(screenLayout);
- 
+
 		frame.pack();
+
+		// frame.setFocusable(true);
 		
 		frame.setVisible(true);
 	}
@@ -506,31 +283,28 @@ public class Main<T extends Algebra<T,U>, U> {
 	{
 		U min = tuple.a().construct();
 		U max = tuple.a().construct();
-		if (preferDataRange) {
-			pixelDataBounds(tuple.a(), tuple.b().rawData(), min, max);
-			if (tuple.a().isEqual().call(min, max))
-				pixelTypeBounds(tuple.a(), min, max);
+		if ((min instanceof RgbMember) || (min instanceof ArgbMember))
+		{
+			displayColorImage(tuple.a(), tuple.b());
+		}
+		else if ((min instanceof ComplexFloat32Member) ||
+				(min instanceof ComplexFloat64Member))
+		{
+			displayComplexImage(tuple.a(), tuple.b());
 		}
 		else {
-			pixelTypeBounds(tuple.a(), min, max);
-			if (tuple.a().isEqual().call(min, max))
+			if (preferDataRange) {
 				pixelDataBounds(tuple.a(), tuple.b().rawData(), min, max);
-		}
-		if (tuple.a().isEqual().call(min, max)) {
-			if ((min instanceof RgbMember) || (min instanceof ArgbMember))
-			{
-				displayColorImage(tuple.a(), tuple.b());
-				return;
+				if (tuple.a().isEqual().call(min, max))
+					pixelTypeBounds(tuple.a(), min, max);
 			}
-			else if ((min instanceof ComplexFloat32Member) ||
-					(min instanceof ComplexFloat64Member))
-			{
-				displayComplexImage(tuple.a(), tuple.b());
-				return;
+			else {
+				pixelTypeBounds(tuple.a(), min, max);
+				if (tuple.a().isEqual().call(min, max))
+					pixelDataBounds(tuple.a(), tuple.b().rawData(), min, max);
 			}
-			// else min == max: a real image with zero display range
+			displayRealImage(tuple.a(), tuple.b(), min, max);
 		}
-		displayRealImage(tuple.a(), tuple.b(), min, max);
 	}
 	
 	private void displayColorImage(T alg, DimensionedDataSource<U> data) {
@@ -625,10 +399,16 @@ public class Main<T extends Algebra<T,U>, U> {
 			arrayUShort[pos] = (short) pixelValue;
 		}
 		
-		((BorderLayout) frame.getContentPane().getLayout()).addLayoutComponent(
-				new JLabel(new ImageIcon(img)), BorderLayout.CENTER);
+		Container pane = frame.getContentPane();
+		
+		pane.remove(label);
+		
+		label = new JLabel(new ImageIcon(img));
+		
+		pane.add(label, BorderLayout.CENTER);
 
 		frame.pack();
+
 		frame.repaint();
 	}
 	

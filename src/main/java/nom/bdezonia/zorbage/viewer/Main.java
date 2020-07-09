@@ -28,6 +28,7 @@ package nom.bdezonia.zorbage.viewer;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
+import java.awt.Panel;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -56,6 +57,7 @@ import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
 import nom.bdezonia.zorbage.scifio.Scifio;
 import nom.bdezonia.zorbage.tuple.Tuple2;
+import nom.bdezonia.zorbage.type.character.FixedStringMember;
 import nom.bdezonia.zorbage.type.float32.complex.ComplexFloat32Member;
 import nom.bdezonia.zorbage.type.float64.complex.ComplexFloat64Member;
 import nom.bdezonia.zorbage.type.highprec.real.HighPrecisionAlgebra;
@@ -143,8 +145,6 @@ public class Main<T extends Algebra<T,U>, U> {
 				dataSources.addAll(bundle.bundle());
 				
 				System.out.println("gdal files loaded");
-				
-				displayImage(dataSources.get(0));
 			}
 		});
 
@@ -180,8 +180,6 @@ public class Main<T extends Algebra<T,U>, U> {
 				dataSources.addAll(bundle.bundle());
 				
 				System.out.println("netcdf files loaded");
-				
-				displayImage(dataSources.get(0));
 			}
 		});
 
@@ -218,8 +216,70 @@ public class Main<T extends Algebra<T,U>, U> {
 				dataSources.addAll(bundle.bundle());
 				
 				System.out.println("scifio files loaded");
-				
-				displayImage(dataSources.get(0));
+			}
+		});
+
+		JButton displayNext = new JButton("Display Next");
+		displayNext.addMouseListener(new MouseListener() {
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+			}
+			
+			@Override
+			public void mousePressed(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (imgNumber+1 >= dataSources.size())
+					java.awt.Toolkit.getDefaultToolkit().beep();
+				else {
+					imgNumber++;
+					Tuple2<T, DimensionedDataSource<U>> tuple =
+							dataSources.get(imgNumber);
+					displayImage(tuple);
+				}
+			}
+		});
+
+		JButton displayPrev = new JButton("Display Prev");
+		displayPrev.addMouseListener(new MouseListener() {
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+			}
+			
+			@Override
+			public void mousePressed(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (imgNumber-1 < 0)
+					java.awt.Toolkit.getDefaultToolkit().beep();
+				else {
+					imgNumber--;
+					Tuple2<T, DimensionedDataSource<U>> tuple =
+							dataSources.get(imgNumber);
+					displayImage(tuple);
+				}
 			}
 		});
 
@@ -227,55 +287,27 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		label = new JLabel(new ImageIcon(img));
 				
+		Panel bp = new Panel();
+		
+		bp.add(loadGdal);
+		bp.add(loadNetcdf);
+		bp.add(loadScifio);
+
+		Panel ip = new Panel();
+		
+		ip.add(displayNext);
+		ip.add(displayPrev);
+		
 		Container pane = frame.getContentPane();
 		
 		pane.setLayout(new BorderLayout());
-		pane.add(loadGdal, BorderLayout.NORTH);
-		pane.add(loadNetcdf, BorderLayout.EAST);
-		pane.add(loadScifio, BorderLayout.WEST);
-		pane.add(new JLabel("Press arrow keys to switch datasets"),BorderLayout.SOUTH);
+		
+		pane.add(bp, BorderLayout.NORTH);
+		pane.add(ip, BorderLayout.SOUTH);
 		pane.add(label, BorderLayout.CENTER);
 		
-		frame.addKeyListener(new KeyListener() {
-			
-			@Override
-			public void keyTyped(KeyEvent e) {
-				System.out.println("key typed "+e);
-				if (e.getKeyChar() == KeyEvent.VK_UP) {
-					if (imgNumber >= dataSources.size())
-						java.awt.Toolkit.getDefaultToolkit().beep();
-					else {
-						imgNumber++;
-						Tuple2<T, DimensionedDataSource<U>> tuple =
-								dataSources.get(imgNumber);
-						displayImage(tuple);
-					}
-				}
-				if (e.getKeyChar() == KeyEvent.VK_DOWN) {
-					if (imgNumber <= 0)
-						java.awt.Toolkit.getDefaultToolkit().beep();
-					else {
-						imgNumber--;
-						Tuple2<T, DimensionedDataSource<U>> tuple =
-								dataSources.get(imgNumber);
-						displayImage(tuple);
-					}
-				}
-			}
-			
-			@Override
-			public void keyReleased(KeyEvent e) {
-			}
-			
-			@Override
-			public void keyPressed(KeyEvent e) {
-			}
-		});
-
 		frame.pack();
 
-		// frame.setFocusable(true);
-		
 		frame.setVisible(true);
 	}
 
@@ -283,7 +315,10 @@ public class Main<T extends Algebra<T,U>, U> {
 	{
 		U min = tuple.a().construct();
 		U max = tuple.a().construct();
-		if ((min instanceof RgbMember) || (min instanceof ArgbMember))
+		if (min instanceof FixedStringMember) {
+			displayTextData(tuple.a(), tuple.b());
+		}
+		else if ((min instanceof RgbMember) || (min instanceof ArgbMember))
 		{
 			displayColorImage(tuple.a(), tuple.b());
 		}
@@ -313,6 +348,10 @@ public class Main<T extends Algebra<T,U>, U> {
 	
 	private void displayComplexImage(T alg, DimensionedDataSource<U> data) {
 		System.out.println("MUST DISPLAY A COMPLEX IMAGE "+data.getName());
+	}
+
+	private void displayTextData(T alg, DimensionedDataSource<U> data) {
+		System.out.println("MUST DISPLAY TEXT DATA "+data.getName());
 	}
 
 	// how would you display complex data? a channel for r and i? otherwise it's not

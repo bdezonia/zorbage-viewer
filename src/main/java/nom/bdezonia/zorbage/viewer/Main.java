@@ -27,6 +27,7 @@
 package nom.bdezonia.zorbage.viewer;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Panel;
 import java.awt.event.MouseEvent;
@@ -79,7 +80,7 @@ public class Main<T extends Algebra<T,U>, U> {
 
 	private boolean preferDataRange = true;
 	
-	private JLabel label = null;
+	private Component image = null;
 	
 	public static void main(String[] args) {
 
@@ -284,7 +285,7 @@ public class Main<T extends Algebra<T,U>, U> {
 
 		BufferedImage img = new BufferedImage(512, 512, BufferedImage.TYPE_USHORT_GRAY);
 		
-		label = new JLabel(new ImageIcon(img));
+		image = new JLabel(new ImageIcon(img));
 				
 		Panel bp = new Panel();
 		
@@ -303,7 +304,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		pane.add(bp, BorderLayout.NORTH);
 		pane.add(ip, BorderLayout.SOUTH);
-		pane.add(label, BorderLayout.CENTER);
+		pane.add(image, BorderLayout.CENTER);
 		
 		frame.pack();
 
@@ -450,11 +451,13 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		Container pane = frame.getContentPane();
 		
-		pane.remove(label);
+		pane.remove(image);
 		
-		label = new JLabel(new ImageIcon(img));
+		image = new JLabel(new ImageIcon(img));
 		
-		pane.add(label, BorderLayout.CENTER);
+		image = new JScrollPane(image);
+		
+		pane.add(image, BorderLayout.CENTER);
 
 		frame.pack();
 

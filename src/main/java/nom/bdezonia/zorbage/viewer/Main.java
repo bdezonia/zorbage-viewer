@@ -29,8 +29,6 @@ package nom.bdezonia.zorbage.viewer;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Panel;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
@@ -44,6 +42,7 @@ import javax.swing.*;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Bounded;
+import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
 import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algorithm.GridIterator;
@@ -313,8 +312,15 @@ public class Main<T extends Algebra<T,U>, U> {
 
 	private	void displayImage(Tuple2<T, DimensionedDataSource<U>> tuple)
 	{
+		// TODO: there now are all kinds of multidim data sources theoretically possible:
+		//   (though no reader yet creates them). For instance:
+		//     An n-d data structure containing vectors or matrices or tensors at each point.
+		//     All of these can be made of reals, complexes, quaternions, or octonions. What
+		//     would be the best way to display this info?
+		
 		U min = tuple.a().construct();
 		U max = tuple.a().construct();
+		
 		if (min instanceof FixedStringMember) {
 			displayTextData(tuple.a(), tuple.b());
 		}
@@ -346,17 +352,21 @@ public class Main<T extends Algebra<T,U>, U> {
 		System.out.println("MUST DISPLAY A COLOR IMAGE"+data.getName());
 	}
 	
+	// how would you display complex data? a channel for r and i? otherwise it's not
+	//   bounded and it's not ordered so you can't get a display range from it.
+	
 	private void displayComplexImage(T alg, DimensionedDataSource<U> data) {
 		System.out.println("MUST DISPLAY A COMPLEX IMAGE "+data.getName());
 	}
 
+	@SuppressWarnings("unchecked")
 	private void displayTextData(T alg, DimensionedDataSource<U> data) {
 		System.out.println("MUST DISPLAY TEXT DATA "+data.getName());
+		FixedStringMember value = G.FSTRING.construct("something");
+		data.rawData().get(0, (U) value);
+		System.out.println(" contents = "+value.toString());
 	}
 
-	// how would you display complex data? a channel for r and i? otherwise it's not
-	//   bounded and it's not ordered
-	
 	private	void displayRealImage(T alg, DimensionedDataSource<U> data, U min, U max)
 	{
 		U value = alg.construct();

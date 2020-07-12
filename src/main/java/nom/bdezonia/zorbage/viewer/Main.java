@@ -33,6 +33,7 @@ import java.awt.Panel;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.awt.image.DataBufferUShort;
 import java.io.File;
 import java.math.BigDecimal;
@@ -283,7 +284,7 @@ public class Main<T extends Algebra<T,U>, U> {
 			}
 		});
 
-		BufferedImage img = new BufferedImage(512, 512, BufferedImage.TYPE_USHORT_GRAY);
+		BufferedImage img = new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB);
 		
 		image = new JLabel(new ImageIcon(img));
 				
@@ -387,14 +388,14 @@ public class Main<T extends Algebra<T,U>, U> {
 			// for now additional coords are 0's so we are getting 1st plane
 		}
 		
-		BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_USHORT_GRAY);
+		BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_ARGB);
 		
 		 // Safe cast as img is of type TYPE_USHORT_GRAY 
 		
-		DataBufferUShort buffer = (DataBufferUShort) img.getRaster().getDataBuffer();
+		DataBufferInt buffer = (DataBufferInt) img.getRaster().getDataBuffer();
 
 		// Conveniently, the buffer already contains the data array
-		short[] arrayUShort = buffer.getData();
+		int[] arrayInt = buffer.getData();
 
 		HighPrecisionMember hpPix = new HighPrecisionMember();
 		HighPrecisionMember hpMin;
@@ -436,17 +437,14 @@ public class Main<T extends Algebra<T,U>, U> {
 				ratio = BigDecimal.ZERO;
 			if (ratio.compareTo(BigDecimal.ONE) > 0)
 				ratio = BigDecimal.ONE;
-			int pixelValue = BigDecimal.valueOf(65535.0).multiply(ratio).intValue();
+			int pixelValue = BigDecimal.valueOf(0xffffffL).multiply(ratio).intValue() | 0x7f000000;
 
-			// TODO: should I use rgb buffer and scale to ints and let the colors
-			//   just be whatever?
-			
 			// put in canvas
 			long x = idx.get(0);
 			long y = (data.numDimensions() == 1 ? 0 : idx.get(1));
 			int pos = (int) (x + y * width);
 			
-			arrayUShort[pos] = (short) pixelValue;
+			arrayInt[pos] = (int) pixelValue;
 		}
 		
 		Container pane = frame.getContentPane();

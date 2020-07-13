@@ -532,7 +532,7 @@ public class Main<T extends Algebra<T,U>, U> {
 			int b2 = b(color2);
 
 			double bright1 = 0.2126 * r1 + 0.7152 * g1 + 0.0722 * b1;
-			double bright2 = 0.2126 * r1 + 0.7152 * g1 + 0.0722 * b1;
+			double bright2 = 0.2126 * r2 + 0.7152 * g2 + 0.0722 * b2;
 			if (bright1 < bright2)
 				return -1;
 			else if (bright1 > bright2)

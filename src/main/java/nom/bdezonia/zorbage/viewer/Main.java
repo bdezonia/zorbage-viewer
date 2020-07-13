@@ -34,7 +34,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
-import java.awt.image.DataBufferUShort;
 import java.io.File;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -83,12 +82,16 @@ public class Main<T extends Algebra<T,U>, U> {
 	
 	private Component image = null;
 	
+	private int[] colorTable = null;
+
+	@SuppressWarnings({"rawtypes","unchecked"})
 	public static void main(String[] args) {
 
 		Gdal.init();
-		
-		@SuppressWarnings("rawtypes")
+
 		Main main = new Main();
+		
+		main.colorTable = main.colorTable();
 		
 		// Schedule a job for the event-dispatching thread: creating and showing
 		// this application's GUI.
@@ -320,33 +323,22 @@ public class Main<T extends Algebra<T,U>, U> {
 		//     All of these can be made of reals, complexes, quaternions, or octonions. What
 		//     would be the best way to display this info?
 		
-		U min = tuple.a().construct();
-		U max = tuple.a().construct();
+		U type = tuple.a().construct();
 		
-		if (min instanceof FixedStringMember) {
+		if (type instanceof FixedStringMember) {
 			displayTextData(tuple.a(), tuple.b());
 		}
-		else if ((min instanceof RgbMember) || (min instanceof ArgbMember))
+		else if ((type instanceof RgbMember) || (type instanceof ArgbMember))
 		{
 			displayColorImage(tuple.a(), tuple.b());
 		}
-		else if ((min instanceof ComplexFloat32Member) ||
-				(min instanceof ComplexFloat64Member))
+		else if ((type instanceof ComplexFloat32Member) ||
+				(type instanceof ComplexFloat64Member))
 		{
 			displayComplexImage(tuple.a(), tuple.b());
 		}
 		else {
-			if (preferDataRange) {
-				pixelDataBounds(tuple.a(), tuple.b().rawData(), min, max);
-				if (tuple.a().isEqual().call(min, max))
-					pixelTypeBounds(tuple.a(), min, max);
-			}
-			else {
-				pixelTypeBounds(tuple.a(), min, max);
-				if (tuple.a().isEqual().call(min, max))
-					pixelDataBounds(tuple.a(), tuple.b().rawData(), min, max);
-			}
-			displayRealImage(tuple.a(), tuple.b(), min, max);
+			displayRealImage(tuple.a(), tuple.b());
 		}
 	}
 	
@@ -369,8 +361,20 @@ public class Main<T extends Algebra<T,U>, U> {
 		System.out.println(" contents = "+value.toString());
 	}
 
-	private	void displayRealImage(T alg, DimensionedDataSource<U> data, U min, U max)
+	private	void displayRealImage(T alg, DimensionedDataSource<U> data)
 	{
+		U min = alg.construct();
+		U max = alg.construct();
+		if (preferDataRange) {
+			pixelDataBounds(alg, data.rawData(), min, max);
+			if (alg.isEqual().call(min, max))
+				pixelTypeBounds(alg, min, max);
+		}
+		else {
+			pixelTypeBounds(alg, min, max);
+			if (alg.isEqual().call(min, max))
+				pixelDataBounds(alg, data.rawData(), min, max);
+		}
 		U value = alg.construct();
 		boolean isHighPrec = value instanceof HighPrecRepresentation;
 		if (data.numDimensions() < 1)
@@ -390,7 +394,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_ARGB);
 		
-		 // Safe cast as img is of type TYPE_USHORT_GRAY 
+		// Safe cast as img is of correct type 
 		
 		DataBufferInt buffer = (DataBufferInt) img.getRaster().getDataBuffer();
 
@@ -408,6 +412,7 @@ public class Main<T extends Algebra<T,U>, U> {
 			((HighPrecRepresentation) max).toHighPrec(hpMax);
 		}
 		else {
+			// expensive but try a parser conversion if can't use highprec
 			hpMin = new HighPrecisionMember(min.toString());
 			hpMax = new HighPrecisionMember(max.toString());
 		}
@@ -417,7 +422,6 @@ public class Main<T extends Algebra<T,U>, U> {
 			iter.next(idx);
 			data.get(idx, value);
 
-			// scale pixel to 0-65535
 			if (isHighPrec) {
 				((HighPrecRepresentation) value).toHighPrec(hpPix);
 			}
@@ -427,24 +431,35 @@ public class Main<T extends Algebra<T,U>, U> {
 				hpPix = new HighPrecisionMember(pxStrValue);
 			}
 
+			// scale the current value to an intensity from 0 to 1.
+			
 			BigDecimal numer = hpPix.v().subtract(hpMin.v());
 			BigDecimal denom = hpMax.v().subtract(hpMin.v());
+			
 			// image with zero display range
 			if (denom.compareTo(BigDecimal.ZERO) == 0)
 				denom = BigDecimal.ONE;
+			
 			BigDecimal ratio = numer.divide(denom, HighPrecisionAlgebra.getContext());
+			
 			if (ratio.compareTo(BigDecimal.ZERO) < 0)
+			
 				ratio = BigDecimal.ZERO;
 			if (ratio.compareTo(BigDecimal.ONE) > 0)
 				ratio = BigDecimal.ONE;
-			int pixelValue = BigDecimal.valueOf(0xffffffL).multiply(ratio).intValue() | 0x7f000000;
+			
+			// now cale 0-1 to the range of the size of the current color table
+			
+			int intensity = BigDecimal.valueOf(colorTable.length-1).multiply(ratio).intValue();
 
-			// put in canvas
+			// put a color from the colortable into the image at pos (x,y)
+			
 			long x = idx.get(0);
 			long y = (data.numDimensions() == 1 ? 0 : idx.get(1));
-			int pos = (int) (x + y * width);
 			
-			arrayInt[pos] = (int) pixelValue;
+			int bufferPos = (int) (y * width + x);
+			
+			arrayInt[bufferPos] = colorTable[intensity];
 		}
 		
 		Container pane = frame.getContentPane();
@@ -489,5 +504,23 @@ public class Main<T extends Algebra<T,U>, U> {
 			alg.zero().call(min);
 			alg.zero().call(max);
 		}
+	}
+	
+	private int[] colorTable() {
+		int[] colors = new int[256*256*256];
+		// fill table
+		int i = 0;
+		for (int r = 0; r < 256; r++) {
+			for (int g = 0; g < 256; g++) {
+				for (int b = 0; b < 256; b++) {
+					colors[i++] = argb(0x7f, r, g, b);
+				}
+			}
+		}
+		return colors;
+	}
+	
+	private int argb(int a, int r, int g, int b) {
+		return (a << 24) | (r << 16) | (g << 8) | b;
 	}
 }

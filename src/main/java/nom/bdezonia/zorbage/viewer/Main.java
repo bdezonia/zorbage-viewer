@@ -37,6 +37,8 @@ import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.swing.*;
@@ -505,9 +507,9 @@ public class Main<T extends Algebra<T,U>, U> {
 			alg.zero().call(max);
 		}
 	}
-	
+
 	private int[] colorTable() {
-		int[] colors = new int[256*256*256];
+		Integer[] colors = new Integer[256*256*256];
 		// fill table
 		int i = 0;
 		for (int r = 0; r < 256; r++) {
@@ -517,10 +519,65 @@ public class Main<T extends Algebra<T,U>, U> {
 				}
 			}
 		}
-		return colors;
+		// sort it by intensity
+		Arrays.sort(colors, new Comparator<Integer>() {
+
+		@Override
+		public int compare(Integer color1, Integer color2) {
+			int r1 = r(color1);
+			int g1 = g(color1);
+			int b1 = b(color1);
+			int r2 = r(color2);
+			int g2 = g(color2);
+			int b2 = b(color2);
+
+			double bright1 = 0.2126 * r1 + 0.7152 * g1 + 0.0722 * b1;
+			double bright2 = 0.2126 * r1 + 0.7152 * g1 + 0.0722 * b1;
+			if (bright1 < bright2)
+				return -1;
+			else if (bright1 > bright2)
+				return 1;
+			else if (r1 < r2)
+				return -1;
+			else if (r1 > r2)
+				return 1;
+			else if (g1 < g2)
+				return -1;
+			else if (g1 > g2)
+				return 1;
+			else if (b1 < b2)
+				return -1;
+			else if (b1 > b2)
+				return 1;
+			else
+				return 0;
+			}
+		});
+
+		int[] primitives = new int[colors.length];
+		for (i = 0; i < colors.length; i++)
+			primitives[i] = colors[i];
+		return primitives;
 	}
-	
+
 	private int argb(int a, int r, int g, int b) {
-		return (a << 24) | (r << 16) | (g << 8) | b;
+		return ((a & 0xff) << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
+	}
+
+	@SuppressWarnings("unused")
+	private int a(int color) {
+		return (color >> 24) & 0xff;
+	}
+		    
+	private int r(int color) {
+		return (color >> 16) & 0xff;
+	}
+		    
+	private int g(int color) {
+		return (color >> 8) & 0xff;
+	}
+		    
+	private int b(int color) {
+		return (color >> 0) & 0xff;
 	}
 }

@@ -34,9 +34,14 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -640,6 +645,8 @@ public class Main<T extends Algebra<T,U>, U> {
 	}
 	
 	private int[] loadLUT(File lutFile) {
+		/*
+		 * This is a 32k LUT type defined in CUBE files. I found a few free LUTS.
 		try {
 			FileReader fr = new FileReader(lutFile);
 			BufferedReader br = new BufferedReader(fr);
@@ -660,6 +667,54 @@ public class Main<T extends Algebra<T,U>, U> {
 		} catch (Exception e) {
 			System.out.println("loadLUT exception "+e);
 			return colorTable;
+		}
+		*/
+
+		/*
+		 * This is my best guess on how to load ImageJ LUT files. My code discovers that
+		 * some of them are not stored in triplets so this code is not yet complete.
+		 */
+		FileInputStream fin = null;
+		try {
+
+            if (lutFile.length() > Integer.MAX_VALUE)
+            	throw new IllegalArgumentException("lut data is too large");
+
+            if (lutFile.length() % 3 != 0)
+            	throw new IllegalArgumentException("lut data is not just r g b byte triples");
+
+            byte fileContent[] = new byte[(int)lutFile.length()];
+             
+            fin = new FileInputStream(lutFile);
+            
+            // Reads up to certain bytes of data from this input stream into an array of bytes.
+            fin.read(fileContent);
+            
+            fin.close();
+            
+            int chunk = fileContent.length / 3;
+            
+            int[] lut = new int[chunk];
+            
+            for (int i = 0; i < chunk; i++) {
+            	lut[i] = argb(0xcf, fileContent[0*chunk + i], fileContent[1*chunk + i], fileContent[2*chunk + i]);
+            }
+
+            return lut;
+            
+		} catch (Exception e) {
+			
+			System.out.println("loadLUT exception "+e);
+			
+			return colorTable;
+			
+		} finally {
+			try {
+				if (fin != null)
+					fin.close();
+			} catch (Exception e) {
+				;
+			}
 		}
 	}
 

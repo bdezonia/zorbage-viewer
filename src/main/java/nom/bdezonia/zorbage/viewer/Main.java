@@ -680,9 +680,6 @@ public class Main<T extends Algebra<T,U>, U> {
             if (lutFile.length() > Integer.MAX_VALUE)
             	throw new IllegalArgumentException("lut data is too large");
 
-            if (lutFile.length() % 3 != 0)
-            	throw new IllegalArgumentException("lut data is not just r g b byte triples");
-
             byte fileContent[] = new byte[(int)lutFile.length()];
              
             fin = new FileInputStream(lutFile);
@@ -692,6 +689,7 @@ public class Main<T extends Algebra<T,U>, U> {
             
             fin.close();
             
+            // note: some imagej lut files have sizes that are not divisible by 3. this code ignores the couple extra bytes
             int chunk = fileContent.length / 3;
             
             int[] lut = new int[chunk];

@@ -305,8 +305,8 @@ public class Main<T extends Algebra<T,U>, U> {
 			}
 		});
 
-		JButton lut = new JButton("Change LUT");
-		lut.addMouseListener(new MouseListener() {
+		JButton loadLut = new JButton("Choose LUT");
+		loadLut.addMouseListener(new MouseListener() {
 			
 			@Override
 			public void mouseReleased(MouseEvent e) {
@@ -338,6 +338,34 @@ public class Main<T extends Algebra<T,U>, U> {
 			}
 		});
 
+		JButton resetLut = new JButton("Reset LUT");
+		resetLut.addMouseListener(new MouseListener() {
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+			}
+			
+			@Override
+			public void mousePressed(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				colorTable = defaultColorTable();
+				if (imgNumber >= 0 && imgNumber < dataSources.size()) {
+					displayImage(dataSources.get(imgNumber));
+				}
+			}
+		});
+
 		BufferedImage img = new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB);
 		
 		image = new JLabel(new ImageIcon(img));
@@ -352,7 +380,8 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		ip.add(displayPrev);
 		ip.add(displayNext);
-		ip.add(lut);
+		ip.add(loadLut);
+		ip.add(resetLut);
 		
 		Container pane = frame.getContentPane();
 		
@@ -495,8 +524,8 @@ public class Main<T extends Algebra<T,U>, U> {
 			BigDecimal ratio = numer.divide(denom, HighPrecisionAlgebra.getContext());
 			
 			if (ratio.compareTo(BigDecimal.ZERO) < 0)
-			
 				ratio = BigDecimal.ZERO;
+
 			if (ratio.compareTo(BigDecimal.ONE) > 0)
 				ratio = BigDecimal.ONE;
 			

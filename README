@@ -2,3 +2,7 @@ zorbage-viewer: utility app for loading and viewing various image data formats
 
 To learn more about Zorbage please visit https://github.com/bdezonia/zorbage
 
+The zorbage-viewer uses the NetCDF, GDAL, and SCIFIO file format
+translation libraries to open many image types into zorbage structures.
+It is a simple file viewer that will be undergoing continued
+development.

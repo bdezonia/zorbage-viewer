@@ -34,7 +34,9 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,7 +80,7 @@ public class Main<T extends Algebra<T,U>, U> {
 	
 	private List<Tuple2<T,DimensionedDataSource<U>>> dataSources = new ArrayList<>();
 	
-	private int imgNumber = -1;
+	private int imgNumber = 0;
 
 	private boolean preferDataRange = true;
 	
@@ -93,7 +95,7 @@ public class Main<T extends Algebra<T,U>, U> {
 
 		Main main = new Main();
 		
-		main.colorTable = main.colorTable();
+		main.colorTable = main.defaultColorTable();
 		
 		// Schedule a job for the event-dispatching thread: creating and showing
 		// this application's GUI.
@@ -148,9 +150,15 @@ public class Main<T extends Algebra<T,U>, U> {
 
 				DataBundle bundle = Gdal.loadAllDatasets(f.getAbsolutePath());
 	
+				int nextImage = dataSources.size();
+				
 				dataSources.addAll(bundle.bundle());
 				
 				System.out.println("gdal files loaded");
+				
+				displayImage(dataSources.get(nextImage));
+				
+				imgNumber = nextImage;
 			}
 		});
 
@@ -183,9 +191,15 @@ public class Main<T extends Algebra<T,U>, U> {
 
 				DataBundle bundle = NetCDF.loadAllDatasets(f.getAbsolutePath());
 	
+				int nextImage = dataSources.size();
+				
 				dataSources.addAll(bundle.bundle());
 				
 				System.out.println("netcdf files loaded");
+				
+				displayImage(dataSources.get(nextImage));
+				
+				imgNumber = nextImage;
 			}
 		});
 
@@ -219,9 +233,15 @@ public class Main<T extends Algebra<T,U>, U> {
 
 				DataBundle bundle = Scifio.loadAllDatasets(f.getAbsolutePath());
 	
+				int nextImage = dataSources.size();
+				
 				dataSources.addAll(bundle.bundle());
 				
 				System.out.println("scifio files loaded");
+								
+				displayImage(dataSources.get(nextImage));
+				
+				imgNumber = nextImage;
 			}
 		});
 
@@ -250,9 +270,7 @@ public class Main<T extends Algebra<T,U>, U> {
 					java.awt.Toolkit.getDefaultToolkit().beep();
 				else {
 					imgNumber++;
-					Tuple2<T, DimensionedDataSource<U>> tuple =
-							dataSources.get(imgNumber);
-					displayImage(tuple);
+					displayImage(dataSources.get(imgNumber));
 				}
 			}
 		});
@@ -282,9 +300,40 @@ public class Main<T extends Algebra<T,U>, U> {
 					java.awt.Toolkit.getDefaultToolkit().beep();
 				else {
 					imgNumber--;
-					Tuple2<T, DimensionedDataSource<U>> tuple =
-							dataSources.get(imgNumber);
-					displayImage(tuple);
+					displayImage(dataSources.get(imgNumber));
+				}
+			}
+		});
+
+		JButton lut = new JButton("Change LUT");
+		lut.addMouseListener(new MouseListener() {
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+			}
+			
+			@Override
+			public void mousePressed(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				JFileChooser dlg = new JFileChooser();
+				int returnVal = dlg.showDialog(frame, "OK");
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					File lutFile = dlg.getSelectedFile();
+					colorTable = loadLUT(lutFile);
+					if (imgNumber >= 0 && imgNumber < dataSources.size()) {
+						displayImage(dataSources.get(imgNumber));
+					}
 				}
 			}
 		});
@@ -301,8 +350,9 @@ public class Main<T extends Algebra<T,U>, U> {
 
 		Panel ip = new Panel();
 		
-		ip.add(displayNext);
 		ip.add(displayPrev);
+		ip.add(displayNext);
+		ip.add(lut);
 		
 		Container pane = frame.getContentPane();
 		
@@ -508,7 +558,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		}
 	}
 
-	private int[] colorTable() {
+	private int[] defaultColorTable() {
 		Integer[] colors = new Integer[256*256*256];
 		// fill table
 		int i = 0;
@@ -558,6 +608,30 @@ public class Main<T extends Algebra<T,U>, U> {
 		for (i = 0; i < colors.length; i++)
 			primitives[i] = colors[i];
 		return primitives;
+	}
+	
+	private int[] loadLUT(File lutFile) {
+		try {
+			FileReader fr = new FileReader(lutFile);
+			BufferedReader br = new BufferedReader(fr);
+			for (int i = 0; i < 12; i++) {
+				br.readLine();
+			}
+			int[] colors = new int[32768];
+			for (int i = 0; i < colors.length; i++) {
+				String line = br.readLine();
+				String[] pieces = line.trim().split(" ");
+				int r = (int) Math.round(255 * Double.valueOf(pieces[0]));
+				int g = (int) Math.round(255 * Double.valueOf(pieces[1]));
+				int b = (int) Math.round(255 * Double.valueOf(pieces[2]));
+				colors[i] = argb(0x7f,r,g,b);
+			}
+			br.close();
+			return colors;
+		} catch (Exception e) {
+			System.out.println("loadLUT exception "+e);
+			return colorTable;
+		}
 	}
 
 	private int argb(int a, int r, int g, int b) {

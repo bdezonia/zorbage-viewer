@@ -34,14 +34,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -91,16 +85,16 @@ public class Main<T extends Algebra<T,U>, U> {
 	
 	private Component image = null;
 	
-	private int[] colorTable = null;
+	private int[] defaultColorTable = defaultColorTable();
 
-	@SuppressWarnings({"rawtypes","unchecked"})
+	private int[] colorTable = defaultColorTable;
+
+	@SuppressWarnings("rawtypes")
 	public static void main(String[] args) {
 
 		Gdal.init();
 
 		Main main = new Main();
-		
-		main.colorTable = main.defaultColorTable();
 		
 		// Schedule a job for the event-dispatching thread: creating and showing
 		// this application's GUI.
@@ -159,8 +153,6 @@ public class Main<T extends Algebra<T,U>, U> {
 				
 				dataSources.addAll(bundle.bundle());
 				
-				System.out.println("gdal files loaded");
-				
 				displayImage(dataSources.get(nextImage));
 				
 				imgNumber = nextImage;
@@ -199,8 +191,6 @@ public class Main<T extends Algebra<T,U>, U> {
 				int nextImage = dataSources.size();
 				
 				dataSources.addAll(bundle.bundle());
-				
-				System.out.println("netcdf files loaded");
 				
 				displayImage(dataSources.get(nextImage));
 				
@@ -242,8 +232,6 @@ public class Main<T extends Algebra<T,U>, U> {
 				
 				dataSources.addAll(bundle.bundle());
 				
-				System.out.println("scifio files loaded");
-								
 				displayImage(dataSources.get(nextImage));
 				
 				imgNumber = nextImage;
@@ -364,7 +352,7 @@ public class Main<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				colorTable = defaultColorTable();
+				colorTable = defaultColorTable;
 				if (imgNumber >= 0 && imgNumber < dataSources.size()) {
 					displayImage(dataSources.get(imgNumber));
 				}
@@ -592,6 +580,12 @@ public class Main<T extends Algebra<T,U>, U> {
 		}
 	}
 
+	// TODO The calculation of this is very slow at the start of the program. I am unable to sort a primitive
+	// array using a comparator. A java limitation. I need to do a binary search and insert a color at
+	// a time. I tried an insertion sort kind of approach and it would not finish. Must fix this. I think
+	// right now we generate way too many objects and it fragments memory and affects performance overall.
+	// I think a smart init could avoid a ton of objects and also be fast.
+	
 	private int[] defaultColorTable() {
 		Integer[] colors = new Integer[256*256*256];
 		// fill table
@@ -599,7 +593,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		for (int r = 0; r < 256; r++) {
 			for (int g = 0; g < 256; g++) {
 				for (int b = 0; b < 256; b++) {
-					colors[i++] = argb(0x7f, r, g, b);
+					colors[i++] = argb(0xcf, r, g, b);
 				}
 			}
 		}
@@ -689,7 +683,7 @@ public class Main<T extends Algebra<T,U>, U> {
             
             fin.close();
             
-            // note: some imagej lut files have sizes that are not divisible by 3. this code ignores the couple extra bytes
+            // note: some imagej lut files have sizes that are not divisible by 3. this code ignores the couple extra bytes.
             int chunk = fileContent.length / 3;
             
             int[] lut = new int[chunk];

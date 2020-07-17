@@ -522,14 +522,14 @@ public class Main<T extends Algebra<T,U>, U> {
 			if (ratio.compareTo(BigDecimal.ONE) > 0)
 				ratio = BigDecimal.ONE;
 			
-			// now cale 0-1 to the range of the size of the current color table
+			// now scale 0-1 to the range of the size of the current color table
 			
 			int intensity = BigDecimal.valueOf(colorTable.length-1).multiply(ratio).intValue();
 
-			// put a color from the colortable into the image at pos (x,y)
+			// put a color from the color table into the image at pos (x,y)
 			
 			long x = idx.get(0);
-			long y = (data.numDimensions() == 1 ? 0 : idx.get(1));
+			long y = (idx.numDimensions() == 1 ? 0 : idx.get(1));
 			
 			int bufferPos = (int) (y * width + x);
 			
@@ -602,31 +602,6 @@ public class Main<T extends Algebra<T,U>, U> {
 	}
 	
 	private int[] loadLUT(File lutFile) {
-		/*
-		 * This is a 32k LUT type defined in CUBE files. I found a few free LUTS.
-		try {
-			FileReader fr = new FileReader(lutFile);
-			BufferedReader br = new BufferedReader(fr);
-			for (int i = 0; i < 12; i++) {
-				br.readLine();
-			}
-			int[] colors = new int[32768];
-			for (int i = 0; i < colors.length; i++) {
-				String line = br.readLine();
-				String[] pieces = line.trim().split(" ");
-				int r = (int) Math.round(255 * Double.valueOf(pieces[0]));
-				int g = (int) Math.round(255 * Double.valueOf(pieces[1]));
-				int b = (int) Math.round(255 * Double.valueOf(pieces[2]));
-				colors[i] = argb(0x7f,r,g,b);
-			}
-			br.close();
-			return colors;
-		} catch (Exception e) {
-			System.out.println("loadLUT exception "+e);
-			return colorTable;
-		}
-		*/
-
 		/*
 		 * This is my best guess on how to load ImageJ LUT files. My code discovers that
 		 * some of them are not stored in triplets so this code is not yet complete.

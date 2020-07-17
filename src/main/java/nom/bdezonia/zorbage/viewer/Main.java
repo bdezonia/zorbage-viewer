@@ -38,8 +38,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 import javax.swing.*;
@@ -117,6 +115,7 @@ public class Main<T extends Algebra<T,U>, U> {
  
 		//Create and set up the window.
 		frame = new JFrame("Zorbage Data Viewer");
+		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
  
 		JButton loadGdal = new JButton("Load using gdal");
@@ -421,7 +420,8 @@ public class Main<T extends Algebra<T,U>, U> {
 	}
 	
 	// how would you display complex data? a channel for r and i? otherwise it's not
-	//   bounded and it's not ordered so you can't get a display range from it.
+	//   bounded and it's not ordered so you can't get a display range from it. Also
+	//   similar things for quat and oct images
 	
 	private void displayComplexImage(T alg, DimensionedDataSource<U> data) {
 		System.out.println("MUST DISPLAY A COMPLEX IMAGE "+data.getName());
@@ -657,14 +657,17 @@ public class Main<T extends Algebra<T,U>, U> {
 		return (color >> 24) & 0xff;
 	}
 		    
+	@SuppressWarnings("unused")
 	private int r(int color) {
 		return (color >> 16) & 0xff;
 	}
 		    
+	@SuppressWarnings("unused")
 	private int g(int color) {
 		return (color >> 8) & 0xff;
 	}
 		    
+	@SuppressWarnings("unused")
 	private int b(int color) {
 		return (color >> 0) & 0xff;
 	}

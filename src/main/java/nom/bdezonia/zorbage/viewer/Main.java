@@ -546,6 +546,8 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		pane.add(image, BorderLayout.CENTER);
 
+		frame.setTitle("Zorbage Data Viewer - " + data.getName());
+		
 		frame.pack();
 
 		frame.repaint();
@@ -580,62 +582,23 @@ public class Main<T extends Algebra<T,U>, U> {
 		}
 	}
 
-	// TODO The calculation of this is very slow at the start of the program. I am unable to sort a primitive
-	// array using a comparator. A java limitation. I need to do a binary search and insert a color at
-	// a time. I tried an insertion sort kind of approach and it would not finish. Must fix this. I think
-	// right now we generate way too many objects and it fragments memory and affects performance overall.
-	// I think a smart init could avoid a ton of objects and also be fast.
-	
 	private int[] defaultColorTable() {
-		Integer[] colors = new Integer[256*256*256];
-		// fill table
-		int i = 0;
-		for (int r = 0; r < 256; r++) {
-			for (int g = 0; g < 256; g++) {
-				for (int b = 0; b < 256; b++) {
-					colors[i++] = argb(0xcf, r, g, b);
-				}
+
+		int[] grays = new int[256*3];
+		int r = 0, g = 0, b = 0;
+		for (int i = 0; i < grays.length; i++) {
+			grays[i] = argb(0xcf, r, g, b);
+			if (i % 3 == 0) {
+				b++;
+			}
+			else if (i % 3 == 1) {
+				r++;
+			}
+			else {
+				g++;
 			}
 		}
-		// sort it by intensity
-		Arrays.sort(colors, new Comparator<Integer>() {
-
-		@Override
-		public int compare(Integer color1, Integer color2) {
-			int r1 = r(color1);
-			int g1 = g(color1);
-			int b1 = b(color1);
-			int r2 = r(color2);
-			int g2 = g(color2);
-			int b2 = b(color2);
-
-			double bright1 = 0.2126 * r1 + 0.7152 * g1 + 0.0722 * b1;
-			double bright2 = 0.2126 * r2 + 0.7152 * g2 + 0.0722 * b2;
-			if (bright1 < bright2)
-				return -1;
-			else if (bright1 > bright2)
-				return 1;
-			else if (r1 < r2)
-				return -1;
-			else if (r1 > r2)
-				return 1;
-			else if (g1 < g2)
-				return -1;
-			else if (g1 > g2)
-				return 1;
-			else if (b1 < b2)
-				return -1;
-			else if (b1 > b2)
-				return 1;
-			else
-				return 0;
-			}
-		});
-
-		int[] primitives = new int[colors.length];
-		for (i = 0; i < colors.length; i++)
-			primitives[i] = colors[i];
-		return primitives;
+		return grays;
 	}
 	
 	private int[] loadLUT(File lutFile) {

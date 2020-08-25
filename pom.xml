@@ -160,4 +160,8 @@
     </repository>
   </distributionManagement>
 
+  <name>zorbage-viewer</name>
+  <url>https://github.com/bdezonia/zorbage-viewer</url>
+  <inceptionYear>2020</inceptionYear>
+  <description>zorbage-viewer: utility app for loading and viewing various image data formats</description>
 </project>

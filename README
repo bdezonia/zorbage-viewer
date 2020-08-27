@@ -6,3 +6,7 @@ The zorbage-viewer uses the NetCDF, GDAL, and SCIFIO file format
 translation libraries to open many image types into zorbage structures.
 It is a simple file viewer that will be undergoing continued
 development.
+
+Note that to run the viewer you need to first install GDAL on your machine.
+There are directions for doing so in the zorbage-gdal README. See
+https://github.com/bdezonia/zorbage-gdal for more information.

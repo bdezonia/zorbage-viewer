@@ -609,35 +609,35 @@ public class Main<T extends Algebra<T,U>, U> {
 		FileInputStream fin = null;
 		try {
 
-            if (lutFile.length() > Integer.MAX_VALUE)
-            	throw new IllegalArgumentException("lut data is too large");
+			if (lutFile.length() > Integer.MAX_VALUE)
+				throw new IllegalArgumentException("lut data is too large");
 
-            byte fileContent[] = new byte[(int)lutFile.length()];
-             
-            fin = new FileInputStream(lutFile);
-            
-            // Reads up to certain bytes of data from this input stream into an array of bytes.
-            fin.read(fileContent);
-            
-            fin.close();
-            
-            // note: some imagej lut files have sizes that are not divisible by 3. this code ignores the couple extra bytes.
-            int chunk = fileContent.length / 3;
-            
-            int[] lut = new int[chunk];
-            
-            for (int i = 0; i < chunk; i++) {
-            	lut[i] = argb(0xcf, fileContent[0*chunk + i], fileContent[1*chunk + i], fileContent[2*chunk + i]);
-            }
+			byte fileContent[] = new byte[(int)lutFile.length()];
 
-            return lut;
-            
+			fin = new FileInputStream(lutFile);
+
+			// Reads up to certain bytes of data from this input stream into an array of bytes.
+			fin.read(fileContent);
+
+			fin.close();
+
+			// note: some imagej lut files have sizes that are not divisible by 3. this code ignores the couple extra bytes.
+			int chunk = fileContent.length / 3;
+
+			int[] lut = new int[chunk];
+
+			for (int i = 0; i < chunk; i++) {
+				lut[i] = argb(0xcf, fileContent[0*chunk + i], fileContent[1*chunk + i], fileContent[2*chunk + i]);
+			}
+
+			return lut;
+
 		} catch (Exception e) {
-			
+
 			System.out.println("loadLUT exception "+e);
-			
+
 			return colorTable;
-			
+
 		} finally {
 			try {
 				if (fin != null)
@@ -656,17 +656,17 @@ public class Main<T extends Algebra<T,U>, U> {
 	private int a(int color) {
 		return (color >> 24) & 0xff;
 	}
-		    
+
 	@SuppressWarnings("unused")
 	private int r(int color) {
 		return (color >> 16) & 0xff;
 	}
-		    
+
 	@SuppressWarnings("unused")
 	private int g(int color) {
 		return (color >> 8) & 0xff;
 	}
-		    
+
 	@SuppressWarnings("unused")
 	private int b(int color) {
 		return (color >> 0) & 0xff;

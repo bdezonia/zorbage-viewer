@@ -58,6 +58,7 @@ import nom.bdezonia.zorbage.sampling.SamplingIterator;
 import nom.bdezonia.zorbage.scifio.Scifio;
 import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.character.FixedStringMember;
+import nom.bdezonia.zorbage.type.character.StringMember;
 import nom.bdezonia.zorbage.type.float32.complex.ComplexFloat32Member;
 import nom.bdezonia.zorbage.type.float64.complex.ComplexFloat64Member;
 import nom.bdezonia.zorbage.type.highprec.real.HighPrecisionAlgebra;
@@ -397,7 +398,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		U type = tuple.a().construct();
 		
-		if (type instanceof FixedStringMember) {
+		if ((type instanceof FixedStringMember) || (type instanceof StringMember)) {
 			displayTextData(tuple.a(), tuple.b());
 		}
 		else if ((type instanceof RgbMember) || (type instanceof ArgbMember))
@@ -429,17 +430,36 @@ public class Main<T extends Algebra<T,U>, U> {
 	@SuppressWarnings("unchecked")
 	private void displayTextData(T alg, DimensionedDataSource<U> data) {
 
-		FixedStringMember value = new FixedStringMember(2048);
-		
-		data.rawData().get(0, (U) value);
-		
 		Container pane = frame.getContentPane();
 		
 		pane.remove(image);
 		
 		image = new JTextPane();
+
+		U type = alg.construct();
 		
-		((JTextPane)image).setText(value.toString());
+		String result = "";
+
+		if (type instanceof StringMember) {
+			StringMember value = new StringMember();
+			IndexedDataSource<StringMember> stringList = (IndexedDataSource<StringMember>) data.rawData();
+			for (long i = 0; i < stringList.size(); i++) {
+				stringList.get(0, value);
+				result = result + "\n" + value.toString();
+			}
+		}
+		else if (type instanceof FixedStringMember) {
+			FixedStringMember value = new FixedStringMember(2048);
+			IndexedDataSource<FixedStringMember> stringList = (IndexedDataSource<FixedStringMember>) data.rawData();
+			for (long i = 0; i < stringList.size(); i++) {
+				stringList.get(0, value);
+				result = result + "\n" + value.toString();
+			}
+		}
+		else
+			throw new IllegalArgumentException("Unknown string type "+type);
+		
+		((JTextPane)image).setText(result);
 		
 		image = new JScrollPane(image);
 		

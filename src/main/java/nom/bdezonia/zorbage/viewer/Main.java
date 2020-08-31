@@ -44,7 +44,6 @@ import javax.swing.*;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Bounded;
-import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
 import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algorithm.GridIterator;
@@ -77,7 +76,7 @@ public class Main<T extends Algebra<T,U>, U> {
 	
 	private List<Tuple2<T,DimensionedDataSource<U>>> dataSources = new ArrayList<>();
 	
-	private int imgNumber = 0;
+	private int dsNumber = 0;
 
 	private boolean preferDataRange = true;
 	
@@ -148,13 +147,13 @@ public class Main<T extends Algebra<T,U>, U> {
 
 				DataBundle bundle = Gdal.loadAllDatasets(f.getAbsolutePath());
 	
-				int nextImage = dataSources.size();
+				int nextDs = dataSources.size();
 				
 				dataSources.addAll(bundle.bundle());
 				
-				displayImage(dataSources.get(nextImage));
+				displayData(dataSources.get(nextDs));
 				
-				imgNumber = nextImage;
+				dsNumber = nextDs;
 			}
 		});
 
@@ -187,13 +186,13 @@ public class Main<T extends Algebra<T,U>, U> {
 
 				DataBundle bundle = NetCDF.loadAllDatasets(f.getAbsolutePath());
 	
-				int nextImage = dataSources.size();
+				int nextDs = dataSources.size();
 				
 				dataSources.addAll(bundle.bundle());
 				
-				displayImage(dataSources.get(nextImage));
+				displayData(dataSources.get(nextDs));
 				
-				imgNumber = nextImage;
+				dsNumber = nextDs;
 			}
 		});
 
@@ -227,13 +226,13 @@ public class Main<T extends Algebra<T,U>, U> {
 
 				DataBundle bundle = Scifio.loadAllDatasets(f.getAbsolutePath());
 	
-				int nextImage = dataSources.size();
+				int nextDs = dataSources.size();
 				
 				dataSources.addAll(bundle.bundle());
 				
-				displayImage(dataSources.get(nextImage));
+				displayData(dataSources.get(nextDs));
 				
-				imgNumber = nextImage;
+				dsNumber = nextDs;
 			}
 		});
 
@@ -258,11 +257,11 @@ public class Main<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if (imgNumber+1 >= dataSources.size())
+				if (dsNumber+1 >= dataSources.size())
 					java.awt.Toolkit.getDefaultToolkit().beep();
 				else {
-					imgNumber++;
-					displayImage(dataSources.get(imgNumber));
+					dsNumber++;
+					displayData(dataSources.get(dsNumber));
 				}
 			}
 		});
@@ -288,11 +287,11 @@ public class Main<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if (imgNumber-1 < 0)
+				if (dsNumber-1 < 0)
 					java.awt.Toolkit.getDefaultToolkit().beep();
 				else {
-					imgNumber--;
-					displayImage(dataSources.get(imgNumber));
+					dsNumber--;
+					displayData(dataSources.get(dsNumber));
 				}
 			}
 		});
@@ -323,8 +322,8 @@ public class Main<T extends Algebra<T,U>, U> {
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File lutFile = dlg.getSelectedFile();
 					colorTable = loadLUT(lutFile);
-					if (imgNumber >= 0 && imgNumber < dataSources.size()) {
-						displayImage(dataSources.get(imgNumber));
+					if (dsNumber >= 0 && dsNumber < dataSources.size()) {
+						displayData(dataSources.get(dsNumber));
 					}
 				}
 			}
@@ -352,8 +351,8 @@ public class Main<T extends Algebra<T,U>, U> {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				colorTable = defaultColorTable;
-				if (imgNumber >= 0 && imgNumber < dataSources.size()) {
-					displayImage(dataSources.get(imgNumber));
+				if (dsNumber >= 0 && dsNumber < dataSources.size()) {
+					displayData(dataSources.get(dsNumber));
 				}
 			}
 		});
@@ -388,7 +387,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		frame.setVisible(true);
 	}
 
-	private	void displayImage(Tuple2<T, DimensionedDataSource<U>> tuple)
+	private	void displayData(Tuple2<T, DimensionedDataSource<U>> tuple)
 	{
 		// TODO: there now are all kinds of multidim data sources theoretically possible:
 		//   (though no reader yet creates them). For instance:
@@ -429,10 +428,28 @@ public class Main<T extends Algebra<T,U>, U> {
 
 	@SuppressWarnings("unchecked")
 	private void displayTextData(T alg, DimensionedDataSource<U> data) {
-		System.out.println("MUST DISPLAY TEXT DATA "+data.getName());
-		FixedStringMember value = G.FSTRING.construct("something");
+
+		FixedStringMember value = new FixedStringMember(2048);
+		
 		data.rawData().get(0, (U) value);
-		System.out.println(" contents = "+value.toString());
+		
+		Container pane = frame.getContentPane();
+		
+		pane.remove(image);
+		
+		image = new JTextPane();
+		
+		((JTextPane)image).setText(value.toString());
+		
+		image = new JScrollPane(image);
+		
+		pane.add(image, BorderLayout.CENTER);
+
+		frame.setTitle("Zorbage Data Viewer - " + data.getName());
+		
+		frame.pack();
+
+		frame.repaint();
 	}
 
 	private	void displayRealImage(T alg, DimensionedDataSource<U> data)
@@ -627,6 +644,7 @@ public class Main<T extends Algebra<T,U>, U> {
 			int[] lut = new int[chunk];
 
 			for (int i = 0; i < chunk; i++) {
+				// TODO: why 0xcf? Why not 0xff? Does it make a difference?
 				lut[i] = argb(0xcf, fileContent[0*chunk + i], fileContent[1*chunk + i], fileContent[2*chunk + i]);
 			}
 

@@ -449,7 +449,7 @@ public class Main<T extends Algebra<T,U>, U> {
 			}
 		}
 		else if (type instanceof FixedStringMember) {
-			FixedStringMember value = new FixedStringMember(2048);
+			FixedStringMember value = new FixedStringMember(256);
 			IndexedDataSource<FixedStringMember> stringList = (IndexedDataSource<FixedStringMember>) data.rawData();
 			for (long i = 0; i < stringList.size(); i++) {
 				stringList.get(0, value);

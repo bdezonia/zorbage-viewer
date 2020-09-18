@@ -621,10 +621,10 @@ public class Main<T extends Algebra<T,U>, U> {
 
 	private int[] defaultColorTable() {
 
-		int[] grays = new int[256*3];
+		int[] colors = new int[256*3];
 		int r = 0, g = 0, b = 0;
-		for (int i = 0; i < grays.length; i++) {
-			grays[i] = argb(0xcf, r, g, b);
+		for (int i = 0; i < colors.length; i++) {
+			colors[i] = argb(0xcf, r, g, b);
 			if (i % 3 == 0) {
 				b++;
 			}
@@ -635,7 +635,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				g++;
 			}
 		}
-		return grays;
+		return colors;
 	}
 	
 	private int[] loadLUT(File lutFile) {

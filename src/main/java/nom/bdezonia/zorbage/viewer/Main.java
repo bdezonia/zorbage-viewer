@@ -57,12 +57,16 @@ import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
 import nom.bdezonia.zorbage.scifio.Scifio;
 import nom.bdezonia.zorbage.tuple.Tuple2;
+import nom.bdezonia.zorbage.type.character.CharMember;
 import nom.bdezonia.zorbage.type.character.FixedStringMember;
 import nom.bdezonia.zorbage.type.character.StringMember;
 import nom.bdezonia.zorbage.type.float32.complex.ComplexFloat32Member;
 import nom.bdezonia.zorbage.type.float64.complex.ComplexFloat64Member;
 import nom.bdezonia.zorbage.type.gaussian.int16.GaussianInt16Member;
 import nom.bdezonia.zorbage.type.gaussian.int32.GaussianInt32Member;
+import nom.bdezonia.zorbage.type.gaussian.int64.GaussianInt64Member;
+import nom.bdezonia.zorbage.type.gaussian.int8.GaussianInt8Member;
+import nom.bdezonia.zorbage.type.gaussian.unbounded.GaussianIntUnboundedMember;
 import nom.bdezonia.zorbage.type.highprec.real.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.highprec.real.HighPrecisionMember;
 import nom.bdezonia.zorbage.type.rgb.ArgbMember;
@@ -400,7 +404,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		U type = tuple.a().construct();
 		
-		if ((type instanceof FixedStringMember) || (type instanceof StringMember)) {
+		if ((type instanceof FixedStringMember) || (type instanceof StringMember) || (type instanceof CharMember)) {
 			displayTextData(tuple.a(), tuple.b());
 		}
 		else if ((type instanceof RgbMember) || (type instanceof ArgbMember))
@@ -409,8 +413,11 @@ public class Main<T extends Algebra<T,U>, U> {
 		}
 		else if ((type instanceof ComplexFloat32Member) ||
 				(type instanceof ComplexFloat64Member) ||
+				(type instanceof GaussianInt8Member) ||
 				(type instanceof GaussianInt16Member) ||
-				(type instanceof GaussianInt32Member))
+				(type instanceof GaussianInt32Member) ||
+				(type instanceof GaussianInt64Member) ||
+				(type instanceof GaussianIntUnboundedMember))
 		{
 			displayComplexImage(tuple.a(), tuple.b());
 		}
@@ -458,6 +465,14 @@ public class Main<T extends Algebra<T,U>, U> {
 			for (long i = 0; i < stringList.size(); i++) {
 				stringList.get(0, value);
 				result = result + "\n" + value.toString();
+			}
+		}
+		else if (type instanceof CharMember) {
+			CharMember value = new CharMember();
+			IndexedDataSource<CharMember> stringList = (IndexedDataSource<CharMember>) data.rawData();
+			for (long i = 0; i < stringList.size(); i++) {
+				stringList.get(0, value);
+				result = result + value.toString();
 			}
 		}
 		else

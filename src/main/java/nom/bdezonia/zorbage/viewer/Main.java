@@ -60,6 +60,7 @@ import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.character.CharMember;
 import nom.bdezonia.zorbage.type.character.FixedStringMember;
 import nom.bdezonia.zorbage.type.character.StringMember;
+import nom.bdezonia.zorbage.type.float16.complex.ComplexFloat16Member;
 import nom.bdezonia.zorbage.type.float32.complex.ComplexFloat32Member;
 import nom.bdezonia.zorbage.type.float64.complex.ComplexFloat64Member;
 import nom.bdezonia.zorbage.type.gaussian16.GaussianInt16Member;
@@ -67,6 +68,7 @@ import nom.bdezonia.zorbage.type.gaussian32.GaussianInt32Member;
 import nom.bdezonia.zorbage.type.gaussian64.GaussianInt64Member;
 import nom.bdezonia.zorbage.type.gaussian8.GaussianInt8Member;
 import nom.bdezonia.zorbage.type.gaussianu.GaussianIntUnboundedMember;
+import nom.bdezonia.zorbage.type.highprec.complex.ComplexHighPrecisionMember;
 import nom.bdezonia.zorbage.type.highprec.real.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.highprec.real.HighPrecisionMember;
 import nom.bdezonia.zorbage.type.rgb.ArgbMember;
@@ -411,8 +413,10 @@ public class Main<T extends Algebra<T,U>, U> {
 		{
 			displayColorImage(tuple.a(), tuple.b());
 		}
-		else if ((type instanceof ComplexFloat32Member) ||
+		else if ((type instanceof ComplexFloat16Member) ||
+				(type instanceof ComplexFloat32Member) ||
 				(type instanceof ComplexFloat64Member) ||
+				(type instanceof ComplexHighPrecisionMember) ||
 				(type instanceof GaussianInt8Member) ||
 				(type instanceof GaussianInt16Member) ||
 				(type instanceof GaussianInt32Member) ||

@@ -53,6 +53,7 @@ import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.gdal.Gdal;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
+import nom.bdezonia.zorbage.nifti.Nifti;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
 import nom.bdezonia.zorbage.scifio.Scifio;
@@ -245,6 +246,46 @@ public class Main<T extends Algebra<T,U>, U> {
 			}
 		});
 
+		JButton loadNifti = new JButton("Load using nifti");
+		loadNifti.addMouseListener(new MouseListener() {
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+			}
+			
+			@Override
+			public void mousePressed(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+
+				JFileChooser chooser = new JFileChooser();
+				
+				chooser.showOpenDialog(frame);
+				
+				File f = chooser.getSelectedFile();
+
+				DataBundle bundle = Nifti.open(f.getAbsolutePath());
+	
+				int nextDs = dataSources.size();
+				
+				dataSources.addAll(bundle.bundle());
+				
+				displayData(dataSources.get(nextDs));
+				
+				dsNumber = nextDs;
+			}
+		});
+
 		JButton displayNext = new JButton("Display Next");
 		displayNext.addMouseListener(new MouseListener() {
 			
@@ -374,6 +415,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		bp.add(loadGdal);
 		bp.add(loadNetcdf);
+		bp.add(loadNifti);
 		bp.add(loadScifio);
 
 		Panel ip = new Panel();

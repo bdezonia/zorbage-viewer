@@ -473,7 +473,70 @@ public class Main<T extends Algebra<T,U>, U> {
 	}
 	
 	private void displayColorImage(T alg, DimensionedDataSource<U> data) {
-		System.out.println("MUST DISPLAY A COLOR IMAGE"+data.getName());
+		U value = alg.construct();
+		if (data.numDimensions() < 1)
+			throw new IllegalArgumentException("dataset is completely void: nothing to display");
+		long width = data.dimension(0);
+		long height = data.numDimensions() == 1 ? 1 : data.dimension(1);
+		IntegerIndex idx = new IntegerIndex(data.numDimensions());
+		long[] minPt = new long[data.numDimensions()];
+		long[] maxPt = new long[data.numDimensions()];
+		for (int i = 0; i < data.numDimensions(); i++) {
+			maxPt[i] = data.dimension(i) - 1;
+		}
+		if (data.numDimensions() > 2) {
+			// maybe we want to choose the right plane
+			// for now additional coords are 0's so we are getting 1st plane
+		}
+		
+		BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_ARGB);
+		
+		// Safe cast as img is of correct type 
+		
+		DataBufferInt buffer = (DataBufferInt) img.getRaster().getDataBuffer();
+
+		// Conveniently, the buffer already contains the data array
+		int[] arrayInt = buffer.getData();
+
+		SamplingIterator<IntegerIndex> iter = GridIterator.compute(minPt, maxPt);
+		while (iter.hasNext()) {
+			iter.next(idx);
+			data.get(idx, value);
+			int v;
+			if (value instanceof ArgbMember) {
+				ArgbMember tmp = (ArgbMember) value;
+				v = (tmp.a() << 24) | (tmp.r() << 16) | (tmp.g() << 8) | (tmp.b() << 0);
+			}
+			else if (value instanceof RgbMember) {
+				RgbMember tmp = (RgbMember) value;
+				v = (255 << 24) | (tmp.r() << 16) | (tmp.g() << 8) | (tmp.b() << 0);
+			}
+			else
+				throw new IllegalArgumentException("Unsupported color type passed to display routine");
+
+			long x = idx.get(0);
+			long y = (idx.numDimensions() == 1 ? 0 : idx.get(1));
+			
+			int bufferPos = (int) (y * width + x);
+			
+			arrayInt[bufferPos] = v;
+		}
+		
+		Container pane = frame.getContentPane();
+		
+		pane.remove(image);
+		
+		image = new JLabel(new ImageIcon(img));
+		
+		image = new JScrollPane(image);
+		
+		pane.add(image, BorderLayout.CENTER);
+
+		frame.setTitle("Zorbage Data Viewer - " + data.getName());
+		
+		frame.pack();
+
+		frame.repaint();
 	}
 	
 	// how would you display complex data? a channel for r and i? otherwise it's not

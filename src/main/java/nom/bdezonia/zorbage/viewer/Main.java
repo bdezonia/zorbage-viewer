@@ -1,7 +1,7 @@
 /*
  * zorbage-viewer: utility app for loading and viewing various image data formats
  *
- * Copyright (C) 2020 Barry DeZonia
+ * Copyright (C) 2020-2021 Barry DeZonia
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:

@@ -10,3 +10,188 @@ continued development.
 Note that to run the viewer you need to first install GDAL on your machine.
 There are directions for doing so in the zorbage-gdal README. See
 https://github.com/bdezonia/zorbage-gdal for more information.
+
+The viewer can currently read the following kinds of files:
+
+AAIGrid – Arc/Info ASCII Grid
+ACE2 – ACE2
+ADRG – ADRG/ARC Digitized Raster Graphics (.gen/.thf)
+AIG – Arc/Info Binary Grid
+AIRSAR – AIRSAR Polarimetric Format
+APNG – Animated Portable Network Graphics  
+ARG – Azavea Raster Grid
+AVI – Audio Video Interleave 
+BAG – Bathymetry Attributed Grid
+BLX – Magellan BLX Topo File Format
+BMP – Microsoft Windows Device Independent Bitmap
+BSB – Maptech/NOAA BSB Nautical Chart Format
+BT – VTP .bt Binary Terrain Format
+BYN - Natural Resources Canada’s Geoid file format (.byn)
+CAD – AutoCAD DWG raster layer
+CALS – CALS Type 1
+CEOS – CEOS Image
+COASP – DRDC COASP SAR Processor Raster
+COG – Cloud Optimized GeoTIFF generator
+COSAR – TerraSAR-X Complex SAR Data Product
+CPG – Convair PolGASP data
+CTable2 – CTable2 Datum Grid Shift
+CTG – USGS LULC Composite Theme Grid
+DAAS (Airbus DS Intelligence Data As A Service driver)
+DB2 raster
+DDS – DirectDraw Surface
+DERIVED – Derived subdatasets driver
+DICOM – Digital Imaging and Communications in Medicine
+DIMAP – Spot DIMAP
+DIPEx – ELAS DIPEx
+DODS – OPeNDAP Grid Client
+DOQ1 – First Generation USGS DOQ
+DOQ2 – New Labelled USGS DOQ
+DTED – Military Elevation Data
+ECRGTOC – ECRG Table Of Contents (TOC.xml)
+ECW – Enhanced Compressed Wavelets (.ecw)
+EEDAI - Google Earth Engine Data API Image
+EHdr – ESRI .hdr Labelled
+EIR – Erdas Imagine Raw
+ELAS - Earth Resources Laboratory Applications Software
+ENVI – ENVI .hdr Labelled Raster
+EPS – Encapsulated PostScript 
+ESAT – Envisat Image Product
+ESRIC – Esri Compact Cache
+ERS – ERMapper .ERS
+EXR – Extended Dynamic Range Image File Format
+FAST – EOSAT FAST Format
+FIT – FIT
+FITS – Flexible Image Transport System
+FujiBAS – Fuji BAS Scanner Image
+GenBin – Generic Binary (.hdr labelled)
+Oracle Spatial GeoRaster
+GFF – Sandia National Laboratories GSAT File Format
+GIF – Graphics Interchange Format
+GMT – GMT Compatible netCDF
+GPKG – GeoPackage raster
+GRASS Raster Format
+GRASSASCIIGrid – GRASS ASCII Grid
+GRIB – WMO General Regularly-distributed Information in Binary form
+GS7BG – Golden Software Surfer 7 Binary Grid File Format
+GSAG – Golden Software ASCII Grid File Format
+GSBG – Golden Software Binary Grid File Format
+GSC – GSC Geogrid
+GTA - Generic Tagged Arrays
+GTiff – GeoTIFF File Format
+GXF – Grid eXchange File
+HDF4 – Hierarchical Data Format Release 4 (HDF4)
+HDF5 – Hierarchical Data Format Release 5 (HDF5)
+HEIF / HEIC – ISO/IEC 23008-12:2017 High Efficiency Image File Format
+HF2 – HF2/HFZ heightfield raster
+HFA – Erdas Imagine .img
+IDA – Image Display and Analysis
+RST – Idrisi Raster Format
+ICS – Image Cytometry Standard
+ILWIS – Raster Map
+INGR – Intergraph Raster Format
+IRIS – Vaisala’s weather radar software format
+ISCE – ISCE
+ISG – International Service for the Geoid
+ISIS2 – USGS Astrogeology ISIS Cube (Version 2)
+ISIS3 – USGS Astrogeology ISIS Cube (Version 3)
+JDEM – Japanese DEM (.mem)
+JP2ECW – ERDAS JPEG2000 (.jp2)
+JP2KAK – JPEG-2000 (based on Kakadu)
+JP2Lura – JPEG2000 driver based on Lurawave library
+JP2MrSID – JPEG2000 via MrSID SDK
+JP2OpenJPEG – JPEG2000 driver based on OpenJPEG library
+JPEG2000 – Implementation of the JPEG-2000 part 1
+JPEGLS
+JPEG – JPEG JFIF File Format
+JPIPKAK - JPIP Streaming
+KEA
+KMLSuperoverlay – KMLSuperoverlay
+KRO – KOLOR Raw format
+LAN – Erdas 7.x .LAN and .GIS
+L1B – NOAA Polar Orbiter Level 1b Data Set (AVHRR)
+LCP – FARSITE v.4 LCP Format
+Leveller – Daylon Leveller Heightfield
+LOSLAS – NADCON .los/.las Datum Grid Shift
+MAP – OziExplorer .MAP
+MRF – Meta Raster Format
+MBTiles
+MEM – In Memory Raster
+MFF – Vexcel MFF Raster
+MFF2 – Vexcel MFF2 Image
+MG4Lidar – MrSID/MG4 LiDAR Compression / Point Cloud View files
+Micro-Manager 
+MNG – Multiple-image Network Graphics
+MrSID – Multi-resolution Seamless Image Database
+MSG – Meteosat Second Generation
+MSGN – Meteosat Second Generation (MSG) Native Archive Format (.nat)
+NDF – NLAPS Data Format
+NetCDF: Network Common Data Form
+NGSGEOID - NOAA NGS Geoid Height Grids
+NGW – NextGIS Web
+NIFTI - Neuroimaging Informatics Technology Initiative
+NITF – National Imagery Transmission Format
+NRRD – Nearly Raw Raster Data
+NTv2 – NTv2 Datum Grid Shift
+NWT_GRD/NWT_GRC – Northwood/Vertical Mapper File Format
+OBF – OsmAnd
+OGCAPI – OGC API Tiles / Maps / Coverage
+OZI – OZF2/OZFX3 raster
+JAXA PALSAR Processed Products
+PAux – PCI .aux Labelled Raw Format
+PCIDSK – PCI Geomatics Database File
+PCRaster – PCRaster raster file format
+PCX – Picture Exchange
+PDF – Geospatial PDF
+PDS – Planetary Data System v3
+PDS4 – NASA Planetary Data System (Version 4)
+PGM – Portable Gray Map
+PLMosaic (Planet Labs Mosaics API)
+PNG – Portable Network Graphics
+PNM – Netpbm (.pgm, .ppm)
+PostGISRaster – PostGIS Raster driver
+PHOTOMOD Raster File
+QuickTime – QuickTime File Format
+Rasdaman GDAL driver
+Rasterlite - Rasters in SQLite DB
+RasterLite2 - Rasters in SQLite DB
+R – R Object Data Store
+RDA (DigitalGlobe Raster Data Access)
+RDB - RIEGL Database
+RIK – Swedish Grid Maps
+RMF – Raster Matrix Format
+ROI_PAC – ROI_PAC
+RPFTOC – Raster Product Format/RPF (a.toc)
+RRASTER – R Raster
+RS2 – RadarSat 2 XML Product
+SAFE – Sentinel-1 SAFE XML Product
+SAR_CEOS – CEOS SAR Image
+SAGA – SAGA GIS Binary Grid File Format
+SDTS – USGS SDTS DEM
+SENTINEL2 – Sentinel-2 Products
+SGI – SGI Image Format
+SIGDEM – Scaled Integer Gridded DEM
+SNODAS – Snow Data Assimilation System
+SRP – Standard Product Format (ASRP/USRP) (.gen)
+SRTMHGT – SRTM HGT Format
+STACTA - Spatio-Temporal Asset Catalog Tiled Assets
+Terragen – Terragen™ Terrain File
+TGA – TARGA Image File Format
+TIFF – Tagged Image File Format
+TIL – EarthWatch/DigitalGlobe .TIL
+TileDB - TileDB
+TSX – TerraSAR-X Product
+USGSDEM – USGS ASCII DEM (and CDED)
+VICAR – VICAR
+VRT – GDAL Virtual Format
+WCS – OGC Web Coverage Service
+WEBP - WEBP
+WMS – Web Map Services
+WMTS – OGC Web Map Tile Service
+XPM – X11 Pixmap
+XYZ – ASCII Gridded XYZ
+ZMap – ZMap Plus Grid
+
+The developer of zorbage-viewer is looking for collaborators who want to add
+some visualization and or data processing code to the zorbage-viewer. It
+would be a fun project for the right people. Please file an issue if you'd
+consider doing something like this.

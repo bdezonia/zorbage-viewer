@@ -64,7 +64,9 @@ import nom.bdezonia.zorbage.scifio.Scifio;
 import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.character.CharMember;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
+import nom.bdezonia.zorbage.type.color.CieLabMember;
 import nom.bdezonia.zorbage.type.color.RgbMember;
+import nom.bdezonia.zorbage.type.complex.float128.ComplexFloat128Member;
 import nom.bdezonia.zorbage.type.complex.float16.ComplexFloat16Member;
 import nom.bdezonia.zorbage.type.complex.float32.ComplexFloat32Member;
 import nom.bdezonia.zorbage.type.complex.float64.ComplexFloat64Member;
@@ -74,10 +76,29 @@ import nom.bdezonia.zorbage.type.gaussian.int32.GaussianInt32Member;
 import nom.bdezonia.zorbage.type.gaussian.int64.GaussianInt64Member;
 import nom.bdezonia.zorbage.type.gaussian.int8.GaussianInt8Member;
 import nom.bdezonia.zorbage.type.gaussian.unbounded.GaussianIntUnboundedMember;
+import nom.bdezonia.zorbage.type.octonion.float128.OctonionFloat128Member;
+import nom.bdezonia.zorbage.type.octonion.float16.OctonionFloat16Member;
+import nom.bdezonia.zorbage.type.octonion.float32.OctonionFloat32Member;
+import nom.bdezonia.zorbage.type.octonion.float64.OctonionFloat64Member;
+import nom.bdezonia.zorbage.type.octonion.highprec.OctonionHighPrecisionMember;
+import nom.bdezonia.zorbage.type.quaternion.float128.QuaternionFloat128Member;
+import nom.bdezonia.zorbage.type.quaternion.float16.QuaternionFloat16Member;
+import nom.bdezonia.zorbage.type.quaternion.float32.QuaternionFloat32Member;
+import nom.bdezonia.zorbage.type.quaternion.float64.QuaternionFloat64Member;
+import nom.bdezonia.zorbage.type.quaternion.highprec.QuaternionHighPrecisionMember;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
 import nom.bdezonia.zorbage.type.string.FixedStringMember;
 import nom.bdezonia.zorbage.type.string.StringMember;
+
+// TODO
+//
+//   I should do a little rewriting. A dataset can be a plane or multidims. Each
+//   element can be a number or a vector or a matrix or a tensor. Each of those
+//   can be int/real/complex/quaternion/octonion. Need to think of best way to
+//   detect these differences and to then write specialized display routines to
+//   handle all these differences. Zorbage types might need some identifying info
+//   embedded in their types.
 
 /**
  * 
@@ -455,13 +476,34 @@ public class Main<T extends Algebra<T,U>, U> {
 		if ((type instanceof FixedStringMember) || (type instanceof StringMember) || (type instanceof CharMember)) {
 			displayTextData(tuple.a(), tuple.b());
 		}
+		else if (type instanceof CieLabMember)
+		{
+			displayCieLabColorImage(tuple.a(), tuple.b());
+		}
 		else if ((type instanceof RgbMember) || (type instanceof ArgbMember))
 		{
-			displayColorImage(tuple.a(), tuple.b());
+			displayRgbColorImage(tuple.a(), tuple.b());
+		}
+		else if ((type instanceof OctonionFloat16Member) ||
+				(type instanceof OctonionFloat32Member) ||
+				(type instanceof OctonionFloat64Member) ||
+				(type instanceof OctonionFloat128Member) ||
+				(type instanceof OctonionHighPrecisionMember))
+		{
+			displayOctonionImage(tuple.a(), tuple.b());
+		}
+		else if ((type instanceof QuaternionFloat16Member) ||
+				(type instanceof QuaternionFloat32Member) ||
+				(type instanceof QuaternionFloat64Member) ||
+				(type instanceof QuaternionFloat128Member) ||
+				(type instanceof QuaternionHighPrecisionMember))
+		{
+			displayQuaternionImage(tuple.a(), tuple.b());
 		}
 		else if ((type instanceof ComplexFloat16Member) ||
 				(type instanceof ComplexFloat32Member) ||
 				(type instanceof ComplexFloat64Member) ||
+				(type instanceof ComplexFloat128Member) ||
 				(type instanceof ComplexHighPrecisionMember) ||
 				(type instanceof GaussianInt8Member) ||
 				(type instanceof GaussianInt16Member) ||
@@ -476,7 +518,11 @@ public class Main<T extends Algebra<T,U>, U> {
 		}
 	}
 	
-	private void displayColorImage(T alg, DimensionedDataSource<U> data) {
+	private void displayCieLabColorImage(T alg, DimensionedDataSource<U> data) {
+		System.out.println("MUST DISPLAY A CIELAB COLOR IMAGE "+data.getName());
+	}
+
+	private void displayRgbColorImage(T alg, DimensionedDataSource<U> data) {
 		U value = alg.construct();
 		if (data.numDimensions() < 1)
 			throw new IllegalArgumentException("dataset is completely void: nothing to display");
@@ -549,6 +595,14 @@ public class Main<T extends Algebra<T,U>, U> {
 	
 	private void displayComplexImage(T alg, DimensionedDataSource<U> data) {
 		System.out.println("MUST DISPLAY A COMPLEX IMAGE "+data.getName());
+	}
+
+	private void displayQuaternionImage(T alg, DimensionedDataSource<U> data) {
+		System.out.println("MUST DISPLAY A QUATERNION IMAGE "+data.getName());
+	}
+
+	private void displayOctonionImage(T alg, DimensionedDataSource<U> data) {
+		System.out.println("MUST DISPLAY AN OCTONION IMAGE "+data.getName());
 	}
 
 	@SuppressWarnings("unchecked")

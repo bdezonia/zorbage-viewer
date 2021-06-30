@@ -66,6 +66,7 @@ import nom.bdezonia.zorbage.type.character.CharMember;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
 import nom.bdezonia.zorbage.type.color.CieLabMember;
 import nom.bdezonia.zorbage.type.color.RgbMember;
+import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.complex.float128.ComplexFloat128Member;
 import nom.bdezonia.zorbage.type.complex.float16.ComplexFloat16Member;
 import nom.bdezonia.zorbage.type.complex.float32.ComplexFloat32Member;
@@ -810,7 +811,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		int[] colors = new int[256*3];
 		int r = 0, g = 0, b = 0;
 		for (int i = 0; i < colors.length; i++) {
-			colors[i] = argb(0xcf, r, g, b);
+			colors[i] = RgbUtils.argb(0xcf, r, g, b);
 			if (i % 3 == 0) {
 				b++;
 			}
@@ -851,7 +852,7 @@ public class Main<T extends Algebra<T,U>, U> {
 
 			for (int i = 0; i < chunk; i++) {
 				// TODO: why 0xcf? Why not 0xff? Does it make a difference?
-				lut[i] = argb(0xcf, fileContent[0*chunk + i], fileContent[1*chunk + i], fileContent[2*chunk + i]);
+				lut[i] = RgbUtils.argb(0xcf, fileContent[0*chunk + i], fileContent[1*chunk + i], fileContent[2*chunk + i]);
 			}
 
 			return lut;
@@ -870,29 +871,5 @@ public class Main<T extends Algebra<T,U>, U> {
 				;
 			}
 		}
-	}
-
-	private int argb(int a, int r, int g, int b) {
-		return ((a & 0xff) << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
-	}
-
-	@SuppressWarnings("unused")
-	private int a(int color) {
-		return (color >> 24) & 0xff;
-	}
-
-	@SuppressWarnings("unused")
-	private int r(int color) {
-		return (color >> 16) & 0xff;
-	}
-
-	@SuppressWarnings("unused")
-	private int g(int color) {
-		return (color >> 8) & 0xff;
-	}
-
-	@SuppressWarnings("unused")
-	private int b(int color) {
-		return (color >> 0) & 0xff;
 	}
 }

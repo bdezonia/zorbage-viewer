@@ -483,7 +483,13 @@ public class Main<T extends Algebra<T,U>, U> {
 		}
 		else if ((type instanceof RgbMember) || (type instanceof ArgbMember))
 		{
-			displayRgbColorImage(tuple.a(), tuple.b());
+			int xId = 0;
+			int yId = 1;
+			int numExtraDims = tuple.b().numDimensions()-2;
+			if (numExtraDims < 0)
+				numExtraDims = 0;
+			long[] otherDimVals = new long[numExtraDims];
+			displayRgbColorImage(tuple.a(), tuple.b(), xId, yId, otherDimVals);
 		}
 		else if ((type instanceof OctonionFloat16Member) ||
 				(type instanceof OctonionFloat32Member) ||
@@ -515,29 +521,45 @@ public class Main<T extends Algebra<T,U>, U> {
 			displayComplexImage(tuple.a(), tuple.b());
 		}
 		else {
-			displayRealImage(tuple.a(), tuple.b());
+			int xId = 0;
+			int yId = 1;
+			int numExtraDims = tuple.b().numDimensions()-2;
+			if (numExtraDims < 0)
+				numExtraDims = 0;
+			long[] otherDimVals = new long[numExtraDims];
+			displayRealImage(tuple.a(), tuple.b(), xId, yId, otherDimVals);
 		}
 	}
 	
 	private void displayCieLabColorImage(T alg, DimensionedDataSource<U> data) {
-		System.out.println("MUST DISPLAY A CIELAB COLOR IMAGE "+data.getName());
+		System.out.println("MUST DISPLAY A CIE LAB COLOR IMAGE "+data.getName());
 	}
 
-	private void displayRgbColorImage(T alg, DimensionedDataSource<U> data) {
-		U value = alg.construct();
-		if (data.numDimensions() < 1)
+	private void displayRgbColorImage(T alg, DimensionedDataSource<U> data, int xId, int yId, long[] otherDimVals) {
+		int numD = data.numDimensions();
+		if (numD < 1)
 			throw new IllegalArgumentException("dataset is completely void: nothing to display");
-		long width = data.dimension(0);
-		long height = data.numDimensions() == 1 ? 1 : data.dimension(1);
-		IntegerIndex idx = new IntegerIndex(data.numDimensions());
-		long[] minPt = new long[data.numDimensions()];
-		long[] maxPt = new long[data.numDimensions()];
-		for (int i = 0; i < data.numDimensions(); i++) {
-			maxPt[i] = data.dimension(i) - 1;
+		U value = alg.construct();
+		long width  = xId == -1 ? 1 : data.dimension(xId);
+		long height = yId == -1 ? 1 : data.dimension(yId);
+		IntegerIndex idx = new IntegerIndex(numD);
+		long[] minPt = new long[numD];
+		long[] maxPt = new long[numD];
+		if (xId != -1) {
+			minPt[xId] = 0;
+			maxPt[xId] = data.dimension(xId) - 1;
 		}
-		if (data.numDimensions() > 2) {
-			// maybe we want to choose the right plane
-			// for now additional coords are 0's so we are getting 1st plane
+		if (yId != -1) {
+			minPt[yId] = 0;
+			maxPt[yId] = data.dimension(yId) - 1;
+		}
+		int dimNumber = 0;
+		for (int i = 0; i < numD; i++) {
+			if (i != xId && i != yId) {
+				minPt[i] = otherDimVals[dimNumber];
+				maxPt[i] = otherDimVals[dimNumber];
+				dimNumber++;
+			}
 		}
 		
 		BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_ARGB);
@@ -556,17 +578,17 @@ public class Main<T extends Algebra<T,U>, U> {
 			int v;
 			if (value instanceof ArgbMember) {
 				ArgbMember tmp = (ArgbMember) value;
-				v = (tmp.a() << 24) | (tmp.r() << 16) | (tmp.g() << 8) | (tmp.b() << 0);
+				v = RgbUtils.argb(tmp.a(), tmp.r(), tmp.g(), tmp.b());
 			}
 			else if (value instanceof RgbMember) {
 				RgbMember tmp = (RgbMember) value;
-				v = (255 << 24) | (tmp.r() << 16) | (tmp.g() << 8) | (tmp.b() << 0);
+				v = RgbUtils.argb(255, tmp.r(), tmp.g(), tmp.b());
 			}
 			else
 				throw new IllegalArgumentException("Unsupported color type passed to display routine");
 
-			long x = idx.get(0);
-			long y = (idx.numDimensions() == 1 ? 0 : idx.get(1));
+			long x = xId == -1 ? 0 : idx.get(xId);
+			long y = yId == -1 ? 0 : idx.get(yId);
 			
 			int bufferPos = (int) (y * width + x);
 			
@@ -659,8 +681,9 @@ public class Main<T extends Algebra<T,U>, U> {
 		frame.repaint();
 	}
 
-	private	void displayRealImage(T alg, DimensionedDataSource<U> data)
+	private	void displayRealImage(T alg, DimensionedDataSource<U> data, int xId, int yId, long[] otherDimVals)
 	{
+		int numD = data.numDimensions();
 		U min = alg.construct();
 		U max = alg.construct();
 		if (preferDataRange) {
@@ -675,19 +698,28 @@ public class Main<T extends Algebra<T,U>, U> {
 		}
 		U value = alg.construct();
 		boolean isHighPrec = value instanceof HighPrecRepresentation;
-		if (data.numDimensions() < 1)
+		if (numD < 1)
 			throw new IllegalArgumentException("dataset is completely void: nothing to display");
-		long width = data.dimension(0);
-		long height = data.numDimensions() == 1 ? 1 : data.dimension(1);
-		IntegerIndex idx = new IntegerIndex(data.numDimensions());
-		long[] minPt = new long[data.numDimensions()];
-		long[] maxPt = new long[data.numDimensions()];
-		for (int i = 0; i < data.numDimensions(); i++) {
-			maxPt[i] = data.dimension(i) - 1;
+		long width  = xId == -1 ? 1 : data.dimension(xId);
+		long height = yId == -1 ? 1 : data.dimension(yId);
+		IntegerIndex idx = new IntegerIndex(numD);
+		long[] minPt = new long[numD];
+		long[] maxPt = new long[numD];
+		if (xId != -1) {
+			minPt[xId] = 0;
+			maxPt[xId] = data.dimension(xId) - 1;
 		}
-		if (data.numDimensions() > 2) {
-			// maybe we want to choose the right plane
-			// for now additional coords are 0's so we are getting 1st plane
+		if (yId != -1) {
+			minPt[yId] = 0;
+			maxPt[yId] = data.dimension(yId) - 1;
+		}
+		int dimNumber = 0;
+		for (int i = 0; i < numD; i++) {
+			if (i != xId && i != yId) {
+				minPt[i] = otherDimVals[dimNumber];
+				maxPt[i] = otherDimVals[dimNumber];
+				dimNumber++;
+			}
 		}
 		
 		BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_ARGB);
@@ -715,6 +747,9 @@ public class Main<T extends Algebra<T,U>, U> {
 			hpMax = new HighPrecisionMember(max.toString());
 		}
 
+		//System.out.print(Arrays.toString(maxPt));
+		//minPt[2] = 50;
+		//maxPt[2] = 50;
 		SamplingIterator<IntegerIndex> iter = GridIterator.compute(minPt, maxPt);
 		while (iter.hasNext()) {
 			iter.next(idx);
@@ -752,8 +787,8 @@ public class Main<T extends Algebra<T,U>, U> {
 
 			// put a color from the color table into the image at pos (x,y)
 			
-			long x = idx.get(0);
-			long y = (idx.numDimensions() == 1 ? 0 : idx.get(1));
+			long x = xId == -1 ? 0 : idx.get(xId);
+			long y = yId == -1 ? 0 : idx.get(yId);
 			
 			int bufferPos = (int) (y * width + x);
 			

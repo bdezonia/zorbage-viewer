@@ -54,7 +54,9 @@ import nom.bdezonia.zorbage.algorithm.GridIterator;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
+import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.gdal.Gdal;
+import nom.bdezonia.zorbage.misc.BigDecimalUtils;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
 import nom.bdezonia.zorbage.nifti.Nifti;
@@ -684,6 +686,9 @@ public class Main<T extends Algebra<T,U>, U> {
 	private	void displayRealImage(T alg, DimensionedDataSource<U> data, int xId, int yId, long[] otherDimVals)
 	{
 		int numD = data.numDimensions();
+		if (numD < 1)
+			throw new IllegalArgumentException("dataset is completely void: nothing to display");
+		PlaneView<U> view = new PlaneView<U>(data, 0, 1, otherDimVals);
 		U min = alg.construct();
 		U max = alg.construct();
 		if (preferDataRange) {
@@ -698,29 +703,8 @@ public class Main<T extends Algebra<T,U>, U> {
 		}
 		U value = alg.construct();
 		boolean isHighPrec = value instanceof HighPrecRepresentation;
-		if (numD < 1)
-			throw new IllegalArgumentException("dataset is completely void: nothing to display");
-		long width  = xId == -1 ? 1 : data.dimension(xId);
-		long height = yId == -1 ? 1 : data.dimension(yId);
-		IntegerIndex idx = new IntegerIndex(numD);
-		long[] minPt = new long[numD];
-		long[] maxPt = new long[numD];
-		if (xId != -1) {
-			minPt[xId] = 0;
-			maxPt[xId] = data.dimension(xId) - 1;
-		}
-		if (yId != -1) {
-			minPt[yId] = 0;
-			maxPt[yId] = data.dimension(yId) - 1;
-		}
-		int dimNumber = 0;
-		for (int i = 0; i < numD; i++) {
-			if (i != xId && i != yId) {
-				minPt[i] = otherDimVals[dimNumber];
-				maxPt[i] = otherDimVals[dimNumber];
-				dimNumber++;
-			}
-		}
+		long width  = view.d0();
+		long height = view.d1();
 		
 		BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_ARGB);
 		
@@ -747,52 +731,48 @@ public class Main<T extends Algebra<T,U>, U> {
 			hpMax = new HighPrecisionMember(max.toString());
 		}
 
-		//System.out.print(Arrays.toString(maxPt));
-		//minPt[2] = 50;
-		//maxPt[2] = 50;
-		SamplingIterator<IntegerIndex> iter = GridIterator.compute(minPt, maxPt);
-		while (iter.hasNext()) {
-			iter.next(idx);
-			data.get(idx, value);
+		for (int y = 0; y < view.d1(); y++) {
+			for (int x = 0; x < view.d0(); x++) {
 
-			if (isHighPrec) {
-				((HighPrecRepresentation) value).toHighPrec(hpPix);
+				view.get(x, y, value);
+				
+				if (isHighPrec) {
+					((HighPrecRepresentation) value).toHighPrec(hpPix);
+				}
+				else {
+					// expensive here
+					String pxStrValue = value.toString();
+					hpPix = new HighPrecisionMember(pxStrValue);
+				}
+
+				// scale the current value to an intensity from 0 to 1.
+				
+				BigDecimal numer = hpPix.v().subtract(hpMin.v());
+				BigDecimal denom = hpMax.v().subtract(hpMin.v());
+				
+				// image with zero display range
+				if (denom.compareTo(BigDecimal.ZERO) == 0)
+					denom = BigDecimal.ONE;
+				
+				BigDecimal ratio = numer.divide(denom, HighPrecisionAlgebra.getContext());
+				
+				if (ratio.compareTo(BigDecimal.ZERO) < 0)
+					ratio = BigDecimal.ZERO;
+
+				if (ratio.compareTo(BigDecimal.ONE) > 0)
+					ratio = BigDecimal.ONE;
+				
+				// now scale 0-1 to the range of the size of the current color table
+				
+				int intensity =
+						BigDecimal.valueOf(colorTable.length-1).multiply(ratio).add(BigDecimalUtils.ONE_HALF).intValue();
+
+				// put a color from the color table into the image at pos (x,y)
+				
+				int bufferPos = (int) (y * width + x);
+				
+				arrayInt[bufferPos] = colorTable[intensity];
 			}
-			else {
-				// expensive here
-				String pxStrValue = value.toString();
-				hpPix = new HighPrecisionMember(pxStrValue);
-			}
-
-			// scale the current value to an intensity from 0 to 1.
-			
-			BigDecimal numer = hpPix.v().subtract(hpMin.v());
-			BigDecimal denom = hpMax.v().subtract(hpMin.v());
-			
-			// image with zero display range
-			if (denom.compareTo(BigDecimal.ZERO) == 0)
-				denom = BigDecimal.ONE;
-			
-			BigDecimal ratio = numer.divide(denom, HighPrecisionAlgebra.getContext());
-			
-			if (ratio.compareTo(BigDecimal.ZERO) < 0)
-				ratio = BigDecimal.ZERO;
-
-			if (ratio.compareTo(BigDecimal.ONE) > 0)
-				ratio = BigDecimal.ONE;
-			
-			// now scale 0-1 to the range of the size of the current color table
-			
-			int intensity = BigDecimal.valueOf(colorTable.length-1).multiply(ratio).intValue();
-
-			// put a color from the color table into the image at pos (x,y)
-			
-			long x = xId == -1 ? 0 : idx.get(xId);
-			long y = yId == -1 ? 0 : idx.get(yId);
-			
-			int bufferPos = (int) (y * width + x);
-			
-			arrayInt[bufferPos] = colorTable[intensity];
 		}
 		
 		Container pane = frame.getContentPane();

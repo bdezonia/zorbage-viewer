@@ -685,6 +685,8 @@ public class Main<T extends Algebra<T,U>, U> {
 
 	private	void displayRealImage(T alg, DimensionedDataSource<U> data, int xId, int yId, long[] otherDimVals)
 	{
+		new RealImageViewer<T,U>(alg, data);
+		/*
 		int numD = data.numDimensions();
 		if (numD < 1)
 			throw new IllegalArgumentException("dataset is completely void: nothing to display");
@@ -790,6 +792,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		frame.pack();
 
 		frame.repaint();
+		*/
 	}
 	
 	private <V extends Algebra<V,U> & Bounded<U>>

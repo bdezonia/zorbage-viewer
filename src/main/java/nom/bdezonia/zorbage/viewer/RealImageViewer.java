@@ -23,7 +23,7 @@ import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
-import nom.bdezonia.zorbage.dataview.PlaneView;
+import nom.bdezonia.zorbage.dataview.WindowView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
 import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
@@ -39,10 +39,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		boolean preferDataRange = true;
 		
-		int extraDimCount = dataSource.numDimensions() - 2;
-		if (extraDimCount < 0) extraDimCount = 0;
-		long[] extraDimPositions = new long[extraDimCount];
-		PlaneView<U> view = new PlaneView<>(dataSource, 0, 1, extraDimPositions);
+		WindowView<U> view = new WindowView<>(dataSource, 512, 512);
 		
 		String name = dataSource.getName();
 		if (name == null)
@@ -59,21 +56,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		U min = alg.construct();
 		U max = alg.construct();
 		if (preferDataRange) {
-			pixelDataBounds(alg, view.getDataSource().rawData(), min, max);
+			pixelDataBounds(alg, dataSource.rawData(), min, max);
 			if (alg.isEqual().call(min, max))
 				pixelTypeBounds(alg, min, max);
 		}
 		else {
 			pixelTypeBounds(alg, min, max);
 			if (alg.isEqual().call(min, max))
-				pixelDataBounds(alg, view.getDataSource().rawData(), min, max);
+				pixelDataBounds(alg, dataSource.rawData(), min, max);
 		}
 		U value = alg.construct();
 		boolean isHighPrec = value instanceof HighPrecRepresentation;
-		long width  = view.d0();
-		long height = view.d1();
+		int width  = view.d0();
+		int height = view.d1();
 		
-		BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		
 		// Safe cast as img is of correct type 
 		
@@ -151,7 +148,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		BoxLayout boxLayout = new BoxLayout(positions, BoxLayout.Y_AXIS);
 		positions.setLayout(boxLayout);
 		
-		for (int i = 0; i < extraDimCount; i++) {
+		for (int i = 0; i < view.getExtraDimsCount(); i++) {
 			JPanel miniPanel = new JPanel();
 			miniPanel.setLayout(new FlowLayout());
 			JButton decrementButton = new JButton("Decrement");
@@ -180,12 +177,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		frame.setVisible(true);
 
 		frame.repaint();
-		
-		// make detached window
-		// add bufferedImage in the middle
-		// add coord readout at bottom
-		// add extraDimCount sliders below that
-		// add name and source of data source in the title bar
 	}
 	
 	public void changeColorTable(int[] colorTable) {
@@ -239,4 +230,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 		return colors;
 	}
+/*	
+	TODO
+	- label the dimensional sliders
+	- ignore dims of size 1 (scifio loads boats as a 3d image)
+	- do a coord readout thing
+	- load lut changes
+	- make inc and dec buttons change the field value and the plane pos and redraw
+	- make a hand edit of the field val do the same thing
+	- make a redraw method and use in various button callbacks
+*/
 }

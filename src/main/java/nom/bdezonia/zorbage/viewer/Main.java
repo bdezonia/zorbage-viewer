@@ -40,23 +40,16 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.io.FileInputStream;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.*;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
-import nom.bdezonia.zorbage.algebra.Bounded;
-import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
-import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algorithm.GridIterator;
-import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
-import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.gdal.Gdal;
-import nom.bdezonia.zorbage.misc.BigDecimalUtils;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
 import nom.bdezonia.zorbage.nifti.Nifti;
@@ -89,8 +82,6 @@ import nom.bdezonia.zorbage.type.quaternion.float16.QuaternionFloat16Member;
 import nom.bdezonia.zorbage.type.quaternion.float32.QuaternionFloat32Member;
 import nom.bdezonia.zorbage.type.quaternion.float64.QuaternionFloat64Member;
 import nom.bdezonia.zorbage.type.quaternion.highprec.QuaternionHighPrecisionMember;
-import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
-import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
 import nom.bdezonia.zorbage.type.string.FixedStringMember;
 import nom.bdezonia.zorbage.type.string.StringMember;
 
@@ -116,13 +107,11 @@ public class Main<T extends Algebra<T,U>, U> {
 	
 	private int dsNumber = 0;
 
-	private boolean preferDataRange = true;
-	
 	private Component image = null;
 	
-	private int[] defaultColorTable = defaultColorTable();
+	public static int[] DEFAULT_COLOR_TABLE = defaultColorTable();
 
-	private int[] colorTable = defaultColorTable;
+	private int[] colorTable = DEFAULT_COLOR_TABLE;
 
 	@SuppressWarnings("rawtypes")
 	public static void main(String[] args) {
@@ -428,7 +417,7 @@ public class Main<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				colorTable = defaultColorTable;
+				colorTable = DEFAULT_COLOR_TABLE;
 				if (dsNumber >= 0 && dsNumber < dataSources.size()) {
 					displayData(dataSources.get(dsNumber));
 				}
@@ -686,145 +675,9 @@ public class Main<T extends Algebra<T,U>, U> {
 	private	void displayRealImage(T alg, DimensionedDataSource<U> data, int xId, int yId, long[] otherDimVals)
 	{
 		new RealImageViewer<T,U>(alg, data);
-		/*
-		int numD = data.numDimensions();
-		if (numD < 1)
-			throw new IllegalArgumentException("dataset is completely void: nothing to display");
-		PlaneView<U> view = new PlaneView<U>(data, 0, 1, otherDimVals);
-		U min = alg.construct();
-		U max = alg.construct();
-		if (preferDataRange) {
-			pixelDataBounds(alg, data.rawData(), min, max);
-			if (alg.isEqual().call(min, max))
-				pixelTypeBounds(alg, min, max);
-		}
-		else {
-			pixelTypeBounds(alg, min, max);
-			if (alg.isEqual().call(min, max))
-				pixelDataBounds(alg, data.rawData(), min, max);
-		}
-		U value = alg.construct();
-		boolean isHighPrec = value instanceof HighPrecRepresentation;
-		long width  = view.d0();
-		long height = view.d1();
-		
-		BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_ARGB);
-		
-		// Safe cast as img is of correct type 
-		
-		DataBufferInt buffer = (DataBufferInt) img.getRaster().getDataBuffer();
-
-		// Conveniently, the buffer already contains the data array
-		int[] arrayInt = buffer.getData();
-
-		HighPrecisionMember hpPix = new HighPrecisionMember();
-		HighPrecisionMember hpMin;
-		HighPrecisionMember hpMax;
-		
-		if (isHighPrec) {
-			hpMin = new HighPrecisionMember();
-			hpMax = new HighPrecisionMember();
-			((HighPrecRepresentation) min).toHighPrec(hpMin);
-			((HighPrecRepresentation) max).toHighPrec(hpMax);
-		}
-		else {
-			// expensive but try a parser conversion if can't use highprec
-			hpMin = new HighPrecisionMember(min.toString());
-			hpMax = new HighPrecisionMember(max.toString());
-		}
-
-		for (int y = 0; y < view.d1(); y++) {
-			for (int x = 0; x < view.d0(); x++) {
-
-				view.get(x, y, value);
-				
-				if (isHighPrec) {
-					((HighPrecRepresentation) value).toHighPrec(hpPix);
-				}
-				else {
-					// expensive here
-					String pxStrValue = value.toString();
-					hpPix = new HighPrecisionMember(pxStrValue);
-				}
-
-				// scale the current value to an intensity from 0 to 1.
-				
-				BigDecimal numer = hpPix.v().subtract(hpMin.v());
-				BigDecimal denom = hpMax.v().subtract(hpMin.v());
-				
-				// image with zero display range
-				if (denom.compareTo(BigDecimal.ZERO) == 0)
-					denom = BigDecimal.ONE;
-				
-				BigDecimal ratio = numer.divide(denom, HighPrecisionAlgebra.getContext());
-				
-				if (ratio.compareTo(BigDecimal.ZERO) < 0)
-					ratio = BigDecimal.ZERO;
-
-				if (ratio.compareTo(BigDecimal.ONE) > 0)
-					ratio = BigDecimal.ONE;
-				
-				// now scale 0-1 to the range of the size of the current color table
-				
-				int intensity =
-						BigDecimal.valueOf(colorTable.length-1).multiply(ratio).add(BigDecimalUtils.ONE_HALF).intValue();
-
-				// put a color from the color table into the image at pos (x,y)
-				
-				int bufferPos = (int) (y * width + x);
-				
-				arrayInt[bufferPos] = colorTable[intensity];
-			}
-		}
-		
-		Container pane = frame.getContentPane();
-		
-		pane.remove(image);
-		
-		image = new JLabel(new ImageIcon(img));
-		
-		image = new JScrollPane(image);
-		
-		pane.add(image, BorderLayout.CENTER);
-
-		frame.setTitle("Zorbage Data Viewer - " + data.getName());
-		
-		frame.pack();
-
-		frame.repaint();
-		*/
 	}
 	
-	private <V extends Algebra<V,U> & Bounded<U>>
-		void pixelTypeBounds(T alg, U min, U max)
-	{
-		if (alg instanceof Bounded) {
-			@SuppressWarnings("unchecked")
-			V enhancedAlg = (V) alg;
-			enhancedAlg.minBound().call(min);
-			enhancedAlg.maxBound().call(max);
-		}
-		else {
-			alg.zero().call(min);
-			alg.zero().call(max);
-		}
-	}
-	
-	private <V extends Algebra<V,U> & Ordered<U>>
-		void pixelDataBounds(T alg, IndexedDataSource<U> data, U min, U max)
-	{
-		if (alg instanceof Ordered) {
-			@SuppressWarnings("unchecked")
-			V enhancedAlg = (V) alg;
-			MinMaxElement.compute(enhancedAlg, data, min, max);
-		}
-		else {
-			alg.zero().call(min);
-			alg.zero().call(max);
-		}
-	}
-
-	private int[] defaultColorTable() {
+	private static int[] defaultColorTable() {
 
 		int[] colors = new int[256*3];
 		int r = 0, g = 0, b = 0;

@@ -1,3 +1,33 @@
+/*
+ * zorbage-viewer: utility app for loading and viewing various image data formats
+ *
+ * Copyright (c) 2020-2021 Barry DeZonia All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ * 
+ * Redistributions of source code must retain the above copyright notice, this list
+ * of conditions and the following disclaimer.
+ * 
+ * Redistributions in binary form must reproduce the above copyright notice, this
+ * list of conditions and the following disclaimer in the documentation and/or other
+ * materials provided with the distribution.
+ * 
+ * Neither the name of the <copyright holder> nor the names of its contributors may
+ * be used to endorse or promote products derived from this software without specific
+ * prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ * DAMAGE.
+ */
 package nom.bdezonia.zorbage.viewer;
 
 import java.awt.BorderLayout;
@@ -25,21 +55,31 @@ import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.dataview.WindowView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
-import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
 
+/**
+ * 
+ * @author Barry DeZonia
+ *
+ */
 public class RealImageViewer<T extends Algebra<T,U>, U> {
 
-	private int[] colorTable = defaultColorTable();
-	
+	private final T alg;
+	private final WindowView<U> view;
+	private final BufferedImage img;
+	private int[] colorTable = Main.DEFAULT_COLOR_TABLE;
+	private boolean preferDataRange = true;
+
+	/**
+	 * 
+	 * @param alg
+	 * @param dataSource
+	 */
 	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource) {
 
-		System.out.println("numD = " + dataSource.numDimensions());
-		
-		boolean preferDataRange = true;
-		
-		WindowView<U> view = new WindowView<>(dataSource, 512, 512);
+		this.alg = alg;
+		this.view = new WindowView<>(dataSource, 512, 512);
 		
 		String name = dataSource.getName();
 		if (name == null)
@@ -52,25 +92,100 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JFrame frame = new JFrame(name + " " + source);
 		
 		frame.setLayout(new BorderLayout());
+		
+		img = new BufferedImage(view.d0(), view.d1(), BufferedImage.TYPE_INT_ARGB);
+			
+		JPanel graphicsPanel = new JPanel();
+		JLabel image = new JLabel(new ImageIcon(img));
+		JScrollPane scrollPane = new JScrollPane(image);
+		graphicsPanel.add(scrollPane, BorderLayout.CENTER);
+		
+		JPanel positions = new JPanel();
+		BoxLayout boxLayout = new BoxLayout(positions, BoxLayout.Y_AXIS);
+		positions.setLayout(boxLayout);
+		
+		for (int i = 0; i < view.getExtraDimsCount(); i++) {
+			JPanel miniPanel = new JPanel();
+			miniPanel.setLayout(new FlowLayout());
+			JButton decrementButton = new JButton("Decrement");
+			JButton incrementButton = new JButton("Increment");
+			JFormattedTextField longField = new JFormattedTextField();
+			longField.setValue(0L);
+			miniPanel.add(decrementButton);
+			miniPanel.add(longField);
+			miniPanel.add(incrementButton);
+			positions.add(miniPanel);
+		}
+		
+		JTextField readout = new JTextField();
+		readout.setEnabled(false);
+		
+		JPanel controlPanel = new JPanel();
+		controlPanel.setLayout(new BorderLayout());
+		controlPanel.add(readout, BorderLayout.NORTH);
+		controlPanel.add(positions, BorderLayout.CENTER);
 
+		frame.add(graphicsPanel, BorderLayout.CENTER);
+		frame.add(controlPanel, BorderLayout.SOUTH);
+		
+		frame.pack();
+
+		frame.setVisible(true);
+
+		draw();
+		
+		frame.repaint();
+	}
+	
+	public void setColorTable(int[] colorTable) {
+		this.colorTable = colorTable;
+		draw();
+	}
+	
+	private <V extends Algebra<V,U> & Bounded<U>>
+		void pixelTypeBounds(T alg, U min, U max)
+	{
+		if (alg instanceof Bounded) {
+			@SuppressWarnings("unchecked")
+			V enhancedAlg = (V) alg;
+			enhancedAlg.minBound().call(min);
+			enhancedAlg.maxBound().call(max);
+		}
+		else {
+			alg.zero().call(min);
+			alg.zero().call(max);
+		}
+	}
+	
+	private <V extends Algebra<V,U> & Ordered<U>>
+		void pixelDataBounds(T alg, IndexedDataSource<U> data, U min, U max)
+	{
+		if (alg instanceof Ordered) {
+			@SuppressWarnings("unchecked")
+			V enhancedAlg = (V) alg;
+			MinMaxElement.compute(enhancedAlg, data, min, max);
+		}
+		else {
+			alg.zero().call(min);
+			alg.zero().call(max);
+		}
+	}
+	
+	private void draw() {
 		U min = alg.construct();
 		U max = alg.construct();
 		if (preferDataRange) {
-			pixelDataBounds(alg, dataSource.rawData(), min, max);
+			pixelDataBounds(alg, view.getDataSource().rawData(), min, max);
 			if (alg.isEqual().call(min, max))
 				pixelTypeBounds(alg, min, max);
 		}
 		else {
 			pixelTypeBounds(alg, min, max);
 			if (alg.isEqual().call(min, max))
-				pixelDataBounds(alg, dataSource.rawData(), min, max);
+				pixelDataBounds(alg, view.getDataSource().rawData(), min, max);
 		}
 		U value = alg.construct();
 		boolean isHighPrec = value instanceof HighPrecRepresentation;
-		int width  = view.d0();
-		int height = view.d1();
-		
-		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		
 		// Safe cast as img is of correct type 
 		
@@ -133,103 +248,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 				// put a color from the color table into the image at pos (x,y)
 				
-				int bufferPos = (int) (y * width + x);
+				int bufferPos = (int) (y * view.d0() + x);
 				
 				arrayInt[bufferPos] = colorTable[intensity];
 			}
 		}
-		
-		JPanel graphicsPanel = new JPanel();
-		JLabel image = new JLabel(new ImageIcon(img));
-		JScrollPane scrollPane = new JScrollPane(image);
-		graphicsPanel.add(scrollPane, BorderLayout.CENTER);
-		
-		JPanel positions = new JPanel();
-		BoxLayout boxLayout = new BoxLayout(positions, BoxLayout.Y_AXIS);
-		positions.setLayout(boxLayout);
-		
-		for (int i = 0; i < view.getExtraDimsCount(); i++) {
-			JPanel miniPanel = new JPanel();
-			miniPanel.setLayout(new FlowLayout());
-			JButton decrementButton = new JButton("Decrement");
-			JButton incrementButton = new JButton("Increment");
-			JFormattedTextField longField = new JFormattedTextField();
-			longField.setValue(0L);
-			miniPanel.add(decrementButton);
-			miniPanel.add(longField);
-			miniPanel.add(incrementButton);
-			positions.add(miniPanel);
-		}
-		
-		JTextField readout = new JTextField();
-		readout.setEnabled(false);
-		
-		JPanel controlPanel = new JPanel();
-		controlPanel.setLayout(new BorderLayout());
-		controlPanel.add(readout, BorderLayout.NORTH);
-		controlPanel.add(positions, BorderLayout.CENTER);
-		
-		frame.add(graphicsPanel, BorderLayout.CENTER);
-		frame.add(controlPanel, BorderLayout.SOUTH);
-		
-		frame.pack();
-
-		frame.setVisible(true);
-
-		frame.repaint();
 	}
 	
-	public void changeColorTable(int[] colorTable) {
-		this.colorTable = colorTable;
-	}
-	
-	private <V extends Algebra<V,U> & Bounded<U>>
-		void pixelTypeBounds(T alg, U min, U max)
-	{
-		if (alg instanceof Bounded) {
-			@SuppressWarnings("unchecked")
-			V enhancedAlg = (V) alg;
-			enhancedAlg.minBound().call(min);
-			enhancedAlg.maxBound().call(max);
-		}
-		else {
-			alg.zero().call(min);
-			alg.zero().call(max);
-		}
-	}
-	
-	private <V extends Algebra<V,U> & Ordered<U>>
-		void pixelDataBounds(T alg, IndexedDataSource<U> data, U min, U max)
-	{
-		if (alg instanceof Ordered) {
-			@SuppressWarnings("unchecked")
-			V enhancedAlg = (V) alg;
-			MinMaxElement.compute(enhancedAlg, data, min, max);
-		}
-		else {
-			alg.zero().call(min);
-			alg.zero().call(max);
-		}
-	}
-	
-	private int[] defaultColorTable() {
-
-		int[] colors = new int[256*3];
-		int r = 0, g = 0, b = 0;
-		for (int i = 0; i < colors.length; i++) {
-			colors[i] = RgbUtils.argb(0xcf, r, g, b);
-			if (i % 3 == 0) {
-				b++;
-			}
-			else if (i % 3 == 1) {
-				r++;
-			}
-			else {
-				g++;
-			}
-		}
-		return colors;
-	}
 /*	
 	TODO
 	- label the dimensional sliders

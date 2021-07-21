@@ -36,12 +36,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.io.File;
+import java.io.FileInputStream;
 import java.math.BigDecimal;
 
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JFormattedTextField;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -58,6 +60,7 @@ import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.WindowView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
+import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
 
@@ -73,6 +76,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private final BufferedImage img;
 	private int[] colorTable = Main.DEFAULT_COLOR_TABLE;
 	private boolean preferDataRange = true;
+	private JTextField[] longFields;
 	private final JFrame frame;
 
 	/**
@@ -98,7 +102,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		frame.setLayout(new BorderLayout());
 		
 		img = new BufferedImage(view.d0(), view.d1(), BufferedImage.TYPE_INT_ARGB);
-			
+		
+		longFields = new JTextField[view.getExtraDimsCount()];
+		for (int i = 0; i < longFields.length; i++) {
+			longFields[i] = new JTextField();
+			longFields[i].setColumns(10);
+		}
+		
 		JPanel graphicsPanel = new JPanel();
 		JLabel image = new JLabel(new ImageIcon(img));
 		JScrollPane scrollPane = new JScrollPane(image);
@@ -111,10 +121,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton panRight = new JButton("Right");
 		JButton panUp = new JButton("Up");
 		JButton panDown = new JButton("Down");
+		JButton loadLut = new JButton("Load LUT");
+		JButton resetLut = new JButton("Reset LUT");
 		buttonPanel.add(panLeft);
 		buttonPanel.add(panRight);
 		buttonPanel.add(panUp);
 		buttonPanel.add(panDown);
+		buttonPanel.add(loadLut);
+		buttonPanel.add(resetLut);
 		panLeft.addActionListener(new ActionListener() {
 			
 			@Override
@@ -151,6 +165,24 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				frame.repaint();
 			}
 		});
+		loadLut.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser jfc = new JFileChooser();
+				int retVal = jfc.showOpenDialog(frame);
+				if (retVal == 0) {
+					setColorTable(loadLUT(jfc.getSelectedFile()));
+				}
+			}
+		});
+		resetLut.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setColorTable(Main.DEFAULT_COLOR_TABLE);
+			}
+		});
 		
 		JPanel positions = new JPanel();
 		BoxLayout positionsBoxLayout = new BoxLayout(positions, BoxLayout.Y_AXIS);
@@ -161,10 +193,16 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			miniPanel.setLayout(new FlowLayout());
 			JButton decrementButton = new JButton("Decrement");
 			JButton incrementButton = new JButton("Increment");
-			JFormattedTextField longField = new JFormattedTextField();
-			longField.setValue(view.getExtraDimValue(i));
+			longFields[i].setText("" + view.getExtraDimValue(i));
+			int pos = view.getPlaneView().originalCoordPos(i);
+			String axisLabel;
+			if (view.getDataSource().getAxisType(pos) == null)
+				axisLabel = "" + pos + " : ";
+			else
+				axisLabel = view.getDataSource().getAxisType(pos) + " : ";
+			miniPanel.add(new JLabel(axisLabel));
 			miniPanel.add(decrementButton);
-			miniPanel.add(longField);
+			miniPanel.add(longFields[i]);
 			miniPanel.add(incrementButton);
 			positions.add(miniPanel);
 			decrementButton.addActionListener(new Decrementer(i));
@@ -214,16 +252,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		public void actionPerformed(ActionEvent e) {
 			// find dim pos in real world data source of extra dims pos i
 			PlaneView<U> pView = view.getPlaneView();
-			int realPos;
-			if (extraPos < pView.c0())
-				realPos = extraPos;
-			else if (extraPos < pView.c1())
-				realPos = extraPos + 1;
-			else
-				realPos = extraPos + 2;
+			long maxVal = pView.originalCoordDim(extraPos);
 			long pos = view.getExtraDimValue(extraPos);
-			if (pos < view.getDataSource().dimension(realPos) - 1) {
-				view.setExtraDimValue(extraPos, pos+1);
+			if (pos < maxVal - 1) {
+				pos++;
+				view.setExtraDimValue(extraPos, pos);
+				longFields[extraPos].setText(""+pos);
 				draw();
 				frame.repaint();
 			}
@@ -242,7 +276,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		public void actionPerformed(ActionEvent e) {
 			long pos = view.getExtraDimValue(extraPos);
 			if (pos > 0) {
-				view.setExtraDimValue(extraPos, pos-1);
+				pos--;
+				view.setExtraDimValue(extraPos, pos);
+				longFields[extraPos].setText(""+pos);
 				draw();
 				frame.repaint();
 			}
@@ -362,14 +398,63 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
-/*	
+	private int[] loadLUT(File lutFile) {
+		/*
+		 * This is my best guess on how to load ImageJ LUT files. My code discovers that
+		 * some of them are not stored in triplets so this code is not yet complete.
+		 */
+		FileInputStream fin = null;
+		try {
+
+			if (lutFile.length() > Integer.MAX_VALUE)
+				throw new IllegalArgumentException("lut data is too large");
+
+			byte fileContent[] = new byte[(int)lutFile.length()];
+
+			fin = new FileInputStream(lutFile);
+
+			// Reads up to certain bytes of data from this input stream into an array of bytes.
+			fin.read(fileContent);
+
+			fin.close();
+
+			// note: some imagej lut files have sizes that are not divisible by 3. this code ignores the couple extra bytes.
+			int chunk = fileContent.length / 3;
+
+			int[] lut = new int[chunk];
+
+			for (int i = 0; i < chunk; i++) {
+				// TODO: why 0xcf? Why not 0xff? Does it make a difference?
+				lut[i] = RgbUtils.argb(0xcf, fileContent[0*chunk + i], fileContent[1*chunk + i], fileContent[2*chunk + i]);
+			}
+
+			return lut;
+
+		} catch (Exception e) {
+
+			System.out.println("loadLUT exception "+e);
+
+			return Main.DEFAULT_COLOR_TABLE;
+
+		} finally {
+			try {
+				if (fin != null)
+					fin.close();
+			} catch (Exception e) {
+				;
+			}
+		}
+	}
+	
+	/*	
 	TODO
-	- label the dimensional sliders
 	- ignore dims of size 1 (scifio loads boats as a 3d image)
-	- do a coord readout thing
-	- load lut changes
-	- make inc and dec buttons change the field value and the plane pos and redraw
-	- make a hand edit of the field val do the same thing
-	- make a redraw method and use in various button callbacks
-*/
+	- do a coord readout thing including u=43.2 v=104.4 and a pixel value under a the mouse ptr
+	- make a hand edit of the field val do the same thing as a button press: maybe not
+	- make the plane pos fields show 0/4, 1/4, 2/4, 3/4. Also maybe scale/unitize them?
+	- try to figure out why incer and decer can go beyond their limits.
+	- the axis labels seem incorrect sometimes. I should compare to ImageJ2
+	- zoom needed and maybe pan by other means
+	- contrast and brightness?
+    */
 }

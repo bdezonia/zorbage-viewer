@@ -418,7 +418,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 			fin.close();
 
-			// note: some imagej lut files have sizes that are not divisible by 3. this code ignores the couple extra bytes.
+			// note: some imagej lut files have sizes that are not divisible by 3.
+			// this code ignores the couple extra bytes. Wayne hinted that for these
+			// files the extra bytes are at the beginning and are header bytes. he
+			// was going to correct things with them and republish but maybe I should
+			// fix my code here.
+			
 			int chunk = fileContent.length / 3;
 
 			int[] lut = new int[chunk];
@@ -444,16 +449,4 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			}
 		}
 	}
-	
-	/*	
-	TODO
-	- ignore dims of size 1 (scifio loads boats as a 3d image)
-	- do a coord readout thing including u=43.2 v=104.4 and a pixel value under a the mouse ptr
-	- make a hand edit of the field val do the same thing as a button press: maybe not
-	- make the plane pos fields show 0/4, 1/4, 2/4, 3/4. Also maybe scale/unitize them?
-	- try to figure out why incer and decer can go beyond their limits.
-	- the axis labels seem incorrect sometimes. I should compare to ImageJ2
-	- zoom needed and maybe pan by other means
-	- contrast and brightness?
-    */
 }

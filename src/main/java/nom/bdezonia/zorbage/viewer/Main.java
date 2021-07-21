@@ -168,28 +168,29 @@ public class Main<T extends Algebra<T,U>, U> {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 
-				if (GDAL_STATUS == 0) {
-				JFileChooser chooser = new JFileChooser();
-				
-				chooser.showOpenDialog(frame);
-				
-				File f = chooser.getSelectedFile();
-
-				DataBundle bundle = Gdal.loadAllDatasets(f.getAbsolutePath());
-	
-				int nextDs = dataSources.size();
-				
-				dataSources.addAll(bundle.bundle());
-				
-				displayData(dataSources.get(nextDs));
-				
-				dsNumber = nextDs;
-				}
-				else {  // GDAL was not foud on system
+				// GDAL was not found on system or failed to init?
+				if (GDAL_STATUS != 0) {
 					JOptionPane.showMessageDialog(frame,
 						    "GDAL was not found on the system. Please install it.",
 						    "WARNING",
 						    JOptionPane.WARNING_MESSAGE);
+				}
+				else {
+					JFileChooser chooser = new JFileChooser();
+					
+					chooser.showOpenDialog(frame);
+					
+					File f = chooser.getSelectedFile();
+	
+					DataBundle bundle = Gdal.loadAllDatasets(f.getAbsolutePath());
+		
+					int nextDs = dataSources.size();
+					
+					dataSources.addAll(bundle.bundle());
+					
+					displayData(dataSources.get(nextDs));
+					
+					dsNumber = nextDs;
 				}
 			}
 		});

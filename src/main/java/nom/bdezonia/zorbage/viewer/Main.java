@@ -111,12 +111,14 @@ public class Main<T extends Algebra<T,U>, U> {
 	
 	public static int[] DEFAULT_COLOR_TABLE = defaultColorTable();
 
+	public static int GDAL_STATUS = 0;
+
 	private int[] colorTable = DEFAULT_COLOR_TABLE;
 
 	@SuppressWarnings("rawtypes")
 	public static void main(String[] args) {
 
-		Gdal.init();
+		GDAL_STATUS = Gdal.init();
 
 		Main main = new Main();
 		
@@ -166,6 +168,7 @@ public class Main<T extends Algebra<T,U>, U> {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 
+				if (GDAL_STATUS == 0) {
 				JFileChooser chooser = new JFileChooser();
 				
 				chooser.showOpenDialog(frame);
@@ -181,6 +184,13 @@ public class Main<T extends Algebra<T,U>, U> {
 				displayData(dataSources.get(nextDs));
 				
 				dsNumber = nextDs;
+				}
+				else {  // GDAL was not foud on system
+					JOptionPane.showMessageDialog(frame,
+						    "GDAL was not found on the system. Please install it.",
+						    "WARNING",
+						    JOptionPane.WARNING_MESSAGE);
+				}
 			}
 		});
 

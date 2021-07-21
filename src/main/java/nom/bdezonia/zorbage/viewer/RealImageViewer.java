@@ -32,6 +32,8 @@ package nom.bdezonia.zorbage.viewer;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
@@ -53,6 +55,7 @@ import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
+import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.WindowView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
@@ -70,6 +73,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private final BufferedImage img;
 	private int[] colorTable = Main.DEFAULT_COLOR_TABLE;
 	private boolean preferDataRange = true;
+	private final JFrame frame;
 
 	/**
 	 * 
@@ -89,7 +93,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		if (source == null)
 			source = "<unknown source>";
 		
-		JFrame frame = new JFrame(name + " " + source);
+		frame = new JFrame(name + " " + source);
 		
 		frame.setLayout(new BorderLayout());
 		
@@ -100,9 +104,57 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JScrollPane scrollPane = new JScrollPane(image);
 		graphicsPanel.add(scrollPane, BorderLayout.CENTER);
 		
+		JPanel buttonPanel = new JPanel();
+		BoxLayout buttonBoxLayout = new BoxLayout(buttonPanel, BoxLayout.Y_AXIS);
+		buttonPanel.setLayout(buttonBoxLayout);
+		JButton panLeft = new JButton("Left");
+		JButton panRight = new JButton("Right");
+		JButton panUp = new JButton("Up");
+		JButton panDown = new JButton("Down");
+		buttonPanel.add(panLeft);
+		buttonPanel.add(panRight);
+		buttonPanel.add(panUp);
+		buttonPanel.add(panDown);
+		panLeft.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				view.moveWindowLeft(75);
+				draw();
+				frame.repaint();
+			}
+		});
+		panRight.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				view.moveWindowRight(75);
+				draw();
+				frame.repaint();
+			}
+		});
+		panUp.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				view.moveWindowUp(75);
+				draw();
+				frame.repaint();
+			}
+		});
+		panDown.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				view.moveWindowDown(75);
+				draw();
+				frame.repaint();
+			}
+		});
+		
 		JPanel positions = new JPanel();
-		BoxLayout boxLayout = new BoxLayout(positions, BoxLayout.Y_AXIS);
-		positions.setLayout(boxLayout);
+		BoxLayout positionsBoxLayout = new BoxLayout(positions, BoxLayout.Y_AXIS);
+		positions.setLayout(positionsBoxLayout);
 		
 		for (int i = 0; i < view.getExtraDimsCount(); i++) {
 			JPanel miniPanel = new JPanel();
@@ -110,11 +162,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			JButton decrementButton = new JButton("Decrement");
 			JButton incrementButton = new JButton("Increment");
 			JFormattedTextField longField = new JFormattedTextField();
-			longField.setValue(0L);
+			longField.setValue(view.getExtraDimValue(i));
 			miniPanel.add(decrementButton);
 			miniPanel.add(longField);
 			miniPanel.add(incrementButton);
 			positions.add(miniPanel);
+			decrementButton.addActionListener(new Decrementer(i));
+			incrementButton.addActionListener(new Incrementer(i));
 		}
 		
 		JTextField readout = new JTextField();
@@ -126,6 +180,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		controlPanel.add(positions, BorderLayout.CENTER);
 
 		frame.add(graphicsPanel, BorderLayout.CENTER);
+		frame.add(buttonPanel, BorderLayout.EAST);
 		frame.add(controlPanel, BorderLayout.SOUTH);
 		
 		frame.pack();
@@ -137,9 +192,61 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		frame.repaint();
 	}
 	
+	/**
+	 * 
+	 * @param colorTable
+	 */
 	public void setColorTable(int[] colorTable) {
 		this.colorTable = colorTable;
 		draw();
+		frame.repaint();
+	}
+
+	private class Incrementer implements ActionListener {
+		
+		private final int extraPos;
+		
+		public Incrementer(int extraNum) {
+			extraPos = extraNum;
+		}
+		
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			// find dim pos in real world data source of extra dims pos i
+			PlaneView<U> pView = view.getPlaneView();
+			int realPos;
+			if (extraPos < pView.c0())
+				realPos = extraPos;
+			else if (extraPos < pView.c1())
+				realPos = extraPos + 1;
+			else
+				realPos = extraPos + 2;
+			long pos = view.getExtraDimValue(extraPos);
+			if (pos < view.getDataSource().dimension(realPos) - 1) {
+				view.setExtraDimValue(extraPos, pos+1);
+				draw();
+				frame.repaint();
+			}
+		}
+	}
+	
+	private class Decrementer implements ActionListener {
+		
+		private final int extraPos;
+		
+		public Decrementer(int extraNum) {
+			extraPos = extraNum;
+		}
+		
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			long pos = view.getExtraDimValue(extraPos);
+			if (pos > 0) {
+				view.setExtraDimValue(extraPos, pos-1);
+				draw();
+				frame.repaint();
+			}
+		}
 	}
 	
 	private <V extends Algebra<V,U> & Bounded<U>>

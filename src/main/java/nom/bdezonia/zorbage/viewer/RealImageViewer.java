@@ -424,8 +424,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			int[] lut = new int[chunk];
 
 			for (int i = 0; i < chunk; i++) {
-				// TODO: why 0xcf? Why not 0xff? Does it make a difference?
-				lut[i] = RgbUtils.argb(0xcf, fileContent[0*chunk + i], fileContent[1*chunk + i], fileContent[2*chunk + i]);
+				lut[i] = RgbUtils.argb(0xff, fileContent[0*chunk + i], fileContent[1*chunk + i], fileContent[2*chunk + i]);
 			}
 
 			return lut;

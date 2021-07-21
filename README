@@ -7,11 +7,18 @@ libraries as well as zorbage-nifti in order to open many image types into
 zorbage structures. It is a simple file viewer that will be undergoing
 continued development.
 
-Note that to run the viewer you need to first install GDAL on your machine.
-There are directions for doing so in the zorbage-gdal README. See
-https://github.com/bdezonia/zorbage-gdal for more information.
+Note that the viewer uses GDAL if it is present. If not it runs without
+GDAL functionality. To use GDAL functionality you need to first install
+GDAL on your machine. There are directions for doing so in the zorbage-gdal
+README. See:
+  https://github.com/bdezonia/zorbage-gdal for more information.
 
-The viewer can currently read the following kinds of files:
+The viewer can currently read many kinds of files.
+(Note that much of the file type support is due to the presence of GDAL
+so if you want the full functionality of this application then you will
+need to install GDAL on your system)
+
+Supported file types:
 
 AAIGrid – Arc/Info ASCII Grid
 ACE2 – ACE2

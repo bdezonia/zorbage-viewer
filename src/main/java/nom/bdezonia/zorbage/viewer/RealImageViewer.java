@@ -296,30 +296,51 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			decrementButton.addActionListener(new Decrementer(i));
 			incrementButton.addActionListener(new Incrementer(i));
 		}
-		
+
+		JPanel statusPanel = new JPanel(); 
 		JLabel readout = new JLabel();
-		//readout.setEnabled(false);
 		scrollPane.addMouseMotionListener(new MouseMotionListener() {
 
 			HighPrecisionMember hpVal = G.HP.construct();
+			long[] modelCoords = new long[dataSource.numDimensions()];
+			BigDecimal[] realWorldCoords = new BigDecimal[dataSource.numDimensions()]; 
 			
 			@Override
 			public void mouseMoved(MouseEvent e) {
-				int x = e.getX();
-				int y = e.getY();
-				if (x >= 0 && x < view.d0() && y >= 0 && y < view.d1()) {
-					view.get(x, y, oneValue);
+				int i0 = e.getX();
+				int i1 = e.getY();
+				if (i0 >= 0 && i0 < view.d0() && i1 >= 0 && i1 < view.d1()) {
+					view.getModelCoords(i0, i1, modelCoords);
+					dataSource.getCoordinateSpace().project(modelCoords, realWorldCoords);
+					long dataU = view.origin0() + i0;
+					long dataV = view.origin1() + i1;
+					view.get(i0, i1, oneValue);
 					HighPrecRepresentation rep = (HighPrecRepresentation) oneValue;
 					rep.toHighPrec(hpVal);
-					long dataX = view.origin0() + x;
-					long dataY = view.origin1() + y;
+					int c0 = view.getPlaneView().c0();
+					int c1 = view.getPlaneView().c1();
 					StringBuilder sb = new StringBuilder();
-					sb.append("x = ");
-					sb.append(dataX);
-					sb.append(", y = ");
-					sb.append(dataY);
+					sb.append(dataSource.getAxisType(c0) == null ? "d0" : dataSource.getAxisType(c0));
+					sb.append(" = ");
+					sb.append(dataU);
+					sb.append(" (");
+					sb.append(realWorldCoords[c0]);
+					sb.append(" ");
+					sb.append(dataSource.getAxisUnit(c0) == null ? "" : dataSource.getAxisUnit(c0));
+					sb.append(")");
+					sb.append(", ");
+					sb.append(dataSource.getAxisType(c1) == null ? "d1" : dataSource.getAxisType(c1));
+					sb.append("= ");
+					sb.append(dataV);
+					sb.append(" (");
+					sb.append(realWorldCoords[c1]);
+					sb.append(" ");
+					sb.append(dataSource.getAxisUnit(c1) == null ? "" : dataSource.getAxisUnit(c1));
+					sb.append(")");
 					sb.append(", value = ");
 					sb.append(hpVal);
+					sb.append(" ");
+					sb.append(dataSource.getValueUnit() == null ? "" : dataSource.getValueUnit());
 					readout.setText(sb.toString());
 				}
 			}
@@ -328,12 +349,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void mouseDragged(MouseEvent e) {
 			}
 		});
-		
+		statusPanel.add(readout, BorderLayout.CENTER);
+
 		JPanel controlPanel = new JPanel();
 		controlPanel.setLayout(new BorderLayout());
-		controlPanel.add(readout, BorderLayout.NORTH);
 		controlPanel.add(positions, BorderLayout.CENTER);
 
+		frame.add(statusPanel, BorderLayout.NORTH);
 		frame.add(graphicsPanel, BorderLayout.CENTER);
 		frame.add(buttonPanel, BorderLayout.EAST);
 		frame.add(controlPanel, BorderLayout.SOUTH);

@@ -49,6 +49,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextField;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
@@ -133,6 +134,11 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(panUp);
 		buttonPanel.add(panDown);
 		buttonPanel.add(newView);
+		buttonPanel.add(new JSeparator());
+		buttonPanel.add(new JLabel("Dimensions"));
+		for (int i = 0; i < dataSource.numDimensions(); i++) {
+			buttonPanel.add(new JLabel("d"+i+" : "+dataSource.dimension(i)));
+		}
 		panLeft.addActionListener(new ActionListener() {
 			
 			@Override
@@ -224,6 +230,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 							else iOthers = i;
 						}
 					}
+					// make sure only two dims were chosen
 					if (i0 != -1 && i1 != -1 && iOthers == -1)
 						new RgbColorImageViewer<>(alg, dataSource, i0, i1);
 					//else
@@ -259,8 +266,8 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			incrementButton.addActionListener(new Incrementer(i));
 		}
 		
-		JTextField readout = new JTextField();
-
+		JPanel statusPanel = new JPanel(); 
+		JLabel readout = new JLabel();
 		scrollPane.addMouseMotionListener(new MouseMotionListener() {
 
 			@Override
@@ -316,12 +323,13 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			public void mouseDragged(MouseEvent e) {
 			}
 		});
+		statusPanel.add(readout, BorderLayout.CENTER);
 		
 		JPanel controlPanel = new JPanel();
 		controlPanel.setLayout(new BorderLayout());
-		controlPanel.add(readout, BorderLayout.NORTH);
 		controlPanel.add(positions, BorderLayout.CENTER);
 
+		frame.add(statusPanel, BorderLayout.CENTER);
 		frame.add(graphicsPanel, BorderLayout.CENTER);
 		frame.add(buttonPanel, BorderLayout.EAST);
 		frame.add(controlPanel, BorderLayout.SOUTH);

@@ -37,7 +37,6 @@ import java.awt.Panel;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,23 +44,18 @@ import java.util.List;
 import javax.swing.*;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
-import nom.bdezonia.zorbage.algorithm.GridIterator;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
-import nom.bdezonia.zorbage.dataview.WindowView;
 import nom.bdezonia.zorbage.gdal.Gdal;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
 import nom.bdezonia.zorbage.nifti.Nifti;
-import nom.bdezonia.zorbage.sampling.IntegerIndex;
-import nom.bdezonia.zorbage.sampling.SamplingIterator;
 import nom.bdezonia.zorbage.scifio.Scifio;
 import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.character.CharMember;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
 import nom.bdezonia.zorbage.type.color.CieLabMember;
 import nom.bdezonia.zorbage.type.color.RgbMember;
-import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.complex.float128.ComplexFloat128Member;
 import nom.bdezonia.zorbage.type.complex.float16.ComplexFloat16Member;
 import nom.bdezonia.zorbage.type.complex.float32.ComplexFloat32Member;
@@ -519,59 +513,7 @@ public class Main<T extends Algebra<T,U>, U> {
 	}
 
 	private void displayRgbColorImage(T alg, DimensionedDataSource<U> data) {
-		int numD = data.numDimensions();
-		if (numD < 1)
-			throw new IllegalArgumentException("dataset is completely void: nothing to display");
-		WindowView<U> view = new WindowView<>(data, 512, 512, 0, 1);
-		U value = alg.construct();
-		int width  = view.dimension(0);
-		int height = numD == 1 ? 1 : view.dimension(1);
-		
-		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		
-		// Safe cast as img is of correct type 
-		
-		DataBufferInt buffer = (DataBufferInt) img.getRaster().getDataBuffer();
-
-		// Conveniently, the buffer already contains the data array
-		int[] arrayInt = buffer.getData();
-
-		for (int y = 0; y < view.d1(); y++) {
-			for (int x = 0; x < view.d0(); x++) {
-				view.get(x, y, value);
-				int v;
-				if (value instanceof ArgbMember) {
-					ArgbMember tmp = (ArgbMember) value;
-					v = RgbUtils.argb(tmp.a(), tmp.r(), tmp.g(), tmp.b());
-				}
-				else if (value instanceof RgbMember) {
-					RgbMember tmp = (RgbMember) value;
-					v = RgbUtils.argb(255, tmp.r(), tmp.g(), tmp.b());
-				}
-				else
-					throw new IllegalArgumentException("Unsupported color type passed to display routine");
-
-				int bufferPos = y * width + x;
-				
-				arrayInt[bufferPos] = v;
-			}
-		}
-		
-		Container pane = frame.getContentPane();
-		
-		pane.remove(image);
-		
-		image = new JLabel(new ImageIcon(img));
-		
-		image = new JScrollPane(image);
-		
-		pane.add(image, BorderLayout.CENTER);
-
-		frame.setTitle("Zorbage Data Viewer - " + data.getName());
-		
-		frame.pack();
-
-		frame.repaint();
+		new RgbColorImageViewer<T,U>(alg, data);
 	}
 	
 	// how would you display complex data? a channel for r and i? otherwise it's not

@@ -45,7 +45,6 @@ import javax.swing.*;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
-import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.gdal.Gdal;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
@@ -513,12 +512,14 @@ public class Main<T extends Algebra<T,U>, U> {
 	}
 
 	private void displayRgbColorImage(T alg, DimensionedDataSource<U> data) {
+		
 		new RgbColorImageViewer<T,U>(alg, data);
 	}
 	
 	// how would you display complex data? a channel for r and i? otherwise it's not
 	//   bounded and it's not ordered so you can't get a display range from it. Also
-	//   similar things for quat and oct images
+	//   similar things for quat and oct images. Maybe one window per "channel" and
+	//   you can get bounds on a channel.
 	
 	private void displayComplexImage(T alg, DimensionedDataSource<U> data) {
 		System.out.println("MUST DISPLAY A COMPLEX IMAGE "+data.getName());
@@ -532,61 +533,13 @@ public class Main<T extends Algebra<T,U>, U> {
 		System.out.println("MUST DISPLAY AN OCTONION IMAGE "+data.getName());
 	}
 
-	@SuppressWarnings("unchecked")
 	private void displayTextData(T alg, DimensionedDataSource<U> data) {
 
-		Container pane = frame.getContentPane();
-		
-		pane.remove(image);
-		
-		image = new JTextPane();
-
-		U type = alg.construct();
-		
-		String result = "";
-
-		if (type instanceof StringMember) {
-			StringMember value = new StringMember();
-			IndexedDataSource<StringMember> stringList = (IndexedDataSource<StringMember>) data.rawData();
-			for (long i = 0; i < stringList.size(); i++) {
-				stringList.get(0, value);
-				result = result + "\n" + value.toString();
-			}
-		}
-		else if (type instanceof FixedStringMember) {
-			FixedStringMember value = new FixedStringMember(256);
-			IndexedDataSource<FixedStringMember> stringList = (IndexedDataSource<FixedStringMember>) data.rawData();
-			for (long i = 0; i < stringList.size(); i++) {
-				stringList.get(0, value);
-				result = result + "\n" + value.toString();
-			}
-		}
-		else if (type instanceof CharMember) {
-			CharMember value = new CharMember();
-			IndexedDataSource<CharMember> stringList = (IndexedDataSource<CharMember>) data.rawData();
-			for (long i = 0; i < stringList.size(); i++) {
-				stringList.get(0, value);
-				result = result + value.toString();
-			}
-		}
-		else
-			throw new IllegalArgumentException("Unknown string type "+type);
-		
-		((JTextPane)image).setText(result);
-		
-		image = new JScrollPane(image);
-		
-		pane.add(image, BorderLayout.CENTER);
-
-		frame.setTitle("Zorbage Data Viewer - " + data.getName());
-		
-		frame.pack();
-
-		frame.repaint();
+		new TextViewer<T,U>(alg, data);
 	}
 
-	private	void displayRealImage(T alg, DimensionedDataSource<U> data)
-	{
+	private	void displayRealImage(T alg, DimensionedDataSource<U> data) {
+		
 		new RealImageViewer<T,U>(alg, data);
 	}
 	

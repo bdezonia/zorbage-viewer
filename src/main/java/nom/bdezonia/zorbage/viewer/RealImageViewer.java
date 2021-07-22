@@ -51,7 +51,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Bounded;
@@ -79,7 +78,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private final BufferedImage argbData;
 	private int[] colorTable = LutUtils.DEFAULT_COLOR_TABLE;
 	private boolean preferDataRange = true;
-	private JTextField[] longFields;
+	private JLabel[] positionLabels;
 	private final JFrame frame;
 	private U oneValue;
 	
@@ -119,10 +118,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		argbData = new BufferedImage(view.d0(), view.d1(), BufferedImage.TYPE_INT_ARGB);
 		
-		longFields = new JTextField[view.getExtraDimsCount()];
-		for (int i = 0; i < longFields.length; i++) {
-			longFields[i] = new JTextField();
-			longFields[i].setColumns(10);
+		positionLabels = new JLabel[view.getExtraDimsCount()];
+		for (int i = 0; i < positionLabels.length; i++) {
+			positionLabels[i] = new JLabel();
+			//longFields[i].setColumns(10);
 		}
 		
 		JPanel graphicsPanel = new JPanel();
@@ -275,7 +274,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			JButton incrementButton = new JButton("Increment");
 			PlaneView<U> pView = view.getPlaneView();
 			long maxVal = pView.originalCoordDim(i);
-			longFields[i].setText(""+(view.getExtraDimValue(i)+1)+" / "+maxVal);
+			positionLabels[i].setText(""+(view.getExtraDimValue(i)+1)+" / "+maxVal);
 			int pos = pView.originalCoordPos(i);
 			String axisLabel;
 			if (view.getDataSource().getAxisType(pos) == null)
@@ -283,15 +282,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			else
 				axisLabel = view.getDataSource().getAxisType(pos) + " : ";
 			miniPanel.add(new JLabel(axisLabel));
+			miniPanel.add(positionLabels[i]);
 			miniPanel.add(decrementButton);
-			miniPanel.add(longFields[i]);
 			miniPanel.add(incrementButton);
 			positions.add(miniPanel);
 			decrementButton.addActionListener(new Decrementer(i));
 			incrementButton.addActionListener(new Incrementer(i));
 		}
 		
-		JTextField readout = new JTextField();
+		JLabel readout = new JLabel();
 		//readout.setEnabled(false);
 		scrollPane.addMouseMotionListener(new MouseMotionListener() {
 
@@ -368,7 +367,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			if (pos < maxVal - 1) {
 				pos++;
 				view.setExtraDimValue(extraPos, pos);
-				longFields[extraPos].setText(""+(pos+1)+" / "+maxVal);
+				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
 				draw();
 				frame.repaint();
 			}
@@ -391,7 +390,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			if (pos > 0) {
 				pos--;
 				view.setExtraDimValue(extraPos, pos);
-				longFields[extraPos].setText(""+(pos+1)+" / "+maxVal);
+				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
 				draw();
 				frame.repaint();
 			}

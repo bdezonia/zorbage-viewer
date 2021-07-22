@@ -225,7 +225,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 						}
 					}
 					if (i0 != -1 && i1 != -1 && iOthers == -1)
-						new RealImageViewer<>(alg, dataSource, i0, i1);
+						new RgbColorImageViewer<>(alg, dataSource, i0, i1);
 					//else
 					//	System.out.println("" + i0 + " " + i1 + " " + iOthers);
 				}

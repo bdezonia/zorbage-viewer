@@ -31,11 +31,12 @@
 package nom.bdezonia.zorbage.viewer;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
@@ -54,6 +55,7 @@ import javax.swing.JTextField;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Bounded;
+import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
 import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
@@ -74,12 +76,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 	private final T alg;
 	private final WindowView<U> view;
-	private final BufferedImage img;
+	private final BufferedImage argbData;
 	private int[] colorTable = LutUtils.DEFAULT_COLOR_TABLE;
 	private boolean preferDataRange = true;
 	private JTextField[] longFields;
 	private final JFrame frame;
-
+	private U oneValue;
+	
 	/**
 	 * 
 	 * @param alg
@@ -99,6 +102,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource, int c0, int c1) {
 
 		this.alg = alg;
+		this.oneValue = alg.construct();
 		this.view = new WindowView<>(dataSource, 512, 512, c0, c1);
 		
 		String name = dataSource.getName();
@@ -113,7 +117,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		frame.setLayout(new BorderLayout());
 		
-		img = new BufferedImage(view.d0(), view.d1(), BufferedImage.TYPE_INT_ARGB);
+		argbData = new BufferedImage(view.d0(), view.d1(), BufferedImage.TYPE_INT_ARGB);
 		
 		longFields = new JTextField[view.getExtraDimsCount()];
 		for (int i = 0; i < longFields.length; i++) {
@@ -122,10 +126,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 		
 		JPanel graphicsPanel = new JPanel();
-		JLabel image = new JLabel(new ImageIcon(img));
+		JLabel image = new JLabel(new ImageIcon(argbData));
 		JScrollPane scrollPane = new JScrollPane(image);
 		graphicsPanel.add(scrollPane, BorderLayout.CENTER);
-		
+
 		JPanel buttonPanel = new JPanel();
 		BoxLayout buttonBoxLayout = new BoxLayout(buttonPanel, BoxLayout.Y_AXIS);
 		buttonPanel.setLayout(buttonBoxLayout);
@@ -269,8 +273,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			miniPanel.setLayout(new FlowLayout());
 			JButton decrementButton = new JButton("Decrement");
 			JButton incrementButton = new JButton("Increment");
-			longFields[i].setText("" + view.getExtraDimValue(i));
-			int pos = view.getPlaneView().originalCoordPos(i);
+			PlaneView<U> pView = view.getPlaneView();
+			long maxVal = pView.originalCoordDim(i);
+			longFields[i].setText(""+(view.getExtraDimValue(i)+1)+" / "+maxVal);
+			int pos = pView.originalCoordPos(i);
 			String axisLabel;
 			if (view.getDataSource().getAxisType(pos) == null)
 				axisLabel = "" + pos + " : ";
@@ -286,7 +292,36 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 		
 		JTextField readout = new JTextField();
-		readout.setEnabled(false);
+		//readout.setEnabled(false);
+		scrollPane.addMouseMotionListener(new MouseMotionListener() {
+
+			HighPrecisionMember hpVal = G.HP.construct();
+			
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				int x = e.getX();
+				int y = e.getY();
+				if (x >= 0 && x < view.d0() && y >= 0 && y < view.d1()) {
+					view.get(x, y, oneValue);
+					HighPrecRepresentation rep = (HighPrecRepresentation) oneValue;
+					rep.toHighPrec(hpVal);
+					long dataX = view.origin0() + x;
+					long dataY = view.origin1() + y;
+					StringBuilder sb = new StringBuilder();
+					sb.append("x = ");
+					sb.append(dataX);
+					sb.append(", y = ");
+					sb.append(dataY);
+					sb.append(", value = ");
+					sb.append(hpVal);
+					readout.setText(sb.toString());
+				}
+			}
+			
+			@Override
+			public void mouseDragged(MouseEvent e) {
+			}
+		});
 		
 		JPanel controlPanel = new JPanel();
 		controlPanel.setLayout(new BorderLayout());
@@ -333,7 +368,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			if (pos < maxVal - 1) {
 				pos++;
 				view.setExtraDimValue(extraPos, pos);
-				longFields[extraPos].setText(""+pos);
+				longFields[extraPos].setText(""+(pos+1)+" / "+maxVal);
 				draw();
 				frame.repaint();
 			}
@@ -350,11 +385,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			PlaneView<U> pView = view.getPlaneView();
+			long maxVal = pView.originalCoordDim(extraPos);
 			long pos = view.getExtraDimValue(extraPos);
 			if (pos > 0) {
 				pos--;
 				view.setExtraDimValue(extraPos, pos);
-				longFields[extraPos].setText(""+pos);
+				longFields[extraPos].setText(""+(pos+1)+" / "+maxVal);
 				draw();
 				frame.repaint();
 			}
@@ -408,7 +445,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		// Safe cast as img is of correct type 
 		
-		DataBufferInt buffer = (DataBufferInt) img.getRaster().getDataBuffer();
+		DataBufferInt buffer = (DataBufferInt) argbData.getRaster().getDataBuffer();
 
 		// Conveniently, the buffer already contains the data array
 		int[] arrayInt = buffer.getData();

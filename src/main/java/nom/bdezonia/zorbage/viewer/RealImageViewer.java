@@ -261,6 +261,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							else iOthers = i;
 						}
 					}
+					// make sure only two dims were chosen
 					if (i0 != -1 && i1 != -1 && iOthers == -1)
 						new RealImageViewer<>(alg, dataSource, i0, i1);
 					//else

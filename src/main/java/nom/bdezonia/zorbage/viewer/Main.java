@@ -48,6 +48,7 @@ import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algorithm.GridIterator;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
+import nom.bdezonia.zorbage.dataview.WindowView;
 import nom.bdezonia.zorbage.gdal.Gdal;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
@@ -477,13 +478,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		}
 		else if ((type instanceof RgbMember) || (type instanceof ArgbMember))
 		{
-			int xId = 0;
-			int yId = 1;
-			int numExtraDims = tuple.b().numDimensions()-2;
-			if (numExtraDims < 0)
-				numExtraDims = 0;
-			long[] otherDimVals = new long[numExtraDims];
-			displayRgbColorImage(tuple.a(), tuple.b(), xId, yId, otherDimVals);
+			displayRgbColorImage(tuple.a(), tuple.b());
 		}
 		else if ((type instanceof OctonionFloat16Member) ||
 				(type instanceof OctonionFloat32Member) ||
@@ -515,13 +510,7 @@ public class Main<T extends Algebra<T,U>, U> {
 			displayComplexImage(tuple.a(), tuple.b());
 		}
 		else {
-			int xId = 0;
-			int yId = 1;
-			int numExtraDims = tuple.b().numDimensions()-2;
-			if (numExtraDims < 0)
-				numExtraDims = 0;
-			long[] otherDimVals = new long[numExtraDims];
-			displayRealImage(tuple.a(), tuple.b(), xId, yId, otherDimVals);
+			displayRealImage(tuple.a(), tuple.b());
 		}
 	}
 	
@@ -529,34 +518,16 @@ public class Main<T extends Algebra<T,U>, U> {
 		System.out.println("MUST DISPLAY A CIE LAB COLOR IMAGE "+data.getName());
 	}
 
-	private void displayRgbColorImage(T alg, DimensionedDataSource<U> data, int xId, int yId, long[] otherDimVals) {
+	private void displayRgbColorImage(T alg, DimensionedDataSource<U> data) {
 		int numD = data.numDimensions();
 		if (numD < 1)
 			throw new IllegalArgumentException("dataset is completely void: nothing to display");
+		WindowView<U> view = new WindowView<>(data, 512, 512, 0, 1);
 		U value = alg.construct();
-		long width  = xId == -1 ? 1 : data.dimension(xId);
-		long height = yId == -1 ? 1 : data.dimension(yId);
-		IntegerIndex idx = new IntegerIndex(numD);
-		long[] minPt = new long[numD];
-		long[] maxPt = new long[numD];
-		if (xId != -1) {
-			minPt[xId] = 0;
-			maxPt[xId] = data.dimension(xId) - 1;
-		}
-		if (yId != -1) {
-			minPt[yId] = 0;
-			maxPt[yId] = data.dimension(yId) - 1;
-		}
-		int dimNumber = 0;
-		for (int i = 0; i < numD; i++) {
-			if (i != xId && i != yId) {
-				minPt[i] = otherDimVals[dimNumber];
-				maxPt[i] = otherDimVals[dimNumber];
-				dimNumber++;
-			}
-		}
+		int width  = view.dimension(0);
+		int height = numD == 1 ? 1 : view.dimension(1);
 		
-		BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		
 		// Safe cast as img is of correct type 
 		
@@ -565,28 +536,25 @@ public class Main<T extends Algebra<T,U>, U> {
 		// Conveniently, the buffer already contains the data array
 		int[] arrayInt = buffer.getData();
 
-		SamplingIterator<IntegerIndex> iter = GridIterator.compute(minPt, maxPt);
-		while (iter.hasNext()) {
-			iter.next(idx);
-			data.get(idx, value);
-			int v;
-			if (value instanceof ArgbMember) {
-				ArgbMember tmp = (ArgbMember) value;
-				v = RgbUtils.argb(tmp.a(), tmp.r(), tmp.g(), tmp.b());
-			}
-			else if (value instanceof RgbMember) {
-				RgbMember tmp = (RgbMember) value;
-				v = RgbUtils.argb(255, tmp.r(), tmp.g(), tmp.b());
-			}
-			else
-				throw new IllegalArgumentException("Unsupported color type passed to display routine");
+		for (int y = 0; y < view.d1(); y++) {
+			for (int x = 0; x < view.d0(); x++) {
+				view.get(x, y, value);
+				int v;
+				if (value instanceof ArgbMember) {
+					ArgbMember tmp = (ArgbMember) value;
+					v = RgbUtils.argb(tmp.a(), tmp.r(), tmp.g(), tmp.b());
+				}
+				else if (value instanceof RgbMember) {
+					RgbMember tmp = (RgbMember) value;
+					v = RgbUtils.argb(255, tmp.r(), tmp.g(), tmp.b());
+				}
+				else
+					throw new IllegalArgumentException("Unsupported color type passed to display routine");
 
-			long x = xId == -1 ? 0 : idx.get(xId);
-			long y = yId == -1 ? 0 : idx.get(yId);
-			
-			int bufferPos = (int) (y * width + x);
-			
-			arrayInt[bufferPos] = v;
+				int bufferPos = y * width + x;
+				
+				arrayInt[bufferPos] = v;
+			}
 		}
 		
 		Container pane = frame.getContentPane();
@@ -675,7 +643,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		frame.repaint();
 	}
 
-	private	void displayRealImage(T alg, DimensionedDataSource<U> data, int xId, int yId, long[] otherDimVals)
+	private	void displayRealImage(T alg, DimensionedDataSource<U> data)
 	{
 		new RealImageViewer<T,U>(alg, data);
 	}

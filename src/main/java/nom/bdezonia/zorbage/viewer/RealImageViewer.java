@@ -475,9 +475,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					((HighPrecRepresentation) value).toHighPrec(hpPix);
 				}
 				else {
+					throw new IllegalArgumentException("this algo kind of requires high precs");
 					// expensive here
-					String pxStrValue = value.toString();
-					hpPix = new HighPrecisionMember(pxStrValue);
+					//String pxStrValue = value.toString();
+					//hpPix = new HighPrecisionMember(pxStrValue);
 				}
 
 				// scale the current value to an intensity from 0 to 1.
@@ -504,7 +505,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 				// put a color from the color table into the image at pos (x,y)
 				
-				int bufferPos = (int) (y * view.d0() + x);
+				int bufferPos = y * view.d0() + x;
 				
 				arrayInt[bufferPos] = colorTable[intensity];
 			}

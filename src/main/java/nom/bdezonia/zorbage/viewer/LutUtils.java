@@ -5,6 +5,11 @@ import java.io.FileInputStream;
 
 import nom.bdezonia.zorbage.type.color.RgbUtils;
 
+/**
+ * 
+ * @author Barry DeZonia
+ *
+ */
 public class LutUtils {
 
 	public static final int[] DEFAULT_COLOR_TABLE = defaultColorTable();
@@ -59,18 +64,8 @@ public class LutUtils {
 	private static int[] defaultColorTable() {
 
 		int[] colors = new int[256*3];
-		int r = 0, g = 0, b = 0;
-		for (int i = 0; i < colors.length; i++) {
-			colors[i] = RgbUtils.argb(0xff, r, g, b);
-			if (i % 3 == 0) {
-				b++;
-			}
-			else if (i % 3 == 1) {
-				r++;
-			}
-			else {
-				g++;
-			}
+		for (int g = 0; g < colors.length; g++) {
+			colors[g] = RgbUtils.argb(0xff, g, g, g);
 		}
 		return colors;
 	}

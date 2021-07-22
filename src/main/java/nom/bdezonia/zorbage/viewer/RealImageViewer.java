@@ -31,18 +31,20 @@
 package nom.bdezonia.zorbage.viewer;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
-import java.io.File;
-import java.io.FileInputStream;
 import java.math.BigDecimal;
 
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -60,7 +62,6 @@ import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.WindowView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
-import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
 
@@ -85,9 +86,20 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	 * @param dataSource
 	 */
 	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource) {
+		this(alg, dataSource, 0, 1);
+	}
+
+	/**
+	 * 
+	 * @param alg
+	 * @param dataSource
+	 * @param c0
+	 * @param c1
+	 */
+	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource, int c0, int c1) {
 
 		this.alg = alg;
-		this.view = new WindowView<>(dataSource, 512, 512);
+		this.view = new WindowView<>(dataSource, 512, 512, c0, c1);
 		
 		String name = dataSource.getName();
 		if (name == null)
@@ -123,12 +135,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton panDown = new JButton("Down");
 		JButton loadLut = new JButton("Load LUT");
 		JButton resetLut = new JButton("Reset LUT");
+		JButton newView = new JButton("New View");
 		buttonPanel.add(panLeft);
 		buttonPanel.add(panRight);
 		buttonPanel.add(panUp);
 		buttonPanel.add(panDown);
 		buttonPanel.add(loadLut);
 		buttonPanel.add(resetLut);
+		buttonPanel.add(newView);
 		panLeft.addActionListener(new ActionListener() {
 			
 			@Override
@@ -181,6 +195,68 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				setColorTable(LutUtils.DEFAULT_COLOR_TABLE);
+			}
+		});
+		newView.addActionListener(new ActionListener() {
+			
+			boolean cancelled = false;
+			boolean[] checked = new boolean[dataSource.numDimensions()];
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+				dlg.setLayout(new FlowLayout());
+				dlg.add(new JLabel("Choose two dimensions that specify the planes of interest"));
+				for (int i = 0; i < dataSource.numDimensions(); i++) {
+					checked[i] = false;
+					JCheckBox bx = new JCheckBox("d" + i);
+					bx.addActionListener(new ActionListener() {
+						
+						@Override
+						public void actionPerformed(ActionEvent e) {
+							String label = bx.getText();
+							int dimNum = Integer.parseInt(label.substring(1));
+							checked[dimNum] = !checked[dimNum];
+						}
+					});
+					dlg.add(bx);
+				}
+				JButton ok = new JButton("Ok");
+				ok.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						cancelled = false;
+						dlg.setVisible(false);
+					}
+				});
+				JButton cancel = new JButton("Cancel");
+				cancel.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						cancelled = true;
+						dlg.setVisible(false);
+					}
+				});
+				dlg.add(ok);
+				dlg.add(cancel);
+				dlg.pack();
+				dlg.setVisible(true);
+				if (!cancelled) {
+					int i0 = -1;
+					int i1 = -1;
+					int iOthers = -1;
+					for (int i = 0; i < checked.length; i++) {
+						if (checked[i]) {
+							if (i0 == -1) i0 = i;
+							else if (i1 == -1) i1 = i;
+							else iOthers = i;
+						}
+					}
+					if (i0 != -1 && i1 != -1 && iOthers == -1)
+						new RealImageViewer<>(alg, dataSource, i0, i1);
+					//else
+					//	System.out.println("" + i0 + " " + i1 + " " + iOthers);
+				}
 			}
 		});
 		

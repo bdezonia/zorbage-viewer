@@ -51,6 +51,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Bounded;
@@ -146,6 +147,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(loadLut);
 		buttonPanel.add(resetLut);
 		buttonPanel.add(newView);
+		buttonPanel.add(new JSeparator());
+		buttonPanel.add(new JLabel("Dimensions"));
+		for (int i = 0; i < dataSource.numDimensions(); i++) {
+			buttonPanel.add(new JLabel("d"+i+" : "+dataSource.dimension(i)));
+		}
 		panLeft.addActionListener(new ActionListener() {
 			
 			@Override

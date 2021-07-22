@@ -39,7 +39,6 @@ import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -109,11 +108,7 @@ public class Main<T extends Algebra<T,U>, U> {
 
 	private Component image = null;
 	
-	public static int[] DEFAULT_COLOR_TABLE = defaultColorTable();
-
 	public static int GDAL_STATUS = 0;
-
-	private int[] colorTable = DEFAULT_COLOR_TABLE;
 
 	@SuppressWarnings("rawtypes")
 	public static void main(String[] args) {
@@ -398,8 +393,6 @@ public class Main<T extends Algebra<T,U>, U> {
 				JFileChooser dlg = new JFileChooser();
 				int returnVal = dlg.showDialog(frame, "OK");
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File lutFile = dlg.getSelectedFile();
-					colorTable = loadLUT(lutFile);
 					if (dsNumber >= 0 && dsNumber < dataSources.size()) {
 						displayData(dataSources.get(dsNumber));
 					}
@@ -428,7 +421,6 @@ public class Main<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				colorTable = DEFAULT_COLOR_TABLE;
 				if (dsNumber >= 0 && dsNumber < dataSources.size()) {
 					displayData(dataSources.get(dsNumber));
 				}
@@ -688,69 +680,4 @@ public class Main<T extends Algebra<T,U>, U> {
 		new RealImageViewer<T,U>(alg, data);
 	}
 	
-	private static int[] defaultColorTable() {
-
-		int[] colors = new int[256*3];
-		int r = 0, g = 0, b = 0;
-		for (int i = 0; i < colors.length; i++) {
-			colors[i] = RgbUtils.argb(0xff, r, g, b);
-			if (i % 3 == 0) {
-				b++;
-			}
-			else if (i % 3 == 1) {
-				r++;
-			}
-			else {
-				g++;
-			}
-		}
-		return colors;
-	}
-	
-	private int[] loadLUT(File lutFile) {
-		/*
-		 * This is my best guess on how to load ImageJ LUT files. My code discovers that
-		 * some of them are not stored in triplets so this code is not yet complete.
-		 */
-		FileInputStream fin = null;
-		try {
-
-			if (lutFile.length() > Integer.MAX_VALUE)
-				throw new IllegalArgumentException("lut data is too large");
-
-			byte fileContent[] = new byte[(int)lutFile.length()];
-
-			fin = new FileInputStream(lutFile);
-
-			// Reads up to certain bytes of data from this input stream into an array of bytes.
-			fin.read(fileContent);
-
-			fin.close();
-
-			// note: some imagej lut files have sizes that are not divisible by 3. this code ignores the couple extra bytes.
-			int chunk = fileContent.length / 3;
-
-			int[] lut = new int[chunk];
-
-			for (int i = 0; i < chunk; i++) {
-				lut[i] = RgbUtils.argb(0xff, fileContent[0*chunk + i], fileContent[1*chunk + i], fileContent[2*chunk + i]);
-			}
-
-			return lut;
-
-		} catch (Exception e) {
-
-			System.out.println("loadLUT exception "+e);
-
-			return colorTable;
-
-		} finally {
-			try {
-				if (fin != null)
-					fin.close();
-			} catch (Exception e) {
-				;
-			}
-		}
-	}
 }

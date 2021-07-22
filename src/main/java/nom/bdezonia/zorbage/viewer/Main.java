@@ -31,14 +31,11 @@
 package nom.bdezonia.zorbage.viewer;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Container;
 import java.awt.Panel;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.*;
@@ -95,12 +92,6 @@ import nom.bdezonia.zorbage.type.string.StringMember;
 public class Main<T extends Algebra<T,U>, U> {
 
 	private JFrame frame = null;
-	
-	private List<Tuple2<T,DimensionedDataSource<U>>> dataSources = new ArrayList<>();
-	
-	private int dsNumber = 0;
-
-	private Component image = null;
 	
 	public static int GDAL_STATUS = 0;
 
@@ -172,14 +163,8 @@ public class Main<T extends Algebra<T,U>, U> {
 					File f = chooser.getSelectedFile();
 	
 					DataBundle bundle = Gdal.loadAllDatasets(f.getAbsolutePath());
-		
-					int nextDs = dataSources.size();
 					
-					dataSources.addAll(bundle.bundle());
-					
-					displayData(dataSources.get(nextDs));
-					
-					dsNumber = nextDs;
+					displayAll(bundle);
 				}
 			}
 		});
@@ -212,14 +197,8 @@ public class Main<T extends Algebra<T,U>, U> {
 				File f = chooser.getSelectedFile();
 
 				DataBundle bundle = NetCDF.loadAllDatasets(f.getAbsolutePath());
-	
-				int nextDs = dataSources.size();
 				
-				dataSources.addAll(bundle.bundle());
-				
-				displayData(dataSources.get(nextDs));
-				
-				dsNumber = nextDs;
+				displayAll(bundle);
 			}
 		});
 
@@ -252,14 +231,8 @@ public class Main<T extends Algebra<T,U>, U> {
 				File f = chooser.getSelectedFile();
 
 				DataBundle bundle = Scifio.loadAllDatasets(f.getAbsolutePath());
-	
-				int nextDs = dataSources.size();
 				
-				dataSources.addAll(bundle.bundle());
-				
-				displayData(dataSources.get(nextDs));
-				
-				dsNumber = nextDs;
+				displayAll(bundle);
 			}
 		});
 
@@ -292,139 +265,11 @@ public class Main<T extends Algebra<T,U>, U> {
 				File f = chooser.getSelectedFile();
 
 				DataBundle bundle = Nifti.open(f.getAbsolutePath());
-	
-				int nextDs = dataSources.size();
 				
-				dataSources.addAll(bundle.bundle());
-				
-				displayData(dataSources.get(nextDs));
-				
-				dsNumber = nextDs;
+				displayAll(bundle);
 			}
 		});
 
-		JButton displayNext = new JButton("Display Next");
-		displayNext.addMouseListener(new MouseListener() {
-			
-			@Override
-			public void mouseReleased(MouseEvent e) {
-			}
-			
-			@Override
-			public void mousePressed(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseExited(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseEntered(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				if (dsNumber+1 >= dataSources.size())
-					java.awt.Toolkit.getDefaultToolkit().beep();
-				else {
-					dsNumber++;
-					displayData(dataSources.get(dsNumber));
-				}
-			}
-		});
-
-		JButton displayPrev = new JButton("Display Prev");
-		displayPrev.addMouseListener(new MouseListener() {
-			
-			@Override
-			public void mouseReleased(MouseEvent e) {
-			}
-			
-			@Override
-			public void mousePressed(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseExited(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseEntered(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				if (dsNumber-1 < 0)
-					java.awt.Toolkit.getDefaultToolkit().beep();
-				else {
-					dsNumber--;
-					displayData(dataSources.get(dsNumber));
-				}
-			}
-		});
-
-		JButton loadLut = new JButton("Choose LUT");
-		loadLut.addMouseListener(new MouseListener() {
-			
-			@Override
-			public void mouseReleased(MouseEvent e) {
-			}
-			
-			@Override
-			public void mousePressed(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseExited(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseEntered(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				JFileChooser dlg = new JFileChooser();
-				int returnVal = dlg.showDialog(frame, "OK");
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					if (dsNumber >= 0 && dsNumber < dataSources.size()) {
-						displayData(dataSources.get(dsNumber));
-					}
-				}
-			}
-		});
-
-		JButton resetLut = new JButton("Reset LUT");
-		resetLut.addMouseListener(new MouseListener() {
-			
-			@Override
-			public void mouseReleased(MouseEvent e) {
-			}
-			
-			@Override
-			public void mousePressed(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseExited(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseEntered(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				if (dsNumber >= 0 && dsNumber < dataSources.size()) {
-					displayData(dataSources.get(dsNumber));
-				}
-			}
-		});
-
-		BufferedImage img = new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB);
-		
-		image = new JLabel(new ImageIcon(img));
-				
 		Panel bp = new Panel();
 		
 		bp.add(loadGdal);
@@ -432,26 +277,24 @@ public class Main<T extends Algebra<T,U>, U> {
 		bp.add(loadNifti);
 		bp.add(loadScifio);
 
-		Panel ip = new Panel();
-		
-		ip.add(displayPrev);
-		ip.add(displayNext);
-		ip.add(loadLut);
-		ip.add(resetLut);
-		
 		Container pane = frame.getContentPane();
 		
 		pane.setLayout(new BorderLayout());
 		
 		pane.add(bp, BorderLayout.NORTH);
-		pane.add(ip, BorderLayout.SOUTH);
-		pane.add(image, BorderLayout.CENTER);
-		
 		frame.pack();
 
 		frame.setVisible(true);
 	}
 
+	private void displayAll(DataBundle bundle) {
+
+		List<Tuple2<T,DimensionedDataSource<U>>> list = bundle.bundle();
+		for (int i = 0; i < list.size(); i++) {
+			displayData(list.get(i));
+		}
+	}
+	
 	private	void displayData(Tuple2<T, DimensionedDataSource<U>> tuple)
 	{
 		// TODO: there now are all kinds of multidim data sources theoretically possible:

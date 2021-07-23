@@ -341,20 +341,26 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					sb.append(dataSource.getAxisType(c0) == null ? "d0" : dataSource.getAxisType(c0));
 					sb.append(" = ");
 					sb.append(dataU);
-					sb.append(" (");
-					sb.append(realWorldCoords[c0]);
-					sb.append(" ");
-					sb.append(dataSource.getAxisUnit(c0) == null ? "" : dataSource.getAxisUnit(c0));
-					sb.append(")");
+					// only display calibrated values if they are not == 1.0 * uncalibrated values
+					if (realWorldCoords[c0].remainder(BigDecimal.valueOf(modelCoords[c0])).compareTo(BigDecimal.valueOf(0.0000000001)) < 0) {
+						sb.append(" (");
+						sb.append(realWorldCoords[c0]);
+						sb.append(" ");
+						sb.append(dataSource.getAxisUnit(c0) == null ? "" : dataSource.getAxisUnit(c0));
+						sb.append(")");
+					}
 					sb.append(", ");
 					sb.append(dataSource.getAxisType(c1) == null ? "d1" : dataSource.getAxisType(c1));
 					sb.append("= ");
 					sb.append(dataV);
-					sb.append(" (");
-					sb.append(realWorldCoords[c1]);
-					sb.append(" ");
-					sb.append(dataSource.getAxisUnit(c1) == null ? "" : dataSource.getAxisUnit(c1));
-					sb.append(")");
+					// only display calibrated values if they are not == 1.0 * uncalibrated values
+					if (realWorldCoords[c1].remainder(BigDecimal.valueOf(modelCoords[c1])).compareTo(BigDecimal.valueOf(0.0000000001)) < 0) {
+						sb.append(" (");
+						sb.append(realWorldCoords[c1]);
+						sb.append(" ");
+						sb.append(dataSource.getAxisUnit(c1) == null ? "" : dataSource.getAxisUnit(c1));
+						sb.append(")");
+					}
 					sb.append(", value = ");
 					sb.append(hpVal);
 					sb.append(" ");

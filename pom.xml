@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.bdezonia</groupId>
   <artifactId>zorbage-viewer</artifactId>
-  <version>0.1.4-SNAPSHOT</version>
+  <version>0.1.4</version>
   <name>zorbage-viewer</name>
   <url>https://github.com/bdezonia/zorbage-viewer</url>
   <inceptionYear>2020</inceptionYear>
@@ -61,25 +61,25 @@
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-gdal</artifactId>
-      <version>0.1.2-SNAPSHOT</version>
+      <version>0.1.2</version>
     </dependency>
 
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-netcdf</artifactId>
-      <version>0.1.0-SNAPSHOT</version>
+      <version>0.1.0</version>
     </dependency>
   
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-nifti</artifactId>
-      <version>0.1.0-SNAPSHOT</version>
+      <version>0.1.0</version>
     </dependency>
   
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-scifio</artifactId>
-      <version>0.1.1-SNAPSHOT</version>
+      <version>0.1.1</version>
     </dependency>
   
   </dependencies>

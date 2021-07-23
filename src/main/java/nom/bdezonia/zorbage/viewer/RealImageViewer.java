@@ -79,7 +79,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private final BufferedImage argbData;
 	private int[] colorTable = LutUtils.DEFAULT_COLOR_TABLE;
 	private boolean preferDataRange = true;
-	private JLabel[] positionLabels;
+	private final U min;
+	private final U max;
+	private final JLabel[] positionLabels;
 	private final JFrame frame;
 	
 	/**
@@ -102,6 +104,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		this.alg = alg;
 		this.view = new WindowView<>(dataSource, 512, 512, c0, c1);
+		this.min = alg.construct();
+		this.max = alg.construct();
 		
 		String name = dataSource.getName();
 		if (name == null)
@@ -138,6 +142,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton loadLut = new JButton("Load LUT");
 		JButton resetLut = new JButton("Reset LUT");
 		JButton newView = new JButton("New View");
+		JCheckBox check = new JCheckBox("Use data range");
 		buttonPanel.add(panLeft);
 		buttonPanel.add(panRight);
 		buttonPanel.add(panUp);
@@ -153,6 +158,17 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				axisName = "d" + i;
 			buttonPanel.add(new JLabel(dataSource.dimension(i)+" : "+axisName));
 		}
+		buttonPanel.add(check);
+		check.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				preferDataRange = !preferDataRange;
+				calcMinMax();
+				draw();
+				frame.repaint();
+			}
+		});
 		panLeft.addActionListener(new ActionListener() {
 			
 			@Override
@@ -366,6 +382,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		frame.setVisible(true);
 
+		calcMinMax();
+		
 		draw();
 		
 		frame.repaint();
@@ -457,9 +475,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
-	private void draw() {
-		U min = alg.construct();
-		U max = alg.construct();
+	private void calcMinMax() {
+
 		if (preferDataRange) {
 			pixelDataBounds(alg, view.getDataSource().rawData(), min, max);
 			if (alg.isEqual().call(min, max))
@@ -470,7 +487,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			if (alg.isEqual().call(min, max))
 				pixelDataBounds(alg, view.getDataSource().rawData(), min, max);
 		}
+	}
+	
+	private void draw() {
+
 		U value = alg.construct();
+		
 		boolean isHighPrec = value instanceof HighPrecRepresentation;
 		
 		// Safe cast as img is of correct type 
@@ -483,17 +505,16 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		HighPrecisionMember hpPix = new HighPrecisionMember();
 		HighPrecisionMember hpMin;
 		HighPrecisionMember hpMax;
-		
+		HighPrecRepresentation valHi;
 		if (isHighPrec) {
+			valHi = (HighPrecRepresentation) value;
 			hpMin = new HighPrecisionMember();
 			hpMax = new HighPrecisionMember();
 			((HighPrecRepresentation) min).toHighPrec(hpMin);
 			((HighPrecRepresentation) max).toHighPrec(hpMax);
 		}
 		else {
-			// expensive but try a parser conversion if can't use highprec
-			hpMin = new HighPrecisionMember(min.toString());
-			hpMax = new HighPrecisionMember(max.toString());
+			throw new IllegalArgumentException("this algo requires high precision support from type");
 		}
 
 		for (int y = 0; y < view.d1(); y++) {
@@ -501,15 +522,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 				view.get(x, y, value);
 				
-				if (isHighPrec) {
-					((HighPrecRepresentation) value).toHighPrec(hpPix);
-				}
-				else {
-					throw new IllegalArgumentException("this algo kind of requires high precs");
-					// expensive here
-					//String pxStrValue = value.toString();
-					//hpPix = new HighPrecisionMember(pxStrValue);
-				}
+				valHi.toHighPrec(hpPix);
 
 				// scale the current value to an intensity from 0 to 1.
 				

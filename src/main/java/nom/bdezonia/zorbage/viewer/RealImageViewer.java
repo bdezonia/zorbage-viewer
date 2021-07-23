@@ -31,6 +31,7 @@
 package nom.bdezonia.zorbage.viewer;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -115,7 +116,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		if (source == null)
 			source = "<unknown source>";
 		
-		frame = new JFrame(name + " " + source);
+		frame = new JFrame("Zorbage Viewer");
 		
 		frame.setLayout(new BorderLayout());
 		
@@ -126,6 +127,19 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			positionLabels[i] = new JLabel();
 			//longFields[i].setColumns(10);
 		}
+		
+		JLabel nameLabel = new JLabel("Name: "+name);
+		nameLabel.setBackground(Color.WHITE);
+		nameLabel.setOpaque(true);
+		
+		JLabel sourceLabel = new JLabel("Source: "+source);
+		sourceLabel.setBackground(Color.WHITE);
+		sourceLabel.setOpaque(true);
+
+		JPanel headerPanel = new JPanel();
+		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+		headerPanel.add(nameLabel); 
+		headerPanel.add(sourceLabel); 
 		
 		JPanel graphicsPanel = new JPanel();
 		JLabel image = new JLabel(new ImageIcon(argbData));
@@ -315,8 +329,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			incrementButton.addActionListener(new Incrementer(i));
 		}
 
-		JPanel statusPanel = new JPanel(); 
+
 		JLabel readout = new JLabel();
+		readout.setBackground(Color.WHITE);
+		readout.setOpaque(true);
+		readout.setText("<placeholder>");
 		scrollPane.addMouseMotionListener(new MouseMotionListener() {
 
 			HighPrecisionMember hpVal = G.HP.construct();
@@ -343,7 +360,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					sb.append(" = ");
 					sb.append(dataU);
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
-					if (realWorldCoords[c0].remainder(BigDecimal.valueOf(modelCoords[c0])).compareTo(BigDecimal.valueOf(0.0000000001)) < 0) {
+					if (realWorldCoords[c0].subtract(BigDecimal.valueOf(modelCoords[c0])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
 						sb.append(" (");
 						sb.append(realWorldCoords[c0]);
 						sb.append(" ");
@@ -355,7 +372,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					sb.append("= ");
 					sb.append(dataV);
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
-					if (realWorldCoords[c1].remainder(BigDecimal.valueOf(modelCoords[c1])).compareTo(BigDecimal.valueOf(0.0000000001)) < 0) {
+					if (realWorldCoords[c1].subtract(BigDecimal.valueOf(modelCoords[c1])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
 						sb.append(" (");
 						sb.append(realWorldCoords[c1]);
 						sb.append(" ");
@@ -374,16 +391,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void mouseDragged(MouseEvent e) {
 			}
 		});
-		statusPanel.add(readout, BorderLayout.CENTER);
+		JPanel sliderPanel = new JPanel();
+		sliderPanel.setLayout(new BorderLayout());
+		sliderPanel.add(readout, BorderLayout.NORTH);
+		sliderPanel.add(positions, BorderLayout.CENTER);
 
-		JPanel controlPanel = new JPanel();
-		controlPanel.setLayout(new BorderLayout());
-		controlPanel.add(positions, BorderLayout.CENTER);
-
-		frame.add(statusPanel, BorderLayout.NORTH);
+		frame.add(headerPanel, BorderLayout.NORTH);
 		frame.add(graphicsPanel, BorderLayout.CENTER);
 		frame.add(buttonPanel, BorderLayout.EAST);
-		frame.add(controlPanel, BorderLayout.SOUTH);
+		frame.add(sliderPanel, BorderLayout.SOUTH);
 		
 		frame.pack();
 

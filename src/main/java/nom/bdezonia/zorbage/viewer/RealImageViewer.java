@@ -116,7 +116,17 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		if (source == null)
 			source = "<unknown source>";
 		
-		frame = new JFrame("Zorbage Viewer");
+		String dataType = dataSource.getValueType();
+		String dataUnit = dataSource.getValueUnit();
+
+		String title = "Zorbage Viewer";
+		
+		if (dataType != null)
+			title = title + " - " + dataType;
+		if (dataUnit != null)
+			title = title + " (" + dataUnit + ")";
+		
+		frame = new JFrame(title);
 		
 		frame.setLayout(new BorderLayout());
 		

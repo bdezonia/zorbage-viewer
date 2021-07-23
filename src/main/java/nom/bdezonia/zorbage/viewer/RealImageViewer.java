@@ -150,7 +150,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(new JSeparator());
 		buttonPanel.add(new JLabel("Dimensions"));
 		for (int i = 0; i < dataSource.numDimensions(); i++) {
-			buttonPanel.add(new JLabel("d"+i+" : "+dataSource.dimension(i)));
+			String axisName = dataSource.getAxisType(i);
+			if (axisName == null)
+				axisName = "d" + i;
+			buttonPanel.add(new JLabel(dataSource.dimension(i)+" : "+axisName));
 		}
 		panLeft.addActionListener(new ActionListener() {
 			

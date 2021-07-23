@@ -143,6 +143,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton resetLut = new JButton("Reset LUT");
 		JButton newView = new JButton("New View");
 		JCheckBox check = new JCheckBox("Use data range");
+		check.setSelected(preferDataRange);
 		buttonPanel.add(panLeft);
 		buttonPanel.add(panRight);
 		buttonPanel.add(panUp);

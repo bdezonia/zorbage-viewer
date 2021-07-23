@@ -119,12 +119,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		String dataType = dataSource.getValueType();
 		String dataUnit = dataSource.getValueUnit();
 
-		String title = "Zorbage Viewer";
-		
+		String title = "Zorbage Viewer - "+name;
+	
+		String valueInfo = "<unknown type>";
 		if (dataType != null)
-			title = title + " - " + dataType;
+			valueInfo = dataType;
+		String valueUnit = "(<unknown unit>)";
 		if (dataUnit != null)
-			title = title + " (" + dataUnit + ")";
+			valueUnit = " (" + dataUnit + ")";
+		String valueString = valueInfo + valueUnit;
 		
 		frame = new JFrame(title);
 		
@@ -138,18 +141,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			//longFields[i].setColumns(10);
 		}
 		
-		JLabel nameLabel = new JLabel("Name: "+name);
-		nameLabel.setBackground(Color.WHITE);
-		nameLabel.setOpaque(true);
-		
 		JLabel sourceLabel = new JLabel("Source: "+source);
 		sourceLabel.setBackground(Color.WHITE);
 		sourceLabel.setOpaque(true);
 
 		JPanel headerPanel = new JPanel();
 		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
-		headerPanel.add(nameLabel); 
-		headerPanel.add(sourceLabel); 
+		headerPanel.add(sourceLabel);
+		headerPanel.add(new JLabel(valueString));
 		
 		JPanel graphicsPanel = new JPanel();
 		JLabel image = new JLabel(new ImageIcon(argbData));

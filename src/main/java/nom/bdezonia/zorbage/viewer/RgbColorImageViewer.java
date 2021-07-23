@@ -39,6 +39,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.math.BigDecimal;
 
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -50,7 +51,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
-import javax.swing.JTextField;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
@@ -70,9 +70,8 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 	private final T alg;
 	private final WindowView<U> view;
 	private final BufferedImage argbData;
-	private JTextField[] longFields;
+	private JLabel[] positionLabels;
 	private final JFrame frame;
-	private U oneValue;
 	
 	/**
 	 * 
@@ -93,7 +92,6 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 	public RgbColorImageViewer(T alg, DimensionedDataSource<U> dataSource, int c0, int c1) {
 
 		this.alg = alg;
-		this.oneValue = alg.construct();
 		this.view = new WindowView<>(dataSource, 512, 512, c0, c1);
 		
 		String name = dataSource.getName();
@@ -110,10 +108,9 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		
 		argbData = new BufferedImage(view.d0(), view.d1(), BufferedImage.TYPE_INT_ARGB);
 		
-		longFields = new JTextField[view.getExtraDimsCount()];
-		for (int i = 0; i < longFields.length; i++) {
-			longFields[i] = new JTextField();
-			longFields[i].setColumns(10);
+		positionLabels = new JLabel[view.getExtraDimsCount()];
+		for (int i = 0; i < positionLabels.length; i++) {
+			positionLabels[i] = new JLabel();
 		}
 		
 		JPanel graphicsPanel = new JPanel();
@@ -137,7 +134,10 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(new JSeparator());
 		buttonPanel.add(new JLabel("Dimensions"));
 		for (int i = 0; i < dataSource.numDimensions(); i++) {
-			buttonPanel.add(new JLabel("d"+i+" : "+dataSource.dimension(i)));
+			String axisName = dataSource.getAxisType(i);
+			if (axisName == null)
+				axisName = "d" + i;
+			buttonPanel.add(new JLabel(dataSource.dimension(i)+" : "+axisName));
 		}
 		panLeft.addActionListener(new ActionListener() {
 			
@@ -250,7 +250,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			JButton incrementButton = new JButton("Increment");
 			PlaneView<U> pView = view.getPlaneView();
 			long maxVal = pView.originalCoordDim(i);
-			longFields[i].setText(""+(view.getExtraDimValue(i)+1)+" / "+maxVal);
+			positionLabels[i].setText(""+(view.getExtraDimValue(i)+1)+" / "+maxVal);
 			int pos = pView.originalCoordPos(i);
 			String axisLabel;
 			if (view.getDataSource().getAxisType(pos) == null)
@@ -259,7 +259,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 				axisLabel = view.getDataSource().getAxisType(pos) + " : ";
 			miniPanel.add(new JLabel(axisLabel));
 			miniPanel.add(decrementButton);
-			miniPanel.add(longFields[i]);
+			miniPanel.add(positionLabels[i]);
 			miniPanel.add(incrementButton);
 			positions.add(miniPanel);
 			decrementButton.addActionListener(new Decrementer(i));
@@ -269,20 +269,28 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		JPanel statusPanel = new JPanel(); 
 		JLabel readout = new JLabel();
 		scrollPane.addMouseMotionListener(new MouseMotionListener() {
-
+			
+			long[] modelCoords = new long[dataSource.numDimensions()];
+			BigDecimal[] realWorldCoords = new BigDecimal[dataSource.numDimensions()]; 
+			U value = alg.construct();
+			
 			@Override
 			public void mouseMoved(MouseEvent e) {
-				ArgbMember argbMem = null;
-				if (oneValue instanceof ArgbMember)
-					argbMem = (ArgbMember) oneValue;
-				RgbMember rgbMem = null;
-				if (oneValue instanceof RgbMember)
-					rgbMem = (RgbMember) oneValue;
-				int x = e.getX();
-				int y = e.getY();
-				int a, r, g, b;
-				if (x >= 0 && x < view.d0() && y >= 0 && y < view.d1()) {
-					view.get(x, y, oneValue);
+				int i0 = e.getX();
+				int i1 = e.getY();
+				if (i0 >= 0 && i0 < view.d0() && i1 >= 0 && i1 < view.d1()) {
+					int a, r, g, b;
+					ArgbMember argbMem = null;
+					if (value instanceof ArgbMember)
+						argbMem = (ArgbMember) value;
+					RgbMember rgbMem = null;
+					if (value instanceof RgbMember)
+						rgbMem = (RgbMember) value;
+					view.getModelCoords(i0, i1, modelCoords);
+					dataSource.getCoordinateSpace().project(modelCoords, realWorldCoords);
+					long dataU = view.origin0() + i0;
+					long dataV = view.origin1() + i1;
+					view.get(i0, i1, value);
 					if (argbMem != null) {
 						a = argbMem.a();
 						r = argbMem.r();
@@ -296,15 +304,28 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 						b = rgbMem.b();
 					}
 					else {
-						throw new IllegalArgumentException("rats!");
+						throw new IllegalArgumentException("bad error: color is not ARGB or RGB");
 					}
-					long dataX = view.origin0() + x;
-					long dataY = view.origin1() + y;
+					int c0 = view.getPlaneView().c0();
+					int c1 = view.getPlaneView().c1();
 					StringBuilder sb = new StringBuilder();
-					sb.append("x = ");
-					sb.append(dataX);
-					sb.append(", y = ");
-					sb.append(dataY);
+					sb.append(dataSource.getAxisType(c0) == null ? "d0" : dataSource.getAxisType(c0));
+					sb.append(" = ");
+					sb.append(dataU);
+					sb.append(" (");
+					sb.append(realWorldCoords[c0]);
+					sb.append(" ");
+					sb.append(dataSource.getAxisUnit(c0) == null ? "" : dataSource.getAxisUnit(c0));
+					sb.append(")");
+					sb.append(", ");
+					sb.append(dataSource.getAxisType(c1) == null ? "d1" : dataSource.getAxisType(c1));
+					sb.append("= ");
+					sb.append(dataV);
+					sb.append(" (");
+					sb.append(realWorldCoords[c1]);
+					sb.append(" ");
+					sb.append(dataSource.getAxisUnit(c1) == null ? "" : dataSource.getAxisUnit(c1));
+					sb.append(")");
 					sb.append(", value = ");
 					sb.append("(");
 					sb.append(a);
@@ -329,7 +350,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		controlPanel.setLayout(new BorderLayout());
 		controlPanel.add(positions, BorderLayout.CENTER);
 
-		frame.add(statusPanel, BorderLayout.CENTER);
+		frame.add(statusPanel, BorderLayout.NORTH);
 		frame.add(graphicsPanel, BorderLayout.CENTER);
 		frame.add(buttonPanel, BorderLayout.EAST);
 		frame.add(controlPanel, BorderLayout.SOUTH);
@@ -360,7 +381,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			if (pos < maxVal - 1) {
 				pos++;
 				view.setExtraDimValue(extraPos, pos);
-				longFields[extraPos].setText(""+(pos+1)+" / "+maxVal);
+				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
 				draw();
 				frame.repaint();
 			}
@@ -383,7 +404,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			if (pos > 0) {
 				pos--;
 				view.setExtraDimValue(extraPos, pos);
-				longFields[extraPos].setText(""+(pos+1)+" / "+maxVal);
+				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
 				draw();
 				frame.repaint();
 			}

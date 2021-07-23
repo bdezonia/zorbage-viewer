@@ -81,7 +81,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private boolean preferDataRange = true;
 	private JLabel[] positionLabels;
 	private final JFrame frame;
-	private U oneValue;
 	
 	/**
 	 * 
@@ -102,7 +101,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource, int c0, int c1) {
 
 		this.alg = alg;
-		this.oneValue = alg.construct();
 		this.view = new WindowView<>(dataSource, 512, 512, c0, c1);
 		
 		String name = dataSource.getName();
@@ -307,6 +305,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			HighPrecisionMember hpVal = G.HP.construct();
 			long[] modelCoords = new long[dataSource.numDimensions()];
 			BigDecimal[] realWorldCoords = new BigDecimal[dataSource.numDimensions()]; 
+			U value = alg.construct();
 			
 			@Override
 			public void mouseMoved(MouseEvent e) {
@@ -317,8 +316,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					dataSource.getCoordinateSpace().project(modelCoords, realWorldCoords);
 					long dataU = view.origin0() + i0;
 					long dataV = view.origin1() + i1;
-					view.get(i0, i1, oneValue);
-					HighPrecRepresentation rep = (HighPrecRepresentation) oneValue;
+					view.get(i0, i1, value);
+					HighPrecRepresentation rep = (HighPrecRepresentation) value;
 					rep.toHighPrec(hpVal);
 					int c0 = view.getPlaneView().c0();
 					int c1 = view.getPlaneView().c1();

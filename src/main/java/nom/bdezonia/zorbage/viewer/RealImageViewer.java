@@ -167,6 +167,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton loadLut = new JButton("Load LUT");
 		JButton resetLut = new JButton("Reset LUT");
 		JButton newView = new JButton("New View");
+		JButton snapshot = new JButton("Snapshot");
 		JCheckBox check = new JCheckBox("Use data range");
 		check.setSelected(preferDataRange);
 		buttonPanel.add(panLeft);
@@ -176,6 +177,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(loadLut);
 		buttonPanel.add(resetLut);
 		buttonPanel.add(newView);
+		buttonPanel.add(snapshot);
 		buttonPanel.add(new JSeparator());
 		buttonPanel.add(new JLabel("Dimensions"));
 		for (int i = 0; i < dataSource.numDimensions(); i++) {
@@ -310,6 +312,16 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					//else
 					//	System.out.println("" + i0 + " " + i1 + " " + iOthers);
 				}
+			}
+		});
+		snapshot.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+
+				DimensionedDataSource<U> snap = view.takeSnapsot(alg.construct());
+				
+				new RealImageViewer<>(alg, snap);
 			}
 		});
 		

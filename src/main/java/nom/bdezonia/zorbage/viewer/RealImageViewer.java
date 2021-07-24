@@ -136,7 +136,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		argbData = new BufferedImage(view.d0(), view.d1(), BufferedImage.TYPE_INT_ARGB);
 		
-		positionLabels = new JLabel[view.getExtraDimsCount()];
+		positionLabels = new JLabel[view.getPositionsCount()];
 		for (int i = 0; i < positionLabels.length; i++) {
 			positionLabels[i] = new JLabel();
 			//longFields[i].setColumns(10);
@@ -329,15 +329,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		BoxLayout positionsBoxLayout = new BoxLayout(positions, BoxLayout.Y_AXIS);
 		positions.setLayout(positionsBoxLayout);
 		
-		for (int i = 0; i < view.getExtraDimsCount(); i++) {
+		for (int i = 0; i < view.getPositionsCount(); i++) {
 			JPanel miniPanel = new JPanel();
 			miniPanel.setLayout(new FlowLayout());
 			JButton decrementButton = new JButton("Decrement");
 			JButton incrementButton = new JButton("Increment");
 			PlaneView<U> pView = view.getPlaneView();
-			long maxVal = pView.originalCoordDim(i);
-			positionLabels[i].setText(""+(view.getExtraDimValue(i)+1)+" / "+maxVal);
-			int pos = pView.originalCoordPos(i);
+			long maxVal = pView.getDataSourceAxisSize(i);
+			positionLabels[i].setText(""+(view.getPositionValue(i)+1)+" / "+maxVal);
+			int pos = pView.getDataSourceAxisNumber(i);
 			String axisLabel;
 			if (view.getDataSource().getAxisType(pos) == null)
 				axisLabel = "" + pos + " : ";
@@ -377,8 +377,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					view.get(i0, i1, value);
 					HighPrecRepresentation rep = (HighPrecRepresentation) value;
 					rep.toHighPrec(hpVal);
-					int c0 = view.getPlaneView().c0();
-					int c1 = view.getPlaneView().c1();
+					int c0 = view.getPlaneView().axisNumber0();
+					int c1 = view.getPlaneView().axisNumber1();
 					StringBuilder sb = new StringBuilder();
 					sb.append(dataSource.getAxisType(c0) == null ? "d0" : dataSource.getAxisType(c0));
 					sb.append(" = ");
@@ -458,11 +458,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		public void actionPerformed(ActionEvent e) {
 			// find dim pos in real world data source of extra dims pos i
 			PlaneView<U> pView = view.getPlaneView();
-			long maxVal = pView.originalCoordDim(extraPos);
-			long pos = view.getExtraDimValue(extraPos);
+			long maxVal = pView.getDataSourceAxisSize(extraPos);
+			long pos = view.getPositionValue(extraPos);
 			if (pos < maxVal - 1) {
 				pos++;
-				view.setExtraDimValue(extraPos, pos);
+				view.setPositionValue(extraPos, pos);
 				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
 				draw();
 				frame.repaint();
@@ -481,11 +481,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			PlaneView<U> pView = view.getPlaneView();
-			long maxVal = pView.originalCoordDim(extraPos);
-			long pos = view.getExtraDimValue(extraPos);
+			long maxVal = pView.getDataSourceAxisSize(extraPos);
+			long pos = view.getPositionValue(extraPos);
 			if (pos > 0) {
 				pos--;
-				view.setExtraDimValue(extraPos, pos);
+				view.setPositionValue(extraPos, pos);
 				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
 				draw();
 				frame.repaint();

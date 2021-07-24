@@ -41,6 +41,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -148,6 +149,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JPanel headerPanel = new JPanel();
 		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
 		headerPanel.add(sourceLabel);
+		headerPanel.add(new JLabel(alg.typeDescription()));
 		headerPanel.add(new JLabel(valueString));
 		
 		JPanel graphicsPanel = new JPanel();
@@ -349,7 +351,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			long[] modelCoords = new long[dataSource.numDimensions()];
 			BigDecimal[] realWorldCoords = new BigDecimal[dataSource.numDimensions()]; 
 			U value = alg.construct();
-			
+			DecimalFormat df = new DecimalFormat("0.000");
+					
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				int i0 = e.getX();
@@ -371,7 +374,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
 					if (realWorldCoords[c0].subtract(BigDecimal.valueOf(modelCoords[c0])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
 						sb.append(" (");
-						sb.append(realWorldCoords[c0]);
+						sb.append(df.format(realWorldCoords[c0]));
 						sb.append(" ");
 						sb.append(dataSource.getAxisUnit(c0) == null ? "" : dataSource.getAxisUnit(c0));
 						sb.append(")");
@@ -383,7 +386,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
 					if (realWorldCoords[c1].subtract(BigDecimal.valueOf(modelCoords[c1])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
 						sb.append(" (");
-						sb.append(realWorldCoords[c1]);
+						sb.append(df.format(realWorldCoords[c1]));
 						sb.append(" ");
 						sb.append(dataSource.getAxisUnit(c1) == null ? "" : dataSource.getAxisUnit(c1));
 						sb.append(")");

@@ -34,6 +34,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.io.StringReader;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -68,36 +69,46 @@ public class TextViewer<T extends Algebra<T, U>,U> {
 
 		U type = alg.construct();
 		
-		String result = "";
+		StringBuilder result = new StringBuilder();
 
 		if (type instanceof StringMember) {
 			StringMember value = new StringMember();
 			IndexedDataSource<StringMember> stringList = (IndexedDataSource<StringMember>) data.rawData();
 			for (long i = 0; i < stringList.size(); i++) {
-				stringList.get(0, value);
-				result = result + "\n" + value.toString();
+				stringList.get(i, value);
+				if (i != 0)
+					result.append('\n');
+				result.append(value.toString());
 			}
 		}
 		else if (type instanceof FixedStringMember) {
 			FixedStringMember value = new FixedStringMember(256);
 			IndexedDataSource<FixedStringMember> stringList = (IndexedDataSource<FixedStringMember>) data.rawData();
 			for (long i = 0; i < stringList.size(); i++) {
-				stringList.get(0, value);
-				result = result + "\n" + value.toString();
+				stringList.get(i, value);
+				if (i != 0)
+					result.append('\n');
+				result.append(value.toString());
 			}
 		}
 		else if (type instanceof CharMember) {
 			CharMember value = new CharMember();
 			IndexedDataSource<CharMember> stringList = (IndexedDataSource<CharMember>) data.rawData();
 			for (long i = 0; i < stringList.size(); i++) {
-				stringList.get(0, value);
-				result = result + value.toString();
+				stringList.get(i, value);
+				if (i != 0)
+					result.append('\n');
+				result.append(value.toString());
 			}
 		}
 		else
 			throw new IllegalArgumentException("Unknown string type "+type);
 		
-		((JTextPane)image).setText(result);
+		try {
+			((JTextPane)image).read(new StringReader(result.toString()), "text file");
+		} catch (Exception e) {
+			System.out.println("Could not read txt");
+		}
 		
 		image = new JScrollPane(image);
 		

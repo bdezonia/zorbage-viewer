@@ -74,8 +74,6 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 	private final BufferedImage argbData;
 	private final JLabel[] positionLabels;
 	private final JFrame frame;
-	private ArgbMember argb = null;
-	private RgbMember rgb = null;
 	
 	/**
 	 * 
@@ -315,7 +313,9 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			BigDecimal[] realWorldCoords = new BigDecimal[dataSource.numDimensions()]; 
 			U value = alg.construct();
 			DecimalFormat df = new DecimalFormat("0.000");
-			
+			ArgbMember argb = null;
+			RgbMember rgb = null;
+
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				argb = null;
@@ -463,10 +463,12 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 
 		U value = alg.construct();
 
+		ArgbMember argb = null;
 		if (value instanceof ArgbMember) {
 			argb = (ArgbMember) value;
 		}
 		
+		RgbMember rgb = null;
 		if (value instanceof RgbMember) {
 			rgb = (RgbMember) value;
 		}

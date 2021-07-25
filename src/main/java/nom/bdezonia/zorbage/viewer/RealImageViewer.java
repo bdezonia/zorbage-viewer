@@ -87,20 +87,20 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private final JFrame frame;
 	
 	/**
-	 * 
-	 * @param alg
-	 * @param dataSource
+	 * Make an interactive graphical viewer for a real data source.
+	 * @param alg The algebra that matches the type of data to display
+	 * @param dataSource The data to display
 	 */
 	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource) {
 		this(alg, dataSource, 0, 1);
 	}
 
 	/**
-	 * 
-	 * @param alg
-	 * @param dataSource
-	 * @param axisNumber0
-	 * @param axisNumber1
+	 * Make an interactive graphical viewer for a real data source.
+	 * @param alg The algebra that matches the type of data to display
+	 * @param dataSource The data to display
+	 * @param axisNumber0 The first axis number defining the planes to view (x, y, z, c, t, etc.)
+	 * @param axisNumber1 The second axis number defining the planes to view (x, y, z, c, t, etc.)
 	 */
 	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource, int axisNumber0, int axisNumber1) {
 
@@ -436,8 +436,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	}
 	
 	/**
+	 * Assigns a new color table through which the viewer displays plane data.
 	 * 
-	 * @param colorTable
+	 * @param colorTable The ramp of argb colors.
 	 */
 	public void setColorTable(int[] colorTable) {
 		this.colorTable = colorTable;
@@ -445,6 +446,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		frame.repaint();
 	}
 
+	// code to increment a slider and react
+	
 	private class Incrementer implements ActionListener {
 		
 		private final int extraPos;
@@ -469,6 +472,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
+	// code to decrement a slider and react
+	
 	private class Decrementer implements ActionListener {
 		
 		private final int extraPos;
@@ -492,6 +497,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
+	// calcs the pixel type's value bounds
+	
 	private <V extends Algebra<V,U> & Bounded<U>>
 		void pixelTypeBounds(T alg, U min, U max)
 	{
@@ -507,6 +514,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
+	// calcs the data source's actual value bounds
+	
 	private <V extends Algebra<V,U> & Ordered<U>>
 		void pixelDataBounds(T alg, IndexedDataSource<U> data, U min, U max)
 	{
@@ -521,6 +530,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
+	// calc the display range by either data bounds or type bounds
+	
 	private void calcMinMax() {
 
 		if (preferDataRange) {
@@ -534,6 +545,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				pixelDataBounds(alg, view.getDataSource().rawData(), min, max);
 		}
 	}
+	
+	// draw the data
 	
 	private void draw() {
 

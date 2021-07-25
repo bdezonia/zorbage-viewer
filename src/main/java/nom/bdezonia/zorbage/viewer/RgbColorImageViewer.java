@@ -76,20 +76,20 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 	private final JFrame frame;
 	
 	/**
-	 * 
-	 * @param alg
-	 * @param dataSource
+	 * Make an interactive graphical viewer for a a/rgb data source.
+	 * @param alg The algebra that matches the type of data to display
+	 * @param dataSource The data to display
 	 */
 	public RgbColorImageViewer(T alg, DimensionedDataSource<U> dataSource) {
 		this(alg, dataSource, 0, 1);
 	}
 
 	/**
-	 * 
-	 * @param alg
-	 * @param dataSource
-	 * @param axisNumber0
-	 * @param axisNumber1
+	 * Make an interactive graphical viewer for an a/rgb data source.
+	 * @param alg The algebra that matches the type of data to display
+	 * @param dataSource The data to display
+	 * @param axisNumber0 The first axis number defining the planes to view (x, y, z, c, t, etc.)
+	 * @param axisNumber1 The second axis number defining the planes to view (x, y, z, c, t, etc.)
 	 */
 	public RgbColorImageViewer(T alg, DimensionedDataSource<U> dataSource, int axisNumber0, int axisNumber1) {
 
@@ -410,6 +410,8 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		frame.repaint();
 	}
 	
+	// code to increment a slider and react
+	
 	private class Incrementer implements ActionListener {
 		
 		private final int extraPos;
@@ -434,6 +436,8 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
+	// code to decrement a slider and react
+	
 	private class Decrementer implements ActionListener {
 		
 		private final int extraPos;
@@ -456,6 +460,8 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			}
 		}
 	}
+	
+	// draw the data
 	
 	private void draw() {
 

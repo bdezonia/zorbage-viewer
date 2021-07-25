@@ -331,10 +331,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		for (int i = 0; i < view.getPositionsCount(); i++) {
 			JPanel miniPanel = new JPanel();
 			miniPanel.setLayout(new FlowLayout());
-			JButton decrementButton = new JButton("Decrement");
-			JButton incrementButton = new JButton("Increment");
-			JButton homeButton = new JButton("Home");
-			JButton endButton = new JButton("End");
+			JButton homeButton = new JButton("<<");
+			JButton decrementButton = new JButton("<");
+			JButton incrementButton = new JButton(">");
+			JButton endButton = new JButton(">>");
 			PlaneView<U> pView = view.getPlaneView();
 			long maxVal = pView.getDataSourceAxisSize(i);
 			positionLabels[i].setText(""+(view.getPositionValue(i)+1)+" / "+maxVal);

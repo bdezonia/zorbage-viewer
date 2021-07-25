@@ -31,6 +31,7 @@
 package nom.bdezonia.zorbage.viewer;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -40,6 +41,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -70,8 +72,10 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 	private final T alg;
 	private final WindowView<U> view;
 	private final BufferedImage argbData;
-	private JLabel[] positionLabels;
+	private final JLabel[] positionLabels;
 	private final JFrame frame;
+	private ArgbMember argb = null;
+	private RgbMember rgb = null;
 	
 	/**
 	 * 
@@ -102,7 +106,20 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		if (source == null)
 			source = "<unknown source>";
 		
-		frame = new JFrame(name + " " + source);
+		String dataType = dataSource.getValueType();
+		String dataUnit = dataSource.getValueUnit();
+
+		String title = "Zorbage Viewer - "+name;
+	
+		String valueInfo = "<unknown type>";
+		if (dataType != null)
+			valueInfo = dataType;
+		String valueUnit = "(<unknown unit>)";
+		if (dataUnit != null)
+			valueUnit = " (" + dataUnit + ")";
+		String valueString = valueInfo + valueUnit;
+		
+		frame = new JFrame(title);
 		
 		frame.setLayout(new BorderLayout());
 		
@@ -112,6 +129,16 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		for (int i = 0; i < positionLabels.length; i++) {
 			positionLabels[i] = new JLabel();
 		}
+		
+		JLabel sourceLabel = new JLabel("Source: "+source);
+		sourceLabel.setBackground(Color.WHITE);
+		sourceLabel.setOpaque(true);
+
+		JPanel headerPanel = new JPanel();
+		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+		headerPanel.add(sourceLabel);
+		headerPanel.add(new JLabel(alg.typeDescription()));
+		headerPanel.add(new JLabel(valueString));
 		
 		JPanel graphicsPanel = new JPanel();
 		JLabel image = new JLabel(new ImageIcon(argbData));
@@ -126,11 +153,13 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		JButton panUp = new JButton("Up");
 		JButton panDown = new JButton("Down");
 		JButton newView = new JButton("New View");
+		JButton snapshot = new JButton("Snapshot");
 		buttonPanel.add(panLeft);
 		buttonPanel.add(panRight);
 		buttonPanel.add(panUp);
 		buttonPanel.add(panDown);
 		buttonPanel.add(newView);
+		buttonPanel.add(snapshot);
 		buttonPanel.add(new JSeparator());
 		buttonPanel.add(new JLabel("Dimensions"));
 		for (int i = 0; i < dataSource.numDimensions(); i++) {
@@ -232,10 +261,20 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 					}
 					// make sure only two dims were chosen
 					if (i0 != -1 && i1 != -1 && iOthers == -1)
-						new RgbColorImageViewer<>(alg, dataSource, i0, i1);
+						new RealImageViewer<>(alg, dataSource, i0, i1);
 					//else
 					//	System.out.println("" + i0 + " " + i1 + " " + iOthers);
 				}
+			}
+		});
+		snapshot.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+
+				DimensionedDataSource<U> snap = view.takeSnapsot(alg.construct());
+				
+				new RealImageViewer<>(alg, snap);
 			}
 		});
 		
@@ -258,53 +297,65 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			else
 				axisLabel = view.getDataSource().getAxisType(pos) + " : ";
 			miniPanel.add(new JLabel(axisLabel));
-			miniPanel.add(decrementButton);
 			miniPanel.add(positionLabels[i]);
+			miniPanel.add(decrementButton);
 			miniPanel.add(incrementButton);
 			positions.add(miniPanel);
 			decrementButton.addActionListener(new Decrementer(i));
 			incrementButton.addActionListener(new Incrementer(i));
 		}
-		
-		JPanel statusPanel = new JPanel(); 
+
 		JLabel readout = new JLabel();
+		readout.setBackground(Color.WHITE);
+		readout.setOpaque(true);
+		readout.setText("<placeholder>");
 		scrollPane.addMouseMotionListener(new MouseMotionListener() {
-			
+
 			long[] modelCoords = new long[dataSource.numDimensions()];
 			BigDecimal[] realWorldCoords = new BigDecimal[dataSource.numDimensions()]; 
 			U value = alg.construct();
+			DecimalFormat df = new DecimalFormat("0.000");
 			
 			@Override
 			public void mouseMoved(MouseEvent e) {
+				argb = null;
+				if (value instanceof ArgbMember)
+					argb = (ArgbMember) value;
+				rgb = null;
+				if (value instanceof RgbMember)
+					rgb = (RgbMember) value;
 				int i0 = e.getX();
 				int i1 = e.getY();
 				if (i0 >= 0 && i0 < view.d0() && i1 >= 0 && i1 < view.d1()) {
-					int a, r, g, b;
-					ArgbMember argbMem = null;
-					if (value instanceof ArgbMember)
-						argbMem = (ArgbMember) value;
-					RgbMember rgbMem = null;
-					if (value instanceof RgbMember)
-						rgbMem = (RgbMember) value;
 					view.getModelCoords(i0, i1, modelCoords);
 					dataSource.getCoordinateSpace().project(modelCoords, realWorldCoords);
 					long dataU = view.origin0() + i0;
 					long dataV = view.origin1() + i1;
 					view.get(i0, i1, value);
-					if (argbMem != null) {
-						a = argbMem.a();
-						r = argbMem.r();
-						g = argbMem.g();
-						b = argbMem.b();
+					String componentString = "";
+					if (argb != null) {
+						StringBuilder b = new StringBuilder();
+						b.append('(');
+						b.append(argb.a());
+						b.append(',');
+						b.append(argb.r());
+						b.append(',');
+						b.append(argb.g());
+						b.append(',');
+						b.append(argb.b());
+						b.append(')');
+						componentString = b.toString();
 					}
-					else if (rgbMem != null) {
-						a = 255;
-						r = rgbMem.r();
-						g = rgbMem.g();
-						b = rgbMem.b();
-					}
-					else {
-						throw new IllegalArgumentException("bad error: color is not ARGB or RGB");
+					if (rgb != null) {
+						StringBuilder b = new StringBuilder();
+						b.append('(');
+						b.append(rgb.r());
+						b.append(',');
+						b.append(rgb.g());
+						b.append(',');
+						b.append(rgb.b());
+						b.append(')');
+						componentString = b.toString();
 					}
 					int c0 = view.getPlaneView().axisNumber0();
 					int c1 = view.getPlaneView().axisNumber1();
@@ -313,9 +364,9 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 					sb.append(" = ");
 					sb.append(dataU);
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
-					if (realWorldCoords[c0].remainder(BigDecimal.valueOf(modelCoords[c0])).compareTo(BigDecimal.valueOf(0.0000000001)) < 0) {
+					if (realWorldCoords[c0].subtract(BigDecimal.valueOf(modelCoords[c0])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
 						sb.append(" (");
-						sb.append(realWorldCoords[c0]);
+						sb.append(df.format(realWorldCoords[c0]));
 						sb.append(" ");
 						sb.append(dataSource.getAxisUnit(c0) == null ? "" : dataSource.getAxisUnit(c0));
 						sb.append(")");
@@ -325,23 +376,15 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 					sb.append("= ");
 					sb.append(dataV);
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
-					if (realWorldCoords[c1].remainder(BigDecimal.valueOf(modelCoords[c1])).compareTo(BigDecimal.valueOf(0.0000000001)) < 0) {
+					if (realWorldCoords[c1].subtract(BigDecimal.valueOf(modelCoords[c1])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
 						sb.append(" (");
-						sb.append(realWorldCoords[c1]);
+						sb.append(df.format(realWorldCoords[c1]));
 						sb.append(" ");
 						sb.append(dataSource.getAxisUnit(c1) == null ? "" : dataSource.getAxisUnit(c1));
 						sb.append(")");
 					}
 					sb.append(", value = ");
-					sb.append("(");
-					sb.append(a);
-					sb.append(",");
-					sb.append(r);
-					sb.append(",");
-					sb.append(g);
-					sb.append(",");
-					sb.append(b);
-					sb.append(")");
+					sb.append(componentString);
 					readout.setText(sb.toString());
 				}
 			}
@@ -350,16 +393,15 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			public void mouseDragged(MouseEvent e) {
 			}
 		});
-		statusPanel.add(readout, BorderLayout.CENTER);
-		
-		JPanel controlPanel = new JPanel();
-		controlPanel.setLayout(new BorderLayout());
-		controlPanel.add(positions, BorderLayout.CENTER);
+		JPanel sliderPanel = new JPanel();
+		sliderPanel.setLayout(new BorderLayout());
+		sliderPanel.add(readout, BorderLayout.NORTH);
+		sliderPanel.add(positions, BorderLayout.CENTER);
 
-		frame.add(statusPanel, BorderLayout.NORTH);
+		frame.add(headerPanel, BorderLayout.NORTH);
 		frame.add(graphicsPanel, BorderLayout.CENTER);
 		frame.add(buttonPanel, BorderLayout.EAST);
-		frame.add(controlPanel, BorderLayout.SOUTH);
+		frame.add(sliderPanel, BorderLayout.SOUTH);
 		
 		frame.pack();
 
@@ -418,7 +460,16 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 	}
 	
 	private void draw() {
+
 		U value = alg.construct();
+
+		if (value instanceof ArgbMember) {
+			argb = (ArgbMember) value;
+		}
+		
+		if (value instanceof RgbMember) {
+			rgb = (RgbMember) value;
+		}
 		
 		// Safe cast as img is of correct type 
 		
@@ -427,30 +478,26 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		// Conveniently, the buffer already contains the data array
 		int[] arrayInt = buffer.getData();
 
-		int v;
-		
 		for (int y = 0; y < view.d1(); y++) {
 			for (int x = 0; x < view.d0(); x++) {
 
 				view.get(x, y, value);
+
+				int color = 0;
 				
-				if (value instanceof RgbMember) {
-					RgbMember rgb = (RgbMember) value;
-					v = RgbUtils.argb(255, rgb.r(), rgb.g(), rgb.b());
+				if (argb != null) {
+					color = RgbUtils.argb(argb.a(), argb.r(), argb.g(), argb.b());
 				}
-				else if (value instanceof ArgbMember) {
-					ArgbMember argb = (ArgbMember) value;
-					v = RgbUtils.argb(argb.a(), argb.r(), argb.g(), argb.b());
-				}
-				else {
-					throw new IllegalArgumentException("unknown color type");
+				
+				if (rgb != null) {
+					color = RgbUtils.argb(255, rgb.r(), rgb.g(), rgb.b());
 				}
 
-				// put a color from the color table into the image at pos (x,y)
+				// put the color into the image at pos (x,y)
 				
 				int bufferPos = y * view.d0() + x;
 				
-				arrayInt[bufferPos] = v;
+				arrayInt[bufferPos] = color;
 			}
 		}
 	}

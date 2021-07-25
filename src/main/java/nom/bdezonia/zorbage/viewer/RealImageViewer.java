@@ -99,13 +99,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	 * 
 	 * @param alg
 	 * @param dataSource
-	 * @param c0
-	 * @param c1
+	 * @param axisNumber0
+	 * @param axisNumber1
 	 */
-	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource, int c0, int c1) {
+	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource, int axisNumber0, int axisNumber1) {
 
 		this.alg = alg;
-		this.view = new WindowView<>(dataSource, 512, 512, c0, c1);
+		this.view = new WindowView<>(dataSource, 512, 512, axisNumber0, axisNumber1);
 		this.min = alg.construct();
 		this.max = alg.construct();
 		
@@ -139,7 +139,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		positionLabels = new JLabel[view.getPositionsCount()];
 		for (int i = 0; i < positionLabels.length; i++) {
 			positionLabels[i] = new JLabel();
-			//longFields[i].setColumns(10);
 		}
 		
 		JLabel sourceLabel = new JLabel("Source: "+source);
@@ -377,30 +376,30 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					view.get(i0, i1, value);
 					HighPrecRepresentation rep = (HighPrecRepresentation) value;
 					rep.toHighPrec(hpVal);
-					int c0 = view.getPlaneView().axisNumber0();
-					int c1 = view.getPlaneView().axisNumber1();
+					int axisNumber0 = view.getPlaneView().axisNumber0();
+					int axisNumber1 = view.getPlaneView().axisNumber1();
 					StringBuilder sb = new StringBuilder();
-					sb.append(dataSource.getAxisType(c0) == null ? "d0" : dataSource.getAxisType(c0));
+					sb.append(dataSource.getAxisType(axisNumber0) == null ? "d0" : dataSource.getAxisType(axisNumber1));
 					sb.append(" = ");
 					sb.append(dataU);
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
-					if (realWorldCoords[c0].subtract(BigDecimal.valueOf(modelCoords[c0])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
+					if (realWorldCoords[axisNumber0].subtract(BigDecimal.valueOf(modelCoords[axisNumber0])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
 						sb.append(" (");
-						sb.append(df.format(realWorldCoords[c0]));
+						sb.append(df.format(realWorldCoords[axisNumber0]));
 						sb.append(" ");
-						sb.append(dataSource.getAxisUnit(c0) == null ? "" : dataSource.getAxisUnit(c0));
+						sb.append(dataSource.getAxisUnit(axisNumber0) == null ? "" : dataSource.getAxisUnit(axisNumber0));
 						sb.append(")");
 					}
 					sb.append(", ");
-					sb.append(dataSource.getAxisType(c1) == null ? "d1" : dataSource.getAxisType(c1));
+					sb.append(dataSource.getAxisType(axisNumber1) == null ? "d1" : dataSource.getAxisType(axisNumber1));
 					sb.append("= ");
 					sb.append(dataV);
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
-					if (realWorldCoords[c1].subtract(BigDecimal.valueOf(modelCoords[c1])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
+					if (realWorldCoords[axisNumber1].subtract(BigDecimal.valueOf(modelCoords[axisNumber1])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
 						sb.append(" (");
-						sb.append(df.format(realWorldCoords[c1]));
+						sb.append(df.format(realWorldCoords[axisNumber1]));
 						sb.append(" ");
-						sb.append(dataSource.getAxisUnit(c1) == null ? "" : dataSource.getAxisUnit(c1));
+						sb.append(dataSource.getAxisUnit(axisNumber1) == null ? "" : dataSource.getAxisUnit(axisNumber1));
 						sb.append(")");
 					}
 					sb.append(", value = ");

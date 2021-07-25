@@ -151,7 +151,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				// GDAL was not found on system or failed to init?
 				if (GDAL_STATUS != 0) {
 					JOptionPane.showMessageDialog(frame,
-						    "GDAL was not found on the system. Please install it.",
+						    "GDAL was not found on the system. You must install and/or configure it if you want GDAL functionality in this application.",
 						    "WARNING",
 						    JOptionPane.WARNING_MESSAGE);
 				}

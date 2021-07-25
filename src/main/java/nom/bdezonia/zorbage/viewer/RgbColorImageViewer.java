@@ -285,6 +285,8 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			miniPanel.setLayout(new FlowLayout());
 			JButton decrementButton = new JButton("Decrement");
 			JButton incrementButton = new JButton("Increment");
+			JButton homeButton = new JButton("Home");
+			JButton endButton = new JButton("End");
 			PlaneView<U> pView = view.getPlaneView();
 			long maxVal = pView.getDataSourceAxisSize(i);
 			positionLabels[i].setText(""+(view.getPositionValue(i)+1)+" / "+maxVal);
@@ -298,9 +300,13 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			miniPanel.add(positionLabels[i]);
 			miniPanel.add(decrementButton);
 			miniPanel.add(incrementButton);
+			miniPanel.add(homeButton);
+			miniPanel.add(endButton);
 			positions.add(miniPanel);
 			decrementButton.addActionListener(new Decrementer(i));
 			incrementButton.addActionListener(new Incrementer(i));
+			homeButton.addActionListener(new Home(i));
+			endButton.addActionListener(new End(i));
 		}
 
 		JLabel readout = new JLabel();
@@ -458,6 +464,48 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 				draw();
 				frame.repaint();
 			}
+		}
+	}
+	
+	// code to set a slider to zero and react
+	
+	private class Home implements ActionListener {
+		
+		private final int extraPos;
+		
+		public Home(int extraNum) {
+			extraPos = extraNum;
+		}
+		
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			PlaneView<U> pView = view.getPlaneView();
+			long maxVal = pView.getDataSourceAxisSize(extraPos);
+			view.setPositionValue(extraPos, 0);
+			positionLabels[extraPos].setText(""+(1)+" / "+maxVal);
+			draw();
+			frame.repaint();
+		}
+	}
+	
+	// code to set a slider to its max value and react
+	
+	private class End implements ActionListener {
+		
+		private final int extraPos;
+		
+		public End(int extraNum) {
+			extraPos = extraNum;
+		}
+		
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			PlaneView<U> pView = view.getPlaneView();
+			long maxVal = pView.getDataSourceAxisSize(extraPos);
+			view.setPositionValue(extraPos, maxVal-1);
+			positionLabels[extraPos].setText(""+(maxVal)+" / "+maxVal);
+			draw();
+			frame.repaint();
 		}
 	}
 	

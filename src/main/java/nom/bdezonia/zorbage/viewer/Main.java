@@ -162,9 +162,12 @@ public class Main<T extends Algebra<T,U>, U> {
 					
 					File f = chooser.getSelectedFile();
 	
-					DataBundle bundle = Gdal.loadAllDatasets(f.getAbsolutePath());
+					if (f != null) {
+						
+						DataBundle bundle = Gdal.loadAllDatasets(f.getAbsolutePath());
 					
-					displayAll(bundle);
+						displayAll(bundle);
+					}
 				}
 			}
 		});
@@ -196,9 +199,12 @@ public class Main<T extends Algebra<T,U>, U> {
 				
 				File f = chooser.getSelectedFile();
 
-				DataBundle bundle = NetCDF.loadAllDatasets(f.getAbsolutePath());
+				if (f != null) {
 				
-				displayAll(bundle);
+					DataBundle bundle = NetCDF.loadAllDatasets(f.getAbsolutePath());
+				
+					displayAll(bundle);
+				}
 			}
 		});
 
@@ -230,9 +236,12 @@ public class Main<T extends Algebra<T,U>, U> {
 				
 				File f = chooser.getSelectedFile();
 
-				DataBundle bundle = Scifio.loadAllDatasets(f.getAbsolutePath());
+				if (f != null) {
+					
+					DataBundle bundle = Scifio.loadAllDatasets(f.getAbsolutePath());
 				
-				displayAll(bundle);
+					displayAll(bundle);
+				}
 			}
 		});
 
@@ -264,9 +273,12 @@ public class Main<T extends Algebra<T,U>, U> {
 				
 				File f = chooser.getSelectedFile();
 
-				DataBundle bundle = Nifti.open(f.getAbsolutePath());
+				if (f != null) {
 				
-				displayAll(bundle);
+					DataBundle bundle = Nifti.open(f.getAbsolutePath());
+				
+					displayAll(bundle);
+				}
 			}
 		});
 

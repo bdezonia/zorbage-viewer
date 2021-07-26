@@ -85,6 +85,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private final U max;
 	private final JLabel[] positionLabels;
 	private final JFrame frame;
+	private int scale = 1;
 	
 	/**
 	 * Make an interactive graphical viewer for a real data source.
@@ -163,6 +164,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton panRight = new JButton("Right");
 		JButton panUp = new JButton("Up");
 		JButton panDown = new JButton("Down");
+		JButton panReset = new JButton("Reset");
 		JButton loadLut = new JButton("Load LUT");
 		JButton resetLut = new JButton("Reset LUT");
 		JButton newView = new JButton("New View");
@@ -173,6 +175,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(panRight);
 		buttonPanel.add(panUp);
 		buttonPanel.add(panDown);
+		buttonPanel.add(panReset);
 		buttonPanel.add(loadLut);
 		buttonPanel.add(resetLut);
 		buttonPanel.add(newView);
@@ -200,7 +203,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				view.moveWindowLeft(75);
+				if (view.origin0() <= 0) return;
+				int amount = 75 / scale;
+				if (amount == 0) amount = 1;
+				view.moveWindowLeft(amount);
 				draw();
 				frame.repaint();
 			}
@@ -209,7 +215,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				view.moveWindowRight(75);
+				if (view.origin0() >= view.getDataSource().dimension(axisNumber0) - view.d0()) return;
+				int amount = 75 / scale;
+				if (amount == 0) amount = 1;
+				view.moveWindowRight(amount);
 				draw();
 				frame.repaint();
 			}
@@ -218,7 +227,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				view.moveWindowUp(75);
+				if (view.origin1() <= 0) return;
+				int amount = 75 / scale;
+				if (amount == 0) amount = 1;
+				view.moveWindowUp(amount);
 				draw();
 				frame.repaint();
 			}
@@ -227,7 +239,20 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				view.moveWindowDown(75);
+				if (view.origin1() >= view.getDataSource().dimension(axisNumber1) - view.d1()) return;
+				int amount = 75 / scale;
+				if (amount == 0) amount = 1;
+				view.moveWindowDown(amount);
+				draw();
+				frame.repaint();
+			}
+		});
+		panReset.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				view.moveWindowLeft(view.origin0());
+				view.moveWindowUp(view.origin1());
 				draw();
 				frame.repaint();
 			}
@@ -372,8 +397,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				boolean troubleAxis;
-				int i0 = e.getX();
-				int i1 = e.getY();
+				int i0 = e.getX() / scale;
+				int i1 = e.getY() / scale;
 				if (i0 >= 0 && i0 < view.d0() && i1 >= 0 && i1 < view.d1()) {
 					view.getModelCoords(i0, i1, modelCoords);
 					dataSource.getCoordinateSpace().project(modelCoords, realWorldCoords);
@@ -426,15 +451,65 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void mouseDragged(MouseEvent e) {
 			}
 		});
+		
+		JPanel zoomPanel = new JPanel();
+		BoxLayout buttonBoxLayoutZ = new BoxLayout(zoomPanel, BoxLayout.Y_AXIS);
+		JLabel scaleLabel = new JLabel(""+scale+"X");
+		JButton incZoom = new JButton("Zoom In");
+		JButton decZoom = new JButton("Zoom Out");
+		JButton resetZoom = new JButton("Reset");
+		incZoom.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (scale < Math.min(view.d0(), view.d1())) {
+					scale++;
+					scaleLabel.setText(""+scale+"X");
+					draw();
+					//frame.invalidate();
+					frame.repaint();
+				}
+			}
+		});
+		decZoom.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (scale > 1) {
+					scale--;
+					scaleLabel.setText(""+scale+"X");
+					draw();
+					frame.repaint();
+				}
+			}
+		});
+		resetZoom.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				scale = 1;
+				scaleLabel.setText(""+scale+"X");
+				draw();
+				frame.repaint();
+			}
+		});
+		zoomPanel.setLayout(buttonBoxLayoutZ);
+		zoomPanel.add(new JLabel("Scale:"));
+		zoomPanel.add(scaleLabel);
+		zoomPanel.add(incZoom);
+		zoomPanel.add(decZoom);
+		zoomPanel.add(resetZoom);
+
 		JPanel sliderPanel = new JPanel();
 		sliderPanel.setLayout(new BorderLayout());
 		sliderPanel.add(readout, BorderLayout.NORTH);
 		sliderPanel.add(positions, BorderLayout.CENTER);
 
-		frame.add(headerPanel, BorderLayout.NORTH);
 		frame.add(graphicsPanel, BorderLayout.CENTER);
-		frame.add(buttonPanel, BorderLayout.EAST);
+		frame.add(headerPanel, BorderLayout.NORTH);
 		frame.add(sliderPanel, BorderLayout.SOUTH);
+		frame.add(buttonPanel, BorderLayout.EAST);
+		frame.add(zoomPanel, BorderLayout.WEST);
 		
 		frame.pack();
 
@@ -630,10 +705,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			throw new IllegalArgumentException("this algo requires high precision support from type");
 		}
 
-		for (int y = 0; y < view.d1(); y++) {
-			for (int x = 0; x < view.d0(); x++) {
+		for (int model1 = 0; model1 < view.d1() / scale; model1++) {
+			for (int model0 = 0; model0 < view.d0() / scale; model0++) {
 
-				view.get(x, y, value);
+				view.get(model0, model1, value);
 				
 				valHi.toHighPrec(hpPix);
 
@@ -656,14 +731,31 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 				// now scale 0-1 to the range of the size of the current color table
 				
-				int intensity =
-						BigDecimal.valueOf(colorTable.length-1).multiply(ratio).add(BigDecimalUtils.ONE_HALF).intValue();
+				BigDecimal colorTableSize = BigDecimal.valueOf(colorTable.length-1);
+				BigDecimal colorTableIndex = colorTableSize.multiply(ratio);
+				colorTableIndex = colorTableIndex.add(BigDecimalUtils.ONE_HALF);  // force HALF EVEN rounding
+				int intensity = colorTableIndex.intValue();
 
-				// put a color from the color table into the image at pos (x,y)
+				// put a color from the color table into the image at (pssibly many) correct positions
+
+				int view0 = model0 * scale;
+				int view1 = model1 * scale;
 				
-				int bufferPos = y * view.d0() + x;
-				
-				arrayInt[bufferPos] = colorTable[intensity];
+				for (int dy = 0; dy < scale; dy++) {
+					
+					if ((view1 + dy) > view.d1()) continue;
+						
+					for (int dx = 0; dx < scale; dx++) {
+
+						if ((view0 + dx) > view.d0()) continue;
+
+						int bufferPos = (view1 + dy) * view.d0() + (view0 + dx);
+						
+						System.out.println("setting pixel "+(view0+dx)+","+(view1+dy));
+						
+						arrayInt[bufferPos] = colorTable[intensity];
+					}
+				}
 			}
 		}
 	}

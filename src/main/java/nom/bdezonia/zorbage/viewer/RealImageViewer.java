@@ -59,6 +59,8 @@ import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Bounded;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
+import nom.bdezonia.zorbage.algebra.Infinite;
+import nom.bdezonia.zorbage.algebra.NaN;
 import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
@@ -86,6 +88,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private final JLabel[] positionLabels;
 	private final JFrame frame;
 	private int scale = 1;
+	private NaN<U> nanTester = null;
+	private Infinite<U> infTester = null;
+	private Ordered<U> signumTester = null;
+
 	
 	/**
 	 * Make an interactive graphical viewer for a real data source.
@@ -109,7 +115,20 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		this.view = new WindowView<>(dataSource, 512, 512, axisNumber0, axisNumber1);
 		this.min = alg.construct();
 		this.max = alg.construct();
-		
+
+		if (alg instanceof NaN) {
+			this.nanTester = (NaN<U>) alg;
+		}
+		if (alg instanceof Infinite) {
+			this.infTester = (Infinite<U>) alg;
+		}
+		if (alg instanceof Ordered) {
+			this.signumTester = (Ordered<U>) alg;
+		}
+		else {
+			throw new IllegalArgumentException("Weird error: very strange real number type that is not ordered!");
+		}
+
 		String name = dataSource.getName();
 		if (name == null)
 			name = "<unknown name>";
@@ -397,6 +416,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				boolean troubleAxis;
+				String alternateValue = null;
 				int i0 = e.getX() / scale;
 				int i1 = e.getY() / scale;
 				if (i0 >= 0 && i0 < view.d0() && i1 >= 0 && i1 < view.d1()) {
@@ -405,8 +425,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					long dataU = view.origin0() + i0;
 					long dataV = view.origin1() + i1;
 					view.get(i0, i1, value);
-					HighPrecRepresentation rep = (HighPrecRepresentation) value;
-					rep.toHighPrec(hpVal);
+					if ((nanTester != null) && nanTester.isNaN().call(value)) {
+						alternateValue = "nan";
+					}
+					else if ((infTester != null) && infTester.isInfinite().call(value)) {
+						
+						if (signumTester.signum().call(value) <= 0)
+							alternateValue = "-Inf";
+						else
+							alternateValue = "+Inf";
+					}
+					else {
+						alternateValue = null;
+						HighPrecRepresentation rep = (HighPrecRepresentation) value;
+						rep.toHighPrec(hpVal);
+					}
 					int axisNumber0 = view.getPlaneView().axisNumber0();
 					int axisNumber1 = view.getPlaneView().axisNumber1();
 					StringBuilder sb = new StringBuilder();
@@ -440,7 +473,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						}
 					}
 					sb.append(", value = ");
-					sb.append(hpVal);
+					if (alternateValue != null)
+						sb.append(alternateValue);
+					else
+						sb.append(hpVal);
 					sb.append(" ");
 					sb.append(dataSource.getValueUnit() == null ? "" : dataSource.getValueUnit());
 					readout.setText(sb.toString());
@@ -676,12 +712,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	}
 	
 	// draw the data
-	
+
 	private void draw() {
 
 		U value = alg.construct();
 		
-		boolean isHighPrec = value instanceof HighPrecRepresentation;
+		HighPrecRepresentation valHi = null;
+		if (value instanceof HighPrecRepresentation) {
+			valHi = (HighPrecRepresentation) value;
+		}
 		
 		// Safe cast as img is of correct type 
 		
@@ -693,9 +732,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		HighPrecisionMember hpPix = new HighPrecisionMember();
 		HighPrecisionMember hpMin;
 		HighPrecisionMember hpMax;
-		HighPrecRepresentation valHi;
-		if (isHighPrec) {
-			valHi = (HighPrecRepresentation) value;
+		if (valHi != null) {
 			hpMin = new HighPrecisionMember();
 			hpMax = new HighPrecisionMember();
 			((HighPrecRepresentation) min).toHighPrec(hpMin);
@@ -709,13 +746,32 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			for (int model0 = 0; model0 < view.d0() / scale; model0++) {
 
 				view.get(model0, model1, value);
-				
-				valHi.toHighPrec(hpPix);
-
+		
 				// scale the current value to an intensity from 0 to 1.
-				
-				BigDecimal numer = hpPix.v().subtract(hpMin.v());
-				BigDecimal denom = hpMax.v().subtract(hpMin.v());
+				//   Note that HP values can't represent NaNs and Infs so we must handle
+
+				BigDecimal numer;
+				BigDecimal denom;
+
+				if ((nanTester != null) && nanTester.isNaN().call(value)) {
+					numer = BigDecimal.ZERO;
+					denom = BigDecimal.ONE;
+				}
+				else if ((infTester != null) && infTester.isInfinite().call(value)) {
+					
+					if (signumTester.signum().call(value) <= 0)
+						numer = BigDecimal.ZERO;
+					else
+						numer = BigDecimal.ONE;
+					numer = BigDecimal.ZERO;
+					denom = BigDecimal.ONE;
+				}
+				else {
+					
+					valHi.toHighPrec(hpPix);
+					numer = hpPix.v().subtract(hpMin.v());
+					denom = hpMax.v().subtract(hpMin.v());
+				}
 				
 				// image with zero display range
 				if (denom.compareTo(BigDecimal.ZERO) == 0)
@@ -750,8 +806,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						if ((view0 + dx) > view.d0()) continue;
 
 						int bufferPos = (view1 + dy) * view.d0() + (view0 + dx);
-						
-						System.out.println("setting pixel "+(view0+dx)+","+(view1+dy));
 						
 						arrayInt[bufferPos] = colorTable[intensity];
 					}

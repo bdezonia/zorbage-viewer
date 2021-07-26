@@ -763,7 +763,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						numer = BigDecimal.ZERO;
 					else
 						numer = BigDecimal.ONE;
-					numer = BigDecimal.ZERO;
 					denom = BigDecimal.ONE;
 				}
 				else {

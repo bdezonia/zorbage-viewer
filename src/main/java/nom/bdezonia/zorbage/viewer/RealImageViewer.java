@@ -829,31 +829,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				int newScale = scaleDenom - 2;
 				long origXExtent = getVirtualWidth();
 				long origYExtent = getVirtualHeight();
-				long newXExtent = origXExtent * origScale / newScale;
-				long newYExtent = origYExtent * origScale / newScale;
-				long modelChangeForOriginX = (origXExtent - newXExtent) / 2;
-				long modelChangeForOriginY = (origYExtent - newYExtent) / 2;
+				long newXExtent = origXExtent * newScale / origScale;
+				long newYExtent = origYExtent * newScale / origScale;
+				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
+				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
 				originX += modelChangeForOriginX;
 				originY += modelChangeForOriginY;
 				scaleDenom = newScale;
 				changed = true;
 			}
-			/*
-			else if (scaleNumer == 1 && maxScale >= 3) {
-				int origScale = 1;
-				int newScale = 3;
-				long origXExtent = getVirtualWidth();
-				long origYExtent = getVirtualHeight();
-				long newXExtent = origXExtent * origScale / newScale;
-				long newYExtent = origYExtent * origScale / newScale;
-				long modelChangeForOriginX = (newXExtent - origXExtent) / 2;
-				long modelChangeForOriginY = (newYExtent - origYExtent) / 2;
-				originX -= modelChangeForOriginX;
-				originY -= modelChangeForOriginY;
-				scaleNumer = newScale;
-				changed = true;
-			}
-			*/
 			else if (scaleNumer + 2 <= maxScale) {
 				int origScale = scaleNumer;
 				int newScale = scaleNumer + 2;
@@ -861,8 +845,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				long origYExtent = getVirtualHeight();
 				long newXExtent = origXExtent * origScale / newScale;
 				long newYExtent = origYExtent * origScale / newScale;
-				long modelChangeForOriginX = (origXExtent - newXExtent) / 2;
-				long modelChangeForOriginY = (origYExtent - newYExtent) / 2;
+				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
+				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
 				originX += modelChangeForOriginX;
 				originY += modelChangeForOriginY;
 				scaleNumer = newScale;
@@ -884,40 +868,24 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				long origYExtent = getVirtualHeight();
 				long newXExtent = origXExtent * origScale / newScale;
 				long newYExtent = origYExtent * origScale / newScale;
-				long modelChangeForOriginX = (newXExtent - origXExtent) / 2;
-				long modelChangeForOriginY = (newYExtent - origYExtent) / 2;
+				long modelChangeForOriginX = Math.abs(newXExtent - origXExtent) / 2;
+				long modelChangeForOriginY = Math.abs(newYExtent - origYExtent) / 2;
 				originX -= modelChangeForOriginX;
 				originY -= modelChangeForOriginY;
 				scaleNumer = newScale;
 				changed = true;
 			}
-			/*
-			else if (scaleDenom == 1 && maxScale >= 3) {
-				int origScale = 1;
-				int newScale = 3;
-				long origXExtent = getVirtualWidth();
-				long origYExtent = getVirtualHeight();
-				long newXExtent = origXExtent * origScale / newScale;
-				long newYExtent = origYExtent * origScale / newScale;
-				long modelChangeForOriginX = (newXExtent - origXExtent) / 2;
-				long modelChangeForOriginY = (newYExtent - origYExtent) / 2;
-				originX += modelChangeForOriginX;
-				originY += modelChangeForOriginY;
-				scaleDenom = newScale;
-				changed = true;
-			}
-			*/
 			else if (scaleDenom + 2 <= maxScale) {
 				int origScale = scaleDenom;
 				int newScale = scaleDenom + 2;
 				long origXExtent = getVirtualWidth();
 				long origYExtent = getVirtualHeight();
-				long newXExtent = origXExtent * origScale / newScale;
-				long newYExtent = origYExtent * origScale / newScale;
-				long modelChangeForOriginX = (newXExtent - origXExtent) / 2;
-				long modelChangeForOriginY = (newYExtent - origYExtent) / 2;
-				originX += modelChangeForOriginX;
-				originY += modelChangeForOriginY;
+				long newXExtent = origXExtent * newScale / origScale;
+				long newYExtent = origYExtent * newScale / origScale;
+				long modelChangeForOriginX = Math.abs(newXExtent - origXExtent) / 2;
+				long modelChangeForOriginY = Math.abs(newYExtent - origYExtent) / 2;
+				originX -= modelChangeForOriginX;
+				originY -= modelChangeForOriginY;
 				scaleDenom = newScale;
 				changed = true;
 			}

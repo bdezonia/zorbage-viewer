@@ -73,6 +73,13 @@ import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
 
+// TODO
+// - zoom out not working
+// - look and feel still quite bad
+// - retire WindowView?
+// - should snapshot respect zoom?
+
+
 /**
  * 
  * @author Barry DeZonia
@@ -90,12 +97,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private final U max;
 	private final JLabel[] positionLabels;
 	private final JFrame frame;
-	private int scale = 1;
 	private NaN<U> nanTester = null;
 	private Infinite<U> infTester = null;
 	private Ordered<U> signumTester = null;
 	private int axisNumber0, axisNumber1;
 	private final Font font = new Font("Verdana", Font.PLAIN, 18);
+
 	/**
 	 * Make an interactive graphical viewer for a real data source.
 	 * @param alg The algebra that matches the type of data to display
@@ -147,9 +154,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		String title = "Zorbage Viewer - "+name;
 	
+		// temperature, pressure, speed, etc
+		
 		String valueInfo = "(unknown family)";
 		if (dataType != null)
 			valueInfo = dataType;
+	
+		// degrees K, mHg, km/h, etc
+		
 		String valueUnit = "(unknown unit)";
 		if (dataUnit != null)
 			valueUnit = " (" + dataUnit + ")";
@@ -428,6 +440,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 			@Override
 			public void mouseMoved(MouseEvent e) {
+				// TODO : holdover code: eliminate scale
+				int scale = 1;
 				boolean troubleAxis;
 				String alternateValue = null;
 				int i0 = e.getX() / scale;
@@ -703,7 +717,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				pixelDataBounds(alg, view.getDataSource().rawData(), min, max);
 		}
 	}
-	
+
+	/*
+
 	// draw the data
 
 	@SuppressWarnings("unused")
@@ -807,6 +823,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
+	*/
+	
 	@SuppressWarnings("unchecked")
 	class PanZoomCalculator {
 		
@@ -816,10 +834,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		private int scaleNumer; // >= 1
 		private int scaleDenom; // >= 1
-		private final long origCtrX;  // model coords
-		private final long origCtrY;  // model coords
-		private long ctrX;  // model coords
-		private long ctrY;  // model coords
+		private long originX;  // model coords
+		private long originY;  // model coords
 		private final int paneWidth; // pixel window coords
 		private final int paneHeight;  // pixel window coords
 		private long calculatedPaneWidth; // the best guess at model width of paneWidth at curr scale/offset
@@ -832,10 +848,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		public PanZoomCalculator(long ctrX, long ctrY, int paneWidth, int paneHeight) {
 			this.scaleNumer = 1;
 			this.scaleDenom = 1;
-			this.origCtrX = ctrX;
-			this.origCtrY = ctrY;
-			this.ctrX = ctrX;
-			this.ctrY = ctrY;
+			this.originX = 0;
+			this.originY = 0;
 			this.paneWidth = paneWidth;
 			this.paneHeight = paneHeight;
 			this.calculatedPaneWidth = paneWidth;
@@ -873,11 +887,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 
 		public long getVirtualOriginX() {
-			return ctrX - (calculatedPaneWidth/2);
+			return originX;
 		}
 		
 		public long getVirtualOriginY() {
-			return ctrY - (calculatedPaneHeight/2);
+			return originY;
 		}
 		
 		public long getVirtualWidth() {
@@ -913,8 +927,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 
 		public void reset() {
-			this.ctrX = origCtrX;
-			this.ctrY = origCtrY;
+			this.originX = 0;
+			this.originY = 0;
 			setScaleVars(1, 1);
 		}
 		
@@ -952,23 +966,39 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 
 		public void panLeft(int numPixels) {
-			long numModelUnits = pixelToModel(numPixels);
-			ctrX -= numModelUnits;
+			long numModelUnits = pixelToModel(numPixels, 0);
+			long dim = 0;
+			if (axisNumber0 < view.getDataSource().numDimensions())
+				dim = view.getDataSource().dimension(axisNumber0);
+			if ((originX - numModelUnits) > -dim)
+				originX -= numModelUnits;
 		}
 
 		public void panRight(int numPixels) {
-			long numModelUnits = pixelToModel(numPixels);
-			ctrX += numModelUnits;
+			long numModelUnits = pixelToModel(numPixels, 0);
+			long dim = 0;
+			if (axisNumber0 < view.getDataSource().numDimensions())
+				dim = view.getDataSource().dimension(axisNumber0);
+			if ((originX + numModelUnits) < dim)
+				originX += numModelUnits;
 		}
 
 		public void panUp(int numPixels) {
-			long numModelUnits = pixelToModel(numPixels);
-			ctrY -= numModelUnits;
+			long numModelUnits = pixelToModel(numPixels, 0);
+			long dim = 0;
+			if (axisNumber1 < view.getDataSource().numDimensions())
+				dim = view.getDataSource().dimension(axisNumber1);
+			if ((originY - numModelUnits) > -dim)
+				originY -= numModelUnits;
 		}
 
 		public void panDown(int numPixels) {
-			long numModelUnits = pixelToModel(numPixels);
-			ctrY += numModelUnits;
+			long numModelUnits = pixelToModel(numPixels, 0);
+			long dim = 0;
+			if (axisNumber1 < view.getDataSource().numDimensions())
+				dim = view.getDataSource().dimension(axisNumber1);
+			if ((originY + numModelUnits) < dim)
+				originY += numModelUnits;
 		}
 		
 		public String effectiveScale() {
@@ -978,15 +1008,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				return "1/" + scaleDenom + "X";
 		}
 		
-		private long pixelToModel(int pixelNum) {
+		private long pixelToModel(int pixelNum, long modelOffset) {
 			if (scaleNumer == 1 && scaleDenom == 1) {
-				return pixelNum;
+				return pixelNum + modelOffset;
 			}
 			else if (scaleNumer > 1) {
-				return ((long) pixelNum) / scaleNumer;
+				return (((long) pixelNum) / scaleNumer) + modelOffset;
 			}
 			else if (scaleDenom > 1) {
-				return ((long) pixelNum) * scaleDenom;
+				return (((long) pixelNum) * scaleDenom) + modelOffset;
 			}
 			else
 				throw new IllegalArgumentException("back to the drawing board");
@@ -1027,8 +1057,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					long numCounted = 0;
 					for (int dy = -intensityBoxHalfSize(); dy <= intensityBoxHalfSize(); dy++) {
 						for (int dx = -intensityBoxHalfSize(); dx <= intensityBoxHalfSize(); dx++) {
-							long mx = pixelToModel(x+dx);
-							long my = pixelToModel(y+dy);
+							long mx = pixelToModel(x+dx, originX);
+							long my = pixelToModel(y+dy, originY);
 							if (mx >= 0 && mx < maxDimX && my >= 0 && my < maxDimY) {
 								view.getPlaneView().get(mx, my, value);
 								if (nanTester != null && nanTester.isNaN().call(value))
@@ -1164,7 +1194,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			if (x < 0 || x >= paneWidth || y < 0 || y >= paneHeight)
 				return;
 			
-			int bufferPos = y * view.d0() + x;
+			int bufferPos = y * paneWidth + x;
 			
 			arrayInt[bufferPos] = argb;
 		}

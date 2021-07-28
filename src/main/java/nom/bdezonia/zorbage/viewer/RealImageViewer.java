@@ -708,113 +708,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				pixelDataBounds(alg, planeData.getDataSource().rawData(), min, max);
 		}
 	}
-
-	/*
-
-	// draw the data
-
-	@SuppressWarnings("unused")
-	private void oldDraw() {
-
-		U value = alg.construct();
-		
-		HighPrecRepresentation valHi = null;
-		if (value instanceof HighPrecRepresentation) {
-			valHi = (HighPrecRepresentation) value;
-		}
-		
-		// Safe cast as img is of correct type 
-		
-		DataBufferInt buffer = (DataBufferInt) argbData.getRaster().getDataBuffer();
-
-		// Conveniently, the buffer already contains the data array
-		int[] arrayInt = buffer.getData();
-
-		HighPrecisionMember hpPix = new HighPrecisionMember();
-		HighPrecisionMember hpMin;
-		HighPrecisionMember hpMax;
-		if (valHi != null) {
-			hpMin = new HighPrecisionMember();
-			hpMax = new HighPrecisionMember();
-			((HighPrecRepresentation) min).toHighPrec(hpMin);
-			((HighPrecRepresentation) max).toHighPrec(hpMax);
-		}
-		else {
-			throw new IllegalArgumentException("this algo requires high precision support from type");
-		}
-
-		for (int model1 = 0; model1 < view.d1() / scale; model1++) {
-			for (int model0 = 0; model0 < view.d0() / scale; model0++) {
-
-				view.get(model0, model1, value);
-		
-				// scale the current value to an intensity from 0 to 1.
-				//   Note that HP values can't represent NaNs and Infs so we must handle
-
-				BigDecimal numer;
-				BigDecimal denom;
-
-				if ((nanTester != null) && nanTester.isNaN().call(value)) {
-					numer = BigDecimal.ZERO;
-					denom = BigDecimal.ONE;
-				}
-				else if ((infTester != null) && infTester.isInfinite().call(value)) {
-					
-					if (signumTester.signum().call(value) <= 0)
-						numer = BigDecimal.ZERO;
-					else
-						numer = BigDecimal.ONE;
-					denom = BigDecimal.ONE;
-				}
-				else {
-					
-					valHi.toHighPrec(hpPix);
-					numer = hpPix.v().subtract(hpMin.v());
-					denom = hpMax.v().subtract(hpMin.v());
-				}
-				
-				// image with zero display range
-				if (denom.compareTo(BigDecimal.ZERO) == 0)
-					denom = BigDecimal.ONE;
-				
-				BigDecimal ratio = numer.divide(denom, HighPrecisionAlgebra.getContext());
-				
-				if (ratio.compareTo(BigDecimal.ZERO) < 0)
-					ratio = BigDecimal.ZERO;
-
-				if (ratio.compareTo(BigDecimal.ONE) > 0)
-					ratio = BigDecimal.ONE;
-				
-				// now scale 0-1 to the range of the size of the current color table
-				
-				BigDecimal colorTableSize = BigDecimal.valueOf(colorTable.length-1);
-				BigDecimal colorTableIndex = colorTableSize.multiply(ratio);
-				colorTableIndex = colorTableIndex.add(BigDecimalUtils.ONE_HALF);  // force HALF EVEN rounding
-				int intensity = colorTableIndex.intValue();
-
-				// put a color from the color table into the image at (pssibly many) correct positions
-
-				int view0 = model0 * scale;
-				int view1 = model1 * scale;
-				
-				for (int dy = 0; dy < scale; dy++) {
-					
-					if ((view1 + dy) > view.d1()) continue;
-						
-					for (int dx = 0; dx < scale; dx++) {
-
-						if ((view0 + dx) > view.d0()) continue;
-
-						int bufferPos = (view1 + dy) * view.d0() + (view0 + dx);
-						
-						arrayInt[bufferPos] = colorTable[intensity];
-					}
-				}
-			}
-		}
-	}
-	
-	*/
 	
 	@SuppressWarnings("unchecked")
 	class PanZoomView {
@@ -858,6 +751,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			else {
 				throw new IllegalArgumentException("Weird error: very strange real number type that is not ordered!");
 			}
+			if (!(alg.construct() instanceof HighPrecRepresentation)) {
+				throw new IllegalArgumentException(
+						"this viewer requires the real image to support HighPrecisionRepresentation");
+			}
 		}
 
 		private void calcPaneSize() {
@@ -874,7 +771,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				this.calculatedPaneHeight = ((long) paneHeight) * scaleDenom;
 			}
 			else
-				throw new IllegalArgumentException("weird scale components");
+				throw new IllegalArgumentException("weird scale components "+scaleNumer+" "+scaleDenom);
 		}
 
 		public long getVirtualOriginX() {
@@ -928,11 +825,47 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			boolean changed = false;
 
 			if (scaleDenom >= 3) {
-				scaleDenom -= 2;
+				int origScale = scaleDenom;
+				int newScale = scaleDenom - 2;
+				long origXExtent = getVirtualWidth();
+				long origYExtent = getVirtualHeight();
+				long newXExtent = origXExtent * origScale / newScale;
+				long newYExtent = origYExtent * origScale / newScale;
+				long modelChangeForOriginX = (origXExtent - newXExtent) / 2;
+				long modelChangeForOriginY = (origYExtent - newYExtent) / 2;
+				originX += modelChangeForOriginX;
+				originY += modelChangeForOriginY;
+				scaleDenom = newScale;
 				changed = true;
 			}
+			/*
+			else if (scaleNumer == 1 && maxScale >= 3) {
+				int origScale = 1;
+				int newScale = 3;
+				long origXExtent = getVirtualWidth();
+				long origYExtent = getVirtualHeight();
+				long newXExtent = origXExtent * origScale / newScale;
+				long newYExtent = origYExtent * origScale / newScale;
+				long modelChangeForOriginX = (newXExtent - origXExtent) / 2;
+				long modelChangeForOriginY = (newYExtent - origYExtent) / 2;
+				originX -= modelChangeForOriginX;
+				originY -= modelChangeForOriginY;
+				scaleNumer = newScale;
+				changed = true;
+			}
+			*/
 			else if (scaleNumer + 2 <= maxScale) {
-				scaleNumer += 2;
+				int origScale = scaleNumer;
+				int newScale = scaleNumer + 2;
+				long origXExtent = getVirtualWidth();
+				long origYExtent = getVirtualHeight();
+				long newXExtent = origXExtent * origScale / newScale;
+				long newYExtent = origYExtent * origScale / newScale;
+				long modelChangeForOriginX = (origXExtent - newXExtent) / 2;
+				long modelChangeForOriginY = (origYExtent - newYExtent) / 2;
+				originX += modelChangeForOriginX;
+				originY += modelChangeForOriginY;
+				scaleNumer = newScale;
 				changed = true;
 			}
 
@@ -945,11 +878,47 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			boolean changed = false;
 			
 			if (scaleNumer >= 3) {
-				scaleNumer -= 2;
+				int origScale = scaleNumer;
+				int newScale = scaleNumer - 2;
+				long origXExtent = getVirtualWidth();
+				long origYExtent = getVirtualHeight();
+				long newXExtent = origXExtent * origScale / newScale;
+				long newYExtent = origYExtent * origScale / newScale;
+				long modelChangeForOriginX = (newXExtent - origXExtent) / 2;
+				long modelChangeForOriginY = (newYExtent - origYExtent) / 2;
+				originX -= modelChangeForOriginX;
+				originY -= modelChangeForOriginY;
+				scaleNumer = newScale;
 				changed = true;
 			}
+			/*
+			else if (scaleDenom == 1 && maxScale >= 3) {
+				int origScale = 1;
+				int newScale = 3;
+				long origXExtent = getVirtualWidth();
+				long origYExtent = getVirtualHeight();
+				long newXExtent = origXExtent * origScale / newScale;
+				long newYExtent = origYExtent * origScale / newScale;
+				long modelChangeForOriginX = (newXExtent - origXExtent) / 2;
+				long modelChangeForOriginY = (newYExtent - origYExtent) / 2;
+				originX += modelChangeForOriginX;
+				originY += modelChangeForOriginY;
+				scaleDenom = newScale;
+				changed = true;
+			}
+			*/
 			else if (scaleDenom + 2 <= maxScale) {
-				scaleDenom += 2;
+				int origScale = scaleDenom;
+				int newScale = scaleDenom + 2;
+				long origXExtent = getVirtualWidth();
+				long origYExtent = getVirtualHeight();
+				long newXExtent = origXExtent * origScale / newScale;
+				long newYExtent = origYExtent * origScale / newScale;
+				long modelChangeForOriginX = (newXExtent - origXExtent) / 2;
+				long modelChangeForOriginY = (newYExtent - origYExtent) / 2;
+				originX += modelChangeForOriginX;
+				originY += modelChangeForOriginY;
+				scaleDenom = newScale;
 				changed = true;
 			}
 

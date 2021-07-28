@@ -868,8 +868,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				long origYExtent = getVirtualHeight();
 				long newXExtent = origXExtent * origScale / newScale;
 				long newYExtent = origYExtent * origScale / newScale;
-				long modelChangeForOriginX = Math.abs(newXExtent - origXExtent) / 2;
-				long modelChangeForOriginY = Math.abs(newYExtent - origYExtent) / 2;
+				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
+				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
 				originX -= modelChangeForOriginX;
 				originY -= modelChangeForOriginY;
 				scaleNumer = newScale;
@@ -882,8 +882,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				long origYExtent = getVirtualHeight();
 				long newXExtent = origXExtent * newScale / origScale;
 				long newYExtent = origYExtent * newScale / origScale;
-				long modelChangeForOriginX = Math.abs(newXExtent - origXExtent) / 2;
-				long modelChangeForOriginY = Math.abs(newYExtent - origYExtent) / 2;
+				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
+				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
 				originX -= modelChangeForOriginX;
 				originY -= modelChangeForOriginY;
 				scaleDenom = newScale;
@@ -975,19 +975,20 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			DimensionedDataSource<U> data = planeData.getDataSource();
 			long maxDimX = axisNumber0 < data.numDimensions() ? data.dimension(axisNumber0) : 1;
 			long maxDimY = axisNumber1 < data.numDimensions() ? data.dimension(axisNumber1) : 1;
-			int intensityBlockSize = 1 + 2 * intensityBoxHalfSize();
-			for (int y = 0; y < paneHeight; y += intensityBlockSize) {
-				for (int x = 0; x < paneWidth; x += intensityBlockSize) {
+			for (int y = 0; y < paneHeight; y++) {
+				for (int x = 0; x < paneWidth; x++) {
 					G.HP.zero().call(sum);
 					boolean includesNans = false; 
 					boolean includesPosInfs = false; 
 					boolean includesNegInfs = false; 
 					long numCounted = 0;
+					boolean modelCoordsInBounds = false;
 					for (int dy = -intensityBoxHalfSize(); dy <= intensityBoxHalfSize(); dy++) {
 						for (int dx = -intensityBoxHalfSize(); dx <= intensityBoxHalfSize(); dx++) {
 							long mx = pixelToModel(x+dx, originX);
 							long my = pixelToModel(y+dy, originY);
 							if (mx >= 0 && mx < maxDimX && my >= 0 && my < maxDimY) {
+								modelCoordsInBounds = true;
 								planeData.get(mx, my, value);
 								if (nanTester != null && nanTester.isNaN().call(value))
 									includesNans = true;
@@ -1003,21 +1004,30 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 									numCounted++;
 								}
 							}
+							int argb = 0;
+							if (modelCoordsInBounds) {
+
+								// calc average intensity
+
+								BigDecimal avgIntensity = getIntensity(sum, numCounted, includesNans, includesPosInfs, includesNegInfs);
+								
+								argb = getColor(avgIntensity);
+							}
+							else {
+								
+								argb = RgbUtils.argb(255, 0, 0, 0);
+							}
+							
+							for (int dv = -drawingBoxHalfSize(); dv <= drawingBoxHalfSize(); dv++) {
+								for (int du = -drawingBoxHalfSize(); du <= drawingBoxHalfSize(); du++) {
+
+									// plot a point
+									plot(argb, arrayInt, x+du, y+dv);
+								}
+							}
 						}
 					}
 					
-					// calc average intensity
-
-					BigDecimal avgIntensity = getIntensity(sum, numCounted, includesNans, includesPosInfs, includesNegInfs);
-					
-					int argb = getColor(avgIntensity);
-					for (int dx = -drawingBoxHalfSize(); dx <= drawingBoxHalfSize(); dx++) {
-						for (int dy = -drawingBoxHalfSize(); dy <= drawingBoxHalfSize(); dy++) {
-
-							// plot a point
-							plot(argb, arrayInt, x+dx, y+dy);
-						}
-					}
 				}
 			}
 		}

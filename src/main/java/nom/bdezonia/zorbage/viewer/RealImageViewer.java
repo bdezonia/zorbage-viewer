@@ -55,7 +55,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
-import nom.bdezonia.zorbage.algebra.Addition;
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Bounded;
 import nom.bdezonia.zorbage.algebra.G;
@@ -72,7 +71,6 @@ import nom.bdezonia.zorbage.misc.BigDecimalUtils;
 import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
-import ucar.nc2.ft2.coverage.remote.CdmrFeatureProto.CoordSysOrBuilder;
 
 /**
  * 
@@ -113,6 +111,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	 * @param axisNumber0 The first axis number defining the planes to view (x, y, z, c, t, etc.)
 	 * @param axisNumber1 The second axis number defining the planes to view (x, y, z, c, t, etc.)
 	 */
+	@SuppressWarnings("unchecked")
 	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource, int axisNumber0, int axisNumber1) {
 
 		this.alg = alg;
@@ -184,20 +183,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JPanel buttonPanel = new JPanel();
 		BoxLayout buttonBoxLayout = new BoxLayout(buttonPanel, BoxLayout.Y_AXIS);
 		buttonPanel.setLayout(buttonBoxLayout);
-		JButton panLeft = new JButton("Left");
-		JButton panRight = new JButton("Right");
-		JButton panUp = new JButton("Up");
-		JButton panDown = new JButton("Down");
 		JButton loadLut = new JButton("Load LUT");
 		JButton resetLut = new JButton("Reset LUT");
 		JButton newView = new JButton("New View");
 		JButton snapshot = new JButton("Snapshot");
 		JCheckBox check = new JCheckBox("Use data range");
 		check.setSelected(preferDataRange);
-		buttonPanel.add(panLeft);
-		buttonPanel.add(panRight);
-		buttonPanel.add(panUp);
-		buttonPanel.add(panDown);
 		buttonPanel.add(loadLut);
 		buttonPanel.add(resetLut);
 		buttonPanel.add(newView);
@@ -217,42 +208,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e) {
 				preferDataRange = !preferDataRange;
 				calcMinMax();
-				pz.draw();
-				frame.repaint();
-			}
-		});
-		panLeft.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				pz.panLeft(75);
-				pz.draw();
-				frame.repaint();
-			}
-		});
-		panRight.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				pz.panRight(75);
-				pz.draw();
-				frame.repaint();
-			}
-		});
-		panUp.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				pz.panUp(75);
-				pz.draw();
-				frame.repaint();
-			}
-		});
-		panDown.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				pz.panDown(75);
 				pz.draw();
 				frame.repaint();
 			}
@@ -474,6 +429,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JLabel scaleLabel = new JLabel(pz.effectiveScale());
 		JButton incZoom = new JButton("Zoom In");
 		JButton decZoom = new JButton("Zoom Out");
+		JButton panLeft = new JButton("Left");
+		JButton panRight = new JButton("Right");
+		JButton panUp = new JButton("Up");
+		JButton panDown = new JButton("Down");
 		JButton resetZoom = new JButton("Reset");
 		incZoom.addActionListener(new ActionListener() {
 			
@@ -495,6 +454,42 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				frame.repaint();
 			}
 		});
+		panLeft.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				pz.panLeft(75);
+				pz.draw();
+				frame.repaint();
+			}
+		});
+		panRight.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				pz.panRight(75);
+				pz.draw();
+				frame.repaint();
+			}
+		});
+		panUp.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				pz.panUp(75);
+				pz.draw();
+				frame.repaint();
+			}
+		});
+		panDown.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				pz.panDown(75);
+				pz.draw();
+				frame.repaint();
+			}
+		});
 		resetZoom.addActionListener(new ActionListener() {
 			
 			@Override
@@ -510,6 +505,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		zoomPanel.add(scaleLabel);
 		zoomPanel.add(incZoom);
 		zoomPanel.add(decZoom);
+		zoomPanel.add(panLeft);
+		zoomPanel.add(panRight);
+		zoomPanel.add(panUp);
+		zoomPanel.add(panDown);
 		zoomPanel.add(resetZoom);
 
 		JPanel sliderPanel = new JPanel();
@@ -689,6 +688,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	
 	// draw the data
 
+	@SuppressWarnings("unused")
 	private void oldDraw() {
 
 		U value = alg.construct();
@@ -789,28 +789,29 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
-	private class PanZoomCalculator {
+	@SuppressWarnings("unchecked")
+	class PanZoomCalculator {
 		
-		final BigDecimal NAN_CODE = BigDecimal.valueOf(-100);
-		final BigDecimal POSINF_CODE = BigDecimal.valueOf(-200);
-		final BigDecimal NEGINF_CODE = BigDecimal.valueOf(-300);
+		private final BigDecimal NAN_CODE = BigDecimal.valueOf(-100);
+		private final BigDecimal POSINF_CODE = BigDecimal.valueOf(-200);
+		private final BigDecimal NEGINF_CODE = BigDecimal.valueOf(-300);
 
-		int scaleNumer; // >= 1
-		int scaleDenom; // >= 1
-		long origCtrX;  // model coords
-		long origCtrY;  // model coords
-		long ctrX;  // model coords
-		long ctrY;  // model coords
-		int paneWidth; // pixel window coords
-		int paneHeight;  // pixel window coords
-		long calculatedPaneWidth; // the best guess at model width of paneWidth at curr scale/offset
-		long calculatedPaneHeight; // the best guess at model height of paneHeight at curr scale/offset
-		int maxScale;
+		private int scaleNumer; // >= 1
+		private int scaleDenom; // >= 1
+		private final long origCtrX;  // model coords
+		private final long origCtrY;  // model coords
+		private long ctrX;  // model coords
+		private long ctrY;  // model coords
+		private final int paneWidth; // pixel window coords
+		private final int paneHeight;  // pixel window coords
+		private long calculatedPaneWidth; // the best guess at model width of paneWidth at curr scale/offset
+		private long calculatedPaneHeight; // the best guess at model height of paneHeight at curr scale/offset
+		private final int maxScale;
 		NaN<U> nanTester = null;
 		Infinite<U> infTester = null;
 		Ordered<U> signumTester = null;
 		
-		PanZoomCalculator(long ctrX, long ctrY, int paneWidth, int paneHeight) {
+		public PanZoomCalculator(long ctrX, long ctrY, int paneWidth, int paneHeight) {
 			this.scaleNumer = 1;
 			this.scaleDenom = 1;
 			this.origCtrX = ctrX;
@@ -836,7 +837,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			}
 		}
 
-		void calcPaneSize() {
+		private void calcPaneSize() {
 			if (scaleNumer == 1 && scaleDenom == 1) {
 				this.calculatedPaneWidth = paneWidth;
 				this.calculatedPaneHeight = paneHeight;
@@ -853,31 +854,31 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				throw new IllegalArgumentException("weird scale components");
 		}
 
-		long getVirtualOriginX() {
+		public long getVirtualOriginX() {
 			return ctrX - (calculatedPaneWidth/2);
 		}
 		
-		long getVirtualOriginY() {
+		public long getVirtualOriginY() {
 			return ctrY - (calculatedPaneHeight/2);
 		}
 		
-		long getVirtualWidth() {
+		public long getVirtualWidth() {
 			return calculatedPaneWidth;
 		}
 		
-		long getVirtualHeight() {
+		public long getVirtualHeight() {
 			return calculatedPaneHeight;
 		}
 		
-		int drawingBoxHalfSize() {  // this works well when we only support odd zoom factors
+		public int drawingBoxHalfSize() {  // this works well when we only support odd zoom factors
 			return scaleNumer / 2;
 		}
 		
-		int intensityBoxHalfSize() {
+		public int intensityBoxHalfSize() {
 			return scaleDenom / 2;  // this works well when we only support odd zoom factors
 		}
 		
-		void setScaleVars(int numer, int denom) {
+		public void setScaleVars(int numer, int denom) {
 			if (numer == 1) {
 				if (denom < 1)
 					throw new IllegalArgumentException("illegal scale denominator");
@@ -893,13 +894,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			calcPaneSize();
 		}
 
-		void reset() {
+		public void reset() {
 			this.ctrX = origCtrX;
 			this.ctrY = origCtrY;
 			setScaleVars(1, 1);
 		}
 		
-		void increaseZoom() {
+		public void increaseZoom() {
 			
 			boolean changed = false;
 
@@ -916,7 +917,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 		
 		
-		void decreaseZoom() {
+		public void decreaseZoom() {
 			
 			boolean changed = false;
 			
@@ -932,27 +933,27 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			if (changed) calcPaneSize();
 		}
 
-		void panLeft(int numPixels) {
+		public void panLeft(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels);
 			ctrX -= numModelUnits;
 		}
 
-		void panRight(int numPixels) {
+		public void panRight(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels);
 			ctrX += numModelUnits;
 		}
 
-		void panUp(int numPixels) {
+		public void panUp(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels);
 			ctrY -= numModelUnits;
 		}
 
-		void panDown(int numPixels) {
+		public void panDown(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels);
 			ctrY += numModelUnits;
 		}
 		
-		String effectiveScale() {
+		public String effectiveScale() {
 			if (scaleDenom == 1)
 				return "" + scaleNumer + "X";
 			else
@@ -973,7 +974,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				throw new IllegalArgumentException("back to the drawing board");
 		}
 		
-		void draw() {
+		public void draw() {
 
 			if (alg instanceof NaN) {
 				this.nanTester = (NaN<U>) alg;

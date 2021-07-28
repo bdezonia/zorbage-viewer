@@ -76,7 +76,7 @@ import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
 // - zoom out not working
 // - look and feel still quite bad
 // - should snapshot respect zoom?
-// - pan down and pan left not respecting boundaries
+// - pan down and pan left not respecting boundaries (for boats)
 
 /**
  * 
@@ -86,7 +86,7 @@ import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
 public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 	private final T alg;
-	private final PlaneView<U> view;
+	private final PlaneView<U> planeData;
 	private final PanZoomView pz;
 	private final BufferedImage argbData;
 	private int[] colorTable = LutUtils.DEFAULT_COLOR_TABLE;
@@ -121,7 +121,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource, int axisNumber0, int axisNumber1) {
 
 		this.alg = alg;
-		this.view = new PlaneView<>(dataSource, axisNumber0, axisNumber1);
+		this.planeData = new PlaneView<>(dataSource, axisNumber0, axisNumber1);
 		this.pz = new PanZoomView(512, 512);
 		this.min = alg.construct();
 		this.max = alg.construct();
@@ -170,7 +170,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		argbData = new BufferedImage(pz.paneWidth, pz.paneHeight, BufferedImage.TYPE_INT_ARGB);
 		
-		positionLabels = new JLabel[view.getPositionsCount()];
+		positionLabels = new JLabel[planeData.getPositionsCount()];
 		for (int i = 0; i < positionLabels.length; i++) {
 			positionLabels[i] = new JLabel();
 			positionLabels[i].setFont(font);
@@ -394,21 +394,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		BoxLayout positionsBoxLayout = new BoxLayout(positions, BoxLayout.Y_AXIS);
 		positions.setLayout(positionsBoxLayout);
 		
-		for (int i = 0; i < view.getPositionsCount(); i++) {
+		for (int i = 0; i < planeData.getPositionsCount(); i++) {
 			JPanel miniPanel = new JPanel();
 			miniPanel.setLayout(new FlowLayout());
 			JButton homeButton = new JButton("<<");
 			JButton decrementButton = new JButton("<");
 			JButton incrementButton = new JButton(">");
 			JButton endButton = new JButton(">>");
-			long maxVal = view.getDataSourceAxisSize(i);
-			positionLabels[i].setText(""+(view.getPositionValue(i)+1)+" / "+maxVal);
-			int pos = view.getDataSourceAxisNumber(i);
+			long maxVal = planeData.getDataSourceAxisSize(i);
+			positionLabels[i].setText(""+(planeData.getPositionValue(i)+1)+" / "+maxVal);
+			int pos = planeData.getDataSourceAxisNumber(i);
 			String axisLabel;
-			if (view.getDataSource().getAxisType(pos) == null)
+			if (planeData.getDataSource().getAxisType(pos) == null)
 				axisLabel = "" + pos + " : ";
 			else
-				axisLabel = view.getDataSource().getAxisType(pos) + " : ";
+				axisLabel = planeData.getDataSource().getAxisType(pos) + " : ";
 			JLabel jax = new JLabel(axisLabel);
 			jax.setFont(font);
 			miniPanel.add(jax);
@@ -439,18 +439,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 			@Override
 			public void mouseMoved(MouseEvent e) {
-				// TODO : holdover code: eliminate scale
-				int scale = 1;
 				boolean troubleAxis;
 				String alternateValue = null;
-				int i0 = e.getX() / scale;
-				int i1 = e.getY() / scale;
-				if (i0 >= 0 && i0 < view.d0() && i1 >= 0 && i1 < view.d1()) {
-					view.getModelCoords(i0, i1, modelCoords);
+				long i0 = pz.pixelToModel(e.getX(), pz.originX);
+				long i1 = pz.pixelToModel(e.getY(), pz.originY);
+				if (i0 >= 0 && i0 < planeData.d0() && i1 >= 0 && i1 < planeData.d1()) {
+					planeData.getModelCoords(i0, i1, modelCoords);
 					dataSource.getCoordinateSpace().project(modelCoords, realWorldCoords);
-					long dataU = pz.originX + i0;
-					long dataV = pz.originY + i1;
-					view.get(i0, i1, value);
+					planeData.get(i0, i1, value);
 					if ((nanTester != null) && nanTester.isNaN().call(value)) {
 						alternateValue = "nan";
 					}
@@ -466,13 +462,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						HighPrecRepresentation rep = (HighPrecRepresentation) value;
 						rep.toHighPrec(hpVal);
 					}
-					int axisNumber0 = view.axisNumber0();
-					int axisNumber1 = view.axisNumber1();
+					int axisNumber0 = planeData.axisNumber0();
+					int axisNumber1 = planeData.axisNumber1();
 					StringBuilder sb = new StringBuilder();
 					troubleAxis = (axisNumber0 >= dataSource.numDimensions() || dataSource.getAxisType(axisNumber0) == null);
 					sb.append(troubleAxis ? "d0" : dataSource.getAxisType(axisNumber0));
 					sb.append(" = ");
-					sb.append(dataU);
+					sb.append(i0);
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
 					if (axisNumber0 < dataSource.numDimensions()) {
 						if (realWorldCoords[axisNumber0].subtract(BigDecimal.valueOf(modelCoords[axisNumber0])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
@@ -487,7 +483,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					troubleAxis = (axisNumber1 >= dataSource.numDimensions() || dataSource.getAxisType(axisNumber1) == null);
 					sb.append( troubleAxis ? "d1" : dataSource.getAxisType(axisNumber1));
 					sb.append("= ");
-					sb.append(dataV);
+					sb.append(i1);
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
 					if (axisNumber1 < dataSource.numDimensions()) {
 						if (realWorldCoords[axisNumber1].subtract(BigDecimal.valueOf(modelCoords[axisNumber1])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
@@ -588,11 +584,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			// find dim pos in real world data source of extra dims pos i
-			long maxVal = view.getDataSourceAxisSize(extraPos);
-			long pos = view.getPositionValue(extraPos);
+			long maxVal = planeData.getDataSourceAxisSize(extraPos);
+			long pos = planeData.getPositionValue(extraPos);
 			if (pos < maxVal - 1) {
 				pos++;
-				view.setPositionValue(extraPos, pos);
+				planeData.setPositionValue(extraPos, pos);
 				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
 				pz.draw();
 				frame.repaint();
@@ -612,11 +608,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			long maxVal = view.getDataSourceAxisSize(extraPos);
-			long pos = view.getPositionValue(extraPos);
+			long maxVal = planeData.getDataSourceAxisSize(extraPos);
+			long pos = planeData.getPositionValue(extraPos);
 			if (pos > 0) {
 				pos--;
-				view.setPositionValue(extraPos, pos);
+				planeData.setPositionValue(extraPos, pos);
 				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
 				pz.draw();
 				frame.repaint();
@@ -636,8 +632,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			long maxVal = view.getDataSourceAxisSize(extraPos);
-			view.setPositionValue(extraPos, 0);
+			long maxVal = planeData.getDataSourceAxisSize(extraPos);
+			planeData.setPositionValue(extraPos, 0);
 			positionLabels[extraPos].setText(""+(1)+" / "+maxVal);
 			pz.draw();
 			frame.repaint();
@@ -656,8 +652,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			long maxVal = view.getDataSourceAxisSize(extraPos);
-			view.setPositionValue(extraPos, maxVal-1);
+			long maxVal = planeData.getDataSourceAxisSize(extraPos);
+			planeData.setPositionValue(extraPos, maxVal-1);
 			positionLabels[extraPos].setText(""+(maxVal)+" / "+maxVal);
 			pz.draw();
 			frame.repaint();
@@ -702,14 +698,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private void calcMinMax() {
 
 		if (preferDataRange) {
-			pixelDataBounds(alg, view.getDataSource().rawData(), min, max);
+			pixelDataBounds(alg, planeData.getDataSource().rawData(), min, max);
 			if (alg.isEqual().call(min, max))
 				pixelTypeBounds(alg, min, max);
 		}
 		else {
 			pixelTypeBounds(alg, min, max);
 			if (alg.isEqual().call(min, max))
-				pixelDataBounds(alg, view.getDataSource().rawData(), min, max);
+				pixelDataBounds(alg, planeData.getDataSource().rawData(), min, max);
 		}
 	}
 
@@ -963,8 +959,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		public void panLeft(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
 			long dim = 0;
-			if (axisNumber0 < view.getDataSource().numDimensions())
-				dim = view.getDataSource().dimension(axisNumber0);
+			if (axisNumber0 < planeData.getDataSource().numDimensions())
+				dim = planeData.getDataSource().dimension(axisNumber0);
 			if ((originX - numModelUnits) > -dim)
 				originX -= numModelUnits;
 		}
@@ -972,8 +968,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		public void panRight(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
 			long dim = 0;
-			if (axisNumber0 < view.getDataSource().numDimensions())
-				dim = view.getDataSource().dimension(axisNumber0);
+			if (axisNumber0 < planeData.getDataSource().numDimensions())
+				dim = planeData.getDataSource().dimension(axisNumber0);
 			if ((originX + numModelUnits) < dim)
 				originX += numModelUnits;
 		}
@@ -981,8 +977,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		public void panUp(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
 			long dim = 0;
-			if (axisNumber1 < view.getDataSource().numDimensions())
-				dim = view.getDataSource().dimension(axisNumber1);
+			if (axisNumber1 < planeData.getDataSource().numDimensions())
+				dim = planeData.getDataSource().dimension(axisNumber1);
 			if ((originY - numModelUnits) > -dim)
 				originY -= numModelUnits;
 		}
@@ -990,8 +986,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		public void panDown(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
 			long dim = 0;
-			if (axisNumber1 < view.getDataSource().numDimensions())
-				dim = view.getDataSource().dimension(axisNumber1);
+			if (axisNumber1 < planeData.getDataSource().numDimensions())
+				dim = planeData.getDataSource().dimension(axisNumber1);
 			if ((originY + numModelUnits) < dim)
 				originY += numModelUnits;
 		}
@@ -1039,7 +1035,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			HighPrecisionMember sum = G.HP.construct();
 			HighPrecisionMember tmp = G.HP.construct();
 			U value = alg.construct();
-			DimensionedDataSource<U> data = view.getDataSource();
+			DimensionedDataSource<U> data = planeData.getDataSource();
 			long maxDimX = axisNumber0 < data.numDimensions() ? data.dimension(axisNumber0) : 1;
 			long maxDimY = axisNumber1 < data.numDimensions() ? data.dimension(axisNumber1) : 1;
 			int intensityBlockSize = 1 + 2 * intensityBoxHalfSize();
@@ -1055,7 +1051,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							long mx = pixelToModel(x+dx, originX);
 							long my = pixelToModel(y+dy, originY);
 							if (mx >= 0 && mx < maxDimX && my >= 0 && my < maxDimY) {
-								view.get(mx, my, value);
+								planeData.get(mx, my, value);
 								if (nanTester != null && nanTester.isNaN().call(value))
 									includesNans = true;
 								else if (infTester != null && infTester.isInfinite().call(value)) {

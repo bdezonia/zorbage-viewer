@@ -55,6 +55,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
+import nom.bdezonia.zorbage.algebra.Addition;
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Bounded;
 import nom.bdezonia.zorbage.algebra.G;
@@ -68,8 +69,10 @@ import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.WindowView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
+import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
+import ucar.nc2.ft2.coverage.remote.CdmrFeatureProto.CoordSysOrBuilder;
 
 /**
  * 
@@ -80,6 +83,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 	private final T alg;
 	private final WindowView<U> view;
+	private final PanZoomCalculator pz;
 	private final BufferedImage argbData;
 	private int[] colorTable = LutUtils.DEFAULT_COLOR_TABLE;
 	private boolean preferDataRange = true;
@@ -91,7 +95,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private NaN<U> nanTester = null;
 	private Infinite<U> infTester = null;
 	private Ordered<U> signumTester = null;
-
+	private int axisNumber0, axisNumber1;
 	
 	/**
 	 * Make an interactive graphical viewer for a real data source.
@@ -113,6 +117,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		this.alg = alg;
 		this.view = new WindowView<>(dataSource, 512, 512, axisNumber0, axisNumber1);
+		this.pz = new PanZoomCalculator(dataSource.dimension(axisNumber0) / 2, dataSource.dimension(axisNumber1) / 2, view.d0(), view.d1());
 		this.min = alg.construct();
 		this.max = alg.construct();
 
@@ -183,7 +188,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton panRight = new JButton("Right");
 		JButton panUp = new JButton("Up");
 		JButton panDown = new JButton("Down");
-		JButton panReset = new JButton("Reset");
 		JButton loadLut = new JButton("Load LUT");
 		JButton resetLut = new JButton("Reset LUT");
 		JButton newView = new JButton("New View");
@@ -194,7 +198,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(panRight);
 		buttonPanel.add(panUp);
 		buttonPanel.add(panDown);
-		buttonPanel.add(panReset);
 		buttonPanel.add(loadLut);
 		buttonPanel.add(resetLut);
 		buttonPanel.add(newView);
@@ -214,7 +217,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e) {
 				preferDataRange = !preferDataRange;
 				calcMinMax();
-				draw();
+				pz.draw();
 				frame.repaint();
 			}
 		});
@@ -222,11 +225,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (view.origin0() <= 0) return;
-				int amount = 75 / scale;
-				if (amount == 0) amount = 1;
-				view.moveWindowLeft(amount);
-				draw();
+				pz.panLeft(75);
+				pz.draw();
 				frame.repaint();
 			}
 		});
@@ -234,11 +234,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (view.origin0() >= view.getDataSource().dimension(axisNumber0) - view.d0()) return;
-				int amount = 75 / scale;
-				if (amount == 0) amount = 1;
-				view.moveWindowRight(amount);
-				draw();
+				pz.panRight(75);
+				pz.draw();
 				frame.repaint();
 			}
 		});
@@ -246,11 +243,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (view.origin1() <= 0) return;
-				int amount = 75 / scale;
-				if (amount == 0) amount = 1;
-				view.moveWindowUp(amount);
-				draw();
+				pz.panUp(75);
+				pz.draw();
 				frame.repaint();
 			}
 		});
@@ -258,21 +252,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (view.origin1() >= view.getDataSource().dimension(axisNumber1) - view.d1()) return;
-				int amount = 75 / scale;
-				if (amount == 0) amount = 1;
-				view.moveWindowDown(amount);
-				draw();
-				frame.repaint();
-			}
-		});
-		panReset.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				view.moveWindowLeft(view.origin0());
-				view.moveWindowUp(view.origin1());
-				draw();
+				pz.panDown(75);
+				pz.draw();
 				frame.repaint();
 			}
 		});
@@ -490,7 +471,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		JPanel zoomPanel = new JPanel();
 		BoxLayout buttonBoxLayoutZ = new BoxLayout(zoomPanel, BoxLayout.Y_AXIS);
-		JLabel scaleLabel = new JLabel(""+scale+"X");
+		JLabel scaleLabel = new JLabel(pz.effectiveScale());
 		JButton incZoom = new JButton("Zoom In");
 		JButton decZoom = new JButton("Zoom Out");
 		JButton resetZoom = new JButton("Reset");
@@ -498,34 +479,29 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (scale < Math.min(view.d0(), view.d1())) {
-					scale++;
-					scaleLabel.setText(""+scale+"X");
-					draw();
-					//frame.invalidate();
-					frame.repaint();
-				}
+				pz.increaseZoom();
+				scaleLabel.setText(pz.effectiveScale());
+				pz.draw();
+				frame.repaint();
 			}
 		});
 		decZoom.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (scale > 1) {
-					scale--;
-					scaleLabel.setText(""+scale+"X");
-					draw();
-					frame.repaint();
-				}
+				pz.decreaseZoom();
+				scaleLabel.setText(pz.effectiveScale());
+				pz.draw();
+				frame.repaint();
 			}
 		});
 		resetZoom.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				scale = 1;
-				scaleLabel.setText(""+scale+"X");
-				draw();
+				pz.reset();  // no diff between pan reset and zoom reset. should there be?
+				scaleLabel.setText(pz.effectiveScale());
+				pz.draw();
 				frame.repaint();
 			}
 		});
@@ -553,7 +529,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		calcMinMax();
 		
-		draw();
+		pz.draw();
 		
 		frame.repaint();
 	}
@@ -565,7 +541,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	 */
 	public void setColorTable(int[] colorTable) {
 		this.colorTable = colorTable;
-		draw();
+		pz.draw();
 		frame.repaint();
 	}
 
@@ -589,7 +565,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				pos++;
 				view.setPositionValue(extraPos, pos);
 				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
-				draw();
+				pz.draw();
 				frame.repaint();
 			}
 		}
@@ -614,7 +590,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				pos--;
 				view.setPositionValue(extraPos, pos);
 				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
-				draw();
+				pz.draw();
 				frame.repaint();
 			}
 		}
@@ -636,7 +612,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			long maxVal = pView.getDataSourceAxisSize(extraPos);
 			view.setPositionValue(extraPos, 0);
 			positionLabels[extraPos].setText(""+(1)+" / "+maxVal);
-			draw();
+			pz.draw();
 			frame.repaint();
 		}
 	}
@@ -657,7 +633,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			long maxVal = pView.getDataSourceAxisSize(extraPos);
 			view.setPositionValue(extraPos, maxVal-1);
 			positionLabels[extraPos].setText(""+(maxVal)+" / "+maxVal);
-			draw();
+			pz.draw();
 			frame.repaint();
 		}
 	}
@@ -713,7 +689,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	
 	// draw the data
 
-	private void draw() {
+	private void oldDraw() {
 
 		U value = alg.construct();
 		
@@ -811,5 +787,377 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				}
 			}
 		}
+	}
+	
+	private class PanZoomCalculator {
+		
+		final BigDecimal NAN_CODE = BigDecimal.valueOf(-100);
+		final BigDecimal POSINF_CODE = BigDecimal.valueOf(-200);
+		final BigDecimal NEGINF_CODE = BigDecimal.valueOf(-300);
+
+		int scaleNumer; // >= 1
+		int scaleDenom; // >= 1
+		long origCtrX;  // model coords
+		long origCtrY;  // model coords
+		long ctrX;  // model coords
+		long ctrY;  // model coords
+		int paneWidth; // pixel window coords
+		int paneHeight;  // pixel window coords
+		long calculatedPaneWidth; // the best guess at model width of paneWidth at curr scale/offset
+		long calculatedPaneHeight; // the best guess at model height of paneHeight at curr scale/offset
+		int maxScale;
+		NaN<U> nanTester = null;
+		Infinite<U> infTester = null;
+		Ordered<U> signumTester = null;
+		
+		PanZoomCalculator(long ctrX, long ctrY, int paneWidth, int paneHeight) {
+			this.scaleNumer = 1;
+			this.scaleDenom = 1;
+			this.origCtrX = ctrX;
+			this.origCtrY = ctrY;
+			this.ctrX = ctrX;
+			this.ctrY = ctrY;
+			this.paneWidth = paneWidth;
+			this.paneHeight = paneHeight;
+			this.calculatedPaneWidth = paneWidth;
+			this.calculatedPaneHeight = paneHeight;
+			this.maxScale = Math.min(paneWidth, paneHeight);
+			if (alg instanceof NaN) {
+				this.nanTester = (NaN<U>) alg;
+			}
+			if (alg instanceof Infinite) {
+				this.infTester = (Infinite<U>) alg;
+			}
+			if (alg instanceof Ordered) {
+				this.signumTester = (Ordered<U>) alg;
+			}
+			else {
+				throw new IllegalArgumentException("Weird error: very strange real number type that is not ordered!");
+			}
+		}
+
+		void calcPaneSize() {
+			if (scaleNumer == 1 && scaleDenom == 1) {
+				this.calculatedPaneWidth = paneWidth;
+				this.calculatedPaneHeight = paneHeight;
+			}
+			else if (scaleNumer > 1) {
+				this.calculatedPaneWidth = paneWidth / scaleNumer;
+				this.calculatedPaneHeight = paneHeight / scaleNumer;
+			}
+			else if (scaleDenom > 1) {
+				this.calculatedPaneWidth = ((long) paneWidth) * scaleDenom;
+				this.calculatedPaneHeight = ((long) paneHeight) * scaleDenom;
+			}
+			else
+				throw new IllegalArgumentException("weird scale components");
+		}
+
+		long getVirtualOriginX() {
+			return ctrX - (calculatedPaneWidth/2);
+		}
+		
+		long getVirtualOriginY() {
+			return ctrY - (calculatedPaneHeight/2);
+		}
+		
+		long getVirtualWidth() {
+			return calculatedPaneWidth;
+		}
+		
+		long getVirtualHeight() {
+			return calculatedPaneHeight;
+		}
+		
+		int drawingBoxHalfSize() {  // this works well when we only support odd zoom factors
+			return scaleNumer / 2;
+		}
+		
+		int intensityBoxHalfSize() {
+			return scaleDenom / 2;  // this works well when we only support odd zoom factors
+		}
+		
+		void setScaleVars(int numer, int denom) {
+			if (numer == 1) {
+				if (denom < 1)
+					throw new IllegalArgumentException("illegal scale denominator");
+			}
+			else if (denom == 1) {
+				if (numer < 1)
+					throw new IllegalArgumentException("illegal scale numerator");
+			}
+			else
+				throw new IllegalArgumentException("unsupported scale combo; either numer or denom must be 1");
+			scaleNumer = numer;
+			scaleDenom = denom;
+			calcPaneSize();
+		}
+
+		void reset() {
+			this.ctrX = origCtrX;
+			this.ctrY = origCtrY;
+			setScaleVars(1, 1);
+		}
+		
+		void increaseZoom() {
+			
+			boolean changed = false;
+
+			if (scaleDenom >= 3) {
+				scaleDenom -= 2;
+				changed = true;
+			}
+			else if (scaleNumer + 2 <= maxScale) {
+				scaleNumer += 2;
+				changed = true;
+			}
+
+			if (changed) calcPaneSize();
+		}
+		
+		
+		void decreaseZoom() {
+			
+			boolean changed = false;
+			
+			if (scaleNumer >= 3) {
+				scaleNumer -= 2;
+				changed = true;
+			}
+			else if (scaleDenom + 2 <= maxScale) {
+				scaleDenom += 2;
+				changed = true;
+			}
+
+			if (changed) calcPaneSize();
+		}
+
+		void panLeft(int numPixels) {
+			long numModelUnits = pixelToModel(numPixels);
+			ctrX -= numModelUnits;
+		}
+
+		void panRight(int numPixels) {
+			long numModelUnits = pixelToModel(numPixels);
+			ctrX += numModelUnits;
+		}
+
+		void panUp(int numPixels) {
+			long numModelUnits = pixelToModel(numPixels);
+			ctrY -= numModelUnits;
+		}
+
+		void panDown(int numPixels) {
+			long numModelUnits = pixelToModel(numPixels);
+			ctrY += numModelUnits;
+		}
+		
+		String effectiveScale() {
+			if (scaleDenom == 1)
+				return "" + scaleNumer + "X";
+			else
+				return "1/" + scaleDenom + "X";
+		}
+		
+		private long pixelToModel(int pixelNum) {
+			if (scaleNumer == 1 && scaleDenom == 1) {
+				return pixelNum;
+			}
+			else if (scaleNumer > 1) {
+				return ((long) pixelNum) / scaleNumer;
+			}
+			else if (scaleDenom > 1) {
+				return ((long) pixelNum) * scaleDenom;
+			}
+			else
+				throw new IllegalArgumentException("back to the drawing board");
+		}
+		
+		void draw() {
+
+			if (alg instanceof NaN) {
+				this.nanTester = (NaN<U>) alg;
+			}
+			if (alg instanceof Infinite) {
+				this.infTester = (Infinite<U>) alg;
+			}
+			if (alg instanceof Ordered) {
+				this.signumTester = (Ordered<U>) alg;
+			}
+
+			// Safe cast as img is of correct type 
+			
+			DataBufferInt buffer = (DataBufferInt) argbData.getRaster().getDataBuffer();
+
+			// Conveniently, the buffer already contains the data array
+			int[] arrayInt = buffer.getData();
+			
+			HighPrecisionMember sum = G.HP.construct();
+			HighPrecisionMember tmp = G.HP.construct();
+			U value = alg.construct();
+			DimensionedDataSource<U> data = view.getDataSource();
+			long maxDimX = axisNumber0 < data.numDimensions() ? data.dimension(axisNumber0) : 1;
+			long maxDimY = axisNumber1 < data.numDimensions() ? data.dimension(axisNumber1) : 1;
+			int intensityBlockSize = 1 + 2 * intensityBoxHalfSize();
+			for (int y = 0; y < paneHeight; y += intensityBlockSize) {
+				for (int x = 0; x < paneWidth; x += intensityBlockSize) {
+					G.HP.zero().call(sum);
+					boolean includesNans = false; 
+					boolean includesPosInfs = false; 
+					boolean includesNegInfs = false; 
+					long numCounted = 0;
+					for (int dy = -intensityBoxHalfSize(); dy <= intensityBoxHalfSize(); dy++) {
+						for (int dx = -intensityBoxHalfSize(); dx <= intensityBoxHalfSize(); dx++) {
+							long mx = pixelToModel(x+dx);
+							long my = pixelToModel(y+dy);
+							if (mx >= 0 && mx < maxDimX && my >= 0 && my < maxDimY) {
+								view.getPlaneView().get(mx, my, value);
+								if (nanTester != null && nanTester.isNaN().call(value))
+									includesNans = true;
+								else if (infTester != null && infTester.isInfinite().call(value)) {
+									if (signumTester.signum().call(value) < 0)
+										includesNegInfs = true;
+									else
+										includesPosInfs = true;
+								}
+								else {
+									((HighPrecRepresentation) value).toHighPrec(tmp);
+									G.HP.add().call(sum, tmp, sum);
+									numCounted++;
+								}
+							}
+						}
+					}
+					
+					// calc average intensity
+
+					BigDecimal avgIntensity = getIntensity(sum, numCounted, includesNans, includesPosInfs, includesNegInfs);
+					
+					int argb = getColor(avgIntensity);
+					for (int dx = -drawingBoxHalfSize(); dx <= drawingBoxHalfSize(); dx++) {
+						for (int dy = -drawingBoxHalfSize(); dy <= drawingBoxHalfSize(); dy++) {
+
+							// plot a point
+							plot(argb, arrayInt, x+dx, y+dy);
+						}
+					}
+				}
+			}
+		}
+
+		private BigDecimal getIntensity(HighPrecisionMember valueSum, long numValues, boolean includesNans, boolean includesPosInfs, boolean includesNegInfs) {
+
+			// scale the current value sume to an average intensity from 0 to 1.
+			//   Note that HP values can't represent NaNs and Infs so we must handle
+
+			if (includesNans) {
+				
+				// Nans dominate all values: sum would be nan. We will treat as -1000
+				// and getColor will choose black regardless of color table.
+				
+				return NAN_CODE;
+			}
+			else if (includesPosInfs && includesNegInfs) {
+				
+				// this sum would be nan too
+				
+				return NAN_CODE;
+			}
+			else if (includesPosInfs) {
+				
+				// this sum would be pos inf. Encode and get intensity will return white
+				
+				return POSINF_CODE;
+			}
+			else if (includesNegInfs) {
+				
+				// this sum would be neg inf. Encode and get intensity will return black
+
+				return NEGINF_CODE;
+			}
+			else if (numValues == 0) {
+				
+				// this sum would be nan too
+				
+				return NAN_CODE;
+			}
+			
+			HighPrecisionMember hpMin = new HighPrecisionMember();
+			HighPrecisionMember hpMax = new HighPrecisionMember();
+			((HighPrecRepresentation) min).toHighPrec(hpMin);
+			((HighPrecRepresentation) max).toHighPrec(hpMax);
+
+			BigDecimal average =
+					valueSum.v().divide(BigDecimal.valueOf(numValues), HighPrecisionAlgebra.getContext());
+			
+			BigDecimal numer = average.subtract(hpMin.v());
+			
+			BigDecimal denom = hpMax.v().subtract(hpMin.v());
+			
+			BigDecimal ratio = numer.divide(denom, HighPrecisionAlgebra.getContext());
+
+			if (ratio.compareTo(BigDecimal.ZERO) < 0)
+				return BigDecimal.ZERO;
+			else if (ratio.compareTo(BigDecimal.ONE) > 0)
+				return BigDecimal.ONE;
+			else
+				return ratio;
+		}
+		
+		// intensity is 0 <= intensity <= 1
+		
+		private int getColor(BigDecimal intensity) {
+			
+			if (intensity.compareTo(BigDecimal.ZERO) < 0) {
+				if (intensity.compareTo(NAN_CODE) == 0)
+					return RgbUtils.argb(255,0,0,0);
+				if (intensity.compareTo(NEGINF_CODE) == 0)
+					return RgbUtils.argb(255,0,0,0);
+				if (intensity.compareTo(POSINF_CODE) == 0)
+					return RgbUtils.argb(255,255,255,255);
+			}
+
+			// scale 0-1 to the range of the size of the current color table
+			
+			BigDecimal colorTableSize = BigDecimal.valueOf(colorTable.length-1);
+			
+			BigDecimal colorTableIndex = colorTableSize.multiply(intensity);
+			
+			// force correct rounding
+			
+			colorTableIndex = colorTableIndex.add(BigDecimalUtils.ONE_HALF);
+			
+			return colorTable[colorTableIndex.intValue()];
+		}
+		
+		private void plot(int color, int[] arrayInt, int x, int y) {
+			
+			if (x < 0 || x >= paneWidth || y < 0 || y >= paneHeight)
+				return;
+			
+			int bufferPos = y * view.d0() + x;
+			
+			arrayInt[bufferPos] = color;
+		}
+		
+		/*
+		 * If zoom is 4x
+		 *   numer = 4
+		 *   denom = 1
+		 *   model section to display is 1/4 of the existing pane's size'
+		 *   each pixel is drawn in a 4x4 box.
+		 *   
+		 * If zoom is 1/5x
+		 *   numer = 1
+		 *   denom = 5
+		 *   model section to display is 5x of the existing pane's size'
+		 *   each pixel 5x5 group of model pixels is drawn as a single pixel
+		 *     (using pixel averaging?).
+		 * 
+		 * For displaying pixels outside model space just draw them as Black.
+		 *   Or maybe draw a border to delineate the bounds.
+		 * 
+		 * We display origin-halfWidth to origin=halfWidth
+		 */
 	}
 }

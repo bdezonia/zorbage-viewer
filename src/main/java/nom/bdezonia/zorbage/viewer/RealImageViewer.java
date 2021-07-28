@@ -73,7 +73,6 @@ import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
 
 // TODO
-// - zoom out not working
 // - look and feel still quite bad
 // - should snapshot respect zoom?
 // - pan down and pan left not respecting boundaries (for boats)
@@ -903,37 +902,25 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		public void panLeft(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
-			long dim = 0;
-			if (axisNumber0 < planeData.getDataSource().numDimensions())
-				dim = planeData.getDataSource().dimension(axisNumber0);
-			if ((originX - numModelUnits) > -dim)
+			if ((originX - numModelUnits) > -planeData.d0() + 5)
 				originX -= numModelUnits;
 		}
 
 		public void panRight(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
-			long dim = 0;
-			if (axisNumber0 < planeData.getDataSource().numDimensions())
-				dim = planeData.getDataSource().dimension(axisNumber0);
-			if ((originX + numModelUnits) < dim)
+			if ((originX + numModelUnits) < planeData.d0() - 5)
 				originX += numModelUnits;
 		}
 
 		public void panUp(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
-			long dim = 0;
-			if (axisNumber1 < planeData.getDataSource().numDimensions())
-				dim = planeData.getDataSource().dimension(axisNumber1);
-			if ((originY - numModelUnits) > -dim)
+			if ((originY - numModelUnits) > -planeData.d1() + 5)
 				originY -= numModelUnits;
 		}
 
 		public void panDown(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
-			long dim = 0;
-			if (axisNumber1 < planeData.getDataSource().numDimensions())
-				dim = planeData.getDataSource().dimension(axisNumber1);
-			if ((originY + numModelUnits) < dim)
+			if ((originY + numModelUnits) < planeData.d1() - 5)
 				originY += numModelUnits;
 		}
 		

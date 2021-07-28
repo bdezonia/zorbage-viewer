@@ -34,6 +34,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -94,7 +95,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private Infinite<U> infTester = null;
 	private Ordered<U> signumTester = null;
 	private int axisNumber0, axisNumber1;
-	
+	private final Font font = new Font("Verdana", Font.PLAIN, 18);
 	/**
 	 * Make an interactive graphical viewer for a real data source.
 	 * @param alg The algebra that matches the type of data to display
@@ -146,13 +147,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		String title = "Zorbage Viewer - "+name;
 	
-		String valueInfo = "<unknown type>";
+		String valueInfo = "(unknown family)";
 		if (dataType != null)
 			valueInfo = dataType;
-		String valueUnit = "(<unknown unit>)";
+		String valueUnit = "(unknown unit)";
 		if (dataUnit != null)
 			valueUnit = " (" + dataUnit + ")";
-		String valueString = valueInfo + valueUnit;
 		
 		frame = new JFrame(title);
 		
@@ -163,17 +163,25 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		positionLabels = new JLabel[view.getPositionsCount()];
 		for (int i = 0; i < positionLabels.length; i++) {
 			positionLabels[i] = new JLabel();
+			positionLabels[i].setFont(font);
 		}
 		
 		JLabel sourceLabel = new JLabel("Source: "+source);
-		sourceLabel.setBackground(Color.WHITE);
+		sourceLabel.setFont(font);
 		sourceLabel.setOpaque(true);
 
 		JPanel headerPanel = new JPanel();
 		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
 		headerPanel.add(sourceLabel);
-		headerPanel.add(new JLabel(alg.typeDescription()));
-		headerPanel.add(new JLabel(valueString));
+		JLabel a = new JLabel("Data type: " + alg.typeDescription());
+		JLabel b = new JLabel("Data family: " + valueInfo);
+		JLabel c = new JLabel("Data unit: " + valueUnit);
+		a.setFont(font);
+		b.setFont(font);
+		c.setFont(font);
+		headerPanel.add(a);
+		headerPanel.add(b);
+		headerPanel.add(c);
 		
 		JPanel graphicsPanel = new JPanel();
 		JLabel image = new JLabel(new ImageIcon(argbData));
@@ -187,31 +195,31 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton resetLut = new JButton("Reset LUT");
 		JButton newView = new JButton("New View");
 		JButton snapshot = new JButton("Snapshot");
+		JButton incZoom = new JButton("Zoom In");
+		JButton decZoom = new JButton("Zoom Out");
+		JButton panLeft = new JButton("Left");
+		JButton panRight = new JButton("Right");
+		JButton panUp = new JButton("Up");
+		JButton panDown = new JButton("Down");
+		JButton resetZoom = new JButton("Reset");
 		JCheckBox check = new JCheckBox("Use data range");
 		check.setSelected(preferDataRange);
+		check.setFont(font);
 		buttonPanel.add(loadLut);
 		buttonPanel.add(resetLut);
 		buttonPanel.add(newView);
 		buttonPanel.add(snapshot);
+		buttonPanel.add(incZoom);
+		buttonPanel.add(decZoom);
+		buttonPanel.add(panLeft);
+		buttonPanel.add(panRight);
+		buttonPanel.add(panUp);
+		buttonPanel.add(panDown);
+		buttonPanel.add(resetZoom);
 		buttonPanel.add(new JSeparator());
-		buttonPanel.add(new JLabel("Dimensions"));
-		for (int i = 0; i < dataSource.numDimensions(); i++) {
-			String axisName = dataSource.getAxisType(i);
-			if (axisName == null)
-				axisName = "d" + i;
-			buttonPanel.add(new JLabel(dataSource.dimension(i)+" : "+axisName));
-		}
-		buttonPanel.add(check);
-		check.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				preferDataRange = !preferDataRange;
-				calcMinMax();
-				pz.draw();
-				frame.repaint();
-			}
-		});
+		JLabel scaleLabel = new JLabel("Scale: " + pz.effectiveScale());
+		scaleLabel.setFont(font);
+		buttonPanel.add(scaleLabel);
 		loadLut.addActionListener(new ActionListener() {
 			
 			@Override
@@ -303,6 +311,72 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				new RealImageViewer<>(alg, snap);
 			}
 		});
+		incZoom.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				pz.increaseZoom();
+				scaleLabel.setText("Scale: " + pz.effectiveScale());
+				pz.draw();
+				frame.repaint();
+			}
+		});
+		decZoom.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				pz.decreaseZoom();
+				scaleLabel.setText("Scale: " + pz.effectiveScale());
+				pz.draw();
+				frame.repaint();
+			}
+		});
+		panLeft.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				pz.panLeft(75);
+				pz.draw();
+				frame.repaint();
+			}
+		});
+		panRight.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				pz.panRight(75);
+				pz.draw();
+				frame.repaint();
+			}
+		});
+		panUp.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				pz.panUp(75);
+				pz.draw();
+				frame.repaint();
+			}
+		});
+		panDown.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				pz.panDown(75);
+				pz.draw();
+				frame.repaint();
+			}
+		});
+		resetZoom.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				pz.reset();  // no diff between pan reset and zoom reset. should there be?
+				scaleLabel.setText("Scale: " + pz.effectiveScale());
+				pz.draw();
+				frame.repaint();
+			}
+		});
 		
 		JPanel positions = new JPanel();
 		BoxLayout positionsBoxLayout = new BoxLayout(positions, BoxLayout.Y_AXIS);
@@ -324,7 +398,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				axisLabel = "" + pos + " : ";
 			else
 				axisLabel = view.getDataSource().getAxisType(pos) + " : ";
-			miniPanel.add(new JLabel(axisLabel));
+			JLabel jax = new JLabel(axisLabel);
+			jax.setFont(font);
+			miniPanel.add(jax);
 			miniPanel.add(positionLabels[i]);
 			miniPanel.add(homeButton);
 			miniPanel.add(decrementButton);
@@ -341,6 +417,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		readout.setBackground(Color.WHITE);
 		readout.setOpaque(true);
 		readout.setText("<placeholder>");
+		readout.setFont(font);
 		scrollPane.addMouseMotionListener(new MouseMotionListener() {
 
 			HighPrecisionMember hpVal = G.HP.construct();
@@ -424,92 +501,33 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			}
 		});
 		
-		JPanel zoomPanel = new JPanel();
-		BoxLayout buttonBoxLayoutZ = new BoxLayout(zoomPanel, BoxLayout.Y_AXIS);
-		JLabel scaleLabel = new JLabel(pz.effectiveScale());
-		JButton incZoom = new JButton("Zoom In");
-		JButton decZoom = new JButton("Zoom Out");
-		JButton panLeft = new JButton("Left");
-		JButton panRight = new JButton("Right");
-		JButton panUp = new JButton("Up");
-		JButton panDown = new JButton("Down");
-		JButton resetZoom = new JButton("Reset");
-		incZoom.addActionListener(new ActionListener() {
+		JPanel miscPanel = new JPanel();
+		BoxLayout miscBoxLayout = new BoxLayout(miscPanel, BoxLayout.Y_AXIS);
+		miscPanel.setLayout(miscBoxLayout);
+		miscPanel.add(new JSeparator());
+		JLabel d = new JLabel("Dimensions");
+		d.setFont(font);
+		miscPanel.add(d);
+		for (int i = 0; i < dataSource.numDimensions(); i++) {
+			String axisName = dataSource.getAxisType(i);
+			if (axisName == null)
+				axisName = "d" + i;
+			JLabel dimLabel = new JLabel(dataSource.dimension(i)+" : "+axisName);
+			dimLabel.setFont(font);
+			miscPanel.add(dimLabel);
+		}
+		miscPanel.add(check);
+		miscPanel.add(new JSeparator());
+		check.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				pz.increaseZoom();
-				scaleLabel.setText(pz.effectiveScale());
+				preferDataRange = !preferDataRange;
+				calcMinMax();
 				pz.draw();
 				frame.repaint();
 			}
 		});
-		decZoom.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				pz.decreaseZoom();
-				scaleLabel.setText(pz.effectiveScale());
-				pz.draw();
-				frame.repaint();
-			}
-		});
-		panLeft.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				pz.panLeft(75);
-				pz.draw();
-				frame.repaint();
-			}
-		});
-		panRight.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				pz.panRight(75);
-				pz.draw();
-				frame.repaint();
-			}
-		});
-		panUp.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				pz.panUp(75);
-				pz.draw();
-				frame.repaint();
-			}
-		});
-		panDown.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				pz.panDown(75);
-				pz.draw();
-				frame.repaint();
-			}
-		});
-		resetZoom.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				pz.reset();  // no diff between pan reset and zoom reset. should there be?
-				scaleLabel.setText(pz.effectiveScale());
-				pz.draw();
-				frame.repaint();
-			}
-		});
-		zoomPanel.setLayout(buttonBoxLayoutZ);
-		zoomPanel.add(new JLabel("Scale:"));
-		zoomPanel.add(scaleLabel);
-		zoomPanel.add(incZoom);
-		zoomPanel.add(decZoom);
-		zoomPanel.add(panLeft);
-		zoomPanel.add(panRight);
-		zoomPanel.add(panUp);
-		zoomPanel.add(panDown);
-		zoomPanel.add(resetZoom);
 
 		JPanel sliderPanel = new JPanel();
 		sliderPanel.setLayout(new BorderLayout());
@@ -520,7 +538,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		frame.add(headerPanel, BorderLayout.NORTH);
 		frame.add(sliderPanel, BorderLayout.SOUTH);
 		frame.add(buttonPanel, BorderLayout.EAST);
-		frame.add(zoomPanel, BorderLayout.WEST);
+		frame.add(miscPanel, BorderLayout.WEST);
 		
 		frame.pack();
 
@@ -1048,12 +1066,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		private BigDecimal getIntensity(HighPrecisionMember valueSum, long numValues, boolean includesNans, boolean includesPosInfs, boolean includesNegInfs) {
 
-			// scale the current value sume to an average intensity from 0 to 1.
+			// scale the current value sum to an average intensity from 0 to 1.
 			//   Note that HP values can't represent NaNs and Infs so we must handle
+			//   in some other fashion.
 
 			if (includesNans) {
 				
-				// Nans dominate all values: sum would be nan. We will treat as -1000
+				// Nans dominate all values: sum would be nan. We will treat as NAN_CODE
 				// and getColor will choose black regardless of color table.
 				
 				return NAN_CODE;
@@ -1110,12 +1129,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		private int getColor(BigDecimal intensity) {
 			
 			if (intensity.compareTo(BigDecimal.ZERO) < 0) {
-				if (intensity.compareTo(NAN_CODE) == 0)
-					return RgbUtils.argb(255,0,0,0);
-				if (intensity.compareTo(NEGINF_CODE) == 0)
-					return RgbUtils.argb(255,0,0,0);
-				if (intensity.compareTo(POSINF_CODE) == 0)
-					return RgbUtils.argb(255,255,255,255);
+			
+				if (intensity.compareTo(NAN_CODE) == 0) {
+				
+					return RgbUtils.argb(255,0,0,0);  // black
+				}
+				
+				if (intensity.compareTo(NEGINF_CODE) == 0) {
+					
+					return RgbUtils.argb(255,0,0,0); // black
+				}
+				
+				if (intensity.compareTo(POSINF_CODE) == 0) {
+					
+					return RgbUtils.argb(255,255,255,255);  // white
+				}
 			}
 
 			// scale 0-1 to the range of the size of the current color table
@@ -1131,14 +1159,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			return colorTable[colorTableIndex.intValue()];
 		}
 		
-		private void plot(int color, int[] arrayInt, int x, int y) {
+		private void plot(int argb, int[] arrayInt, int x, int y) {
 			
 			if (x < 0 || x >= paneWidth || y < 0 || y >= paneHeight)
 				return;
 			
 			int bufferPos = y * view.d0() + x;
 			
-			arrayInt[bufferPos] = color;
+			arrayInt[bufferPos] = argb;
 		}
 		
 		/*

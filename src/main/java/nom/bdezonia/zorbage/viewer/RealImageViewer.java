@@ -441,8 +441,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void mouseMoved(MouseEvent e) {
 				boolean troubleAxis;
 				String alternateValue = null;
-				long i0 = pz.pixelToModel(e.getX(), pz.originX);
-				long i1 = pz.pixelToModel(e.getY(), pz.originY);
+				long i0 = pz.pixelToModel(e.getX(), pz.getVirtualOriginX());
+				long i1 = pz.pixelToModel(e.getY(), pz.getVirtualOriginY());
 				if (i0 >= 0 && i0 < planeData.d0() && i1 >= 0 && i1 < planeData.d1()) {
 					planeData.getModelCoords(i0, i1, modelCoords);
 					dataSource.getCoordinateSpace().project(modelCoords, realWorldCoords);
@@ -730,15 +730,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		Ordered<U> signumTester = null;
 		
 		public PanZoomView(int paneWidth, int paneHeight) {
-			this.scaleNumer = 1;
-			this.scaleDenom = 1;
-			this.originX = 0;
-			this.originY = 0;
 			this.paneWidth = paneWidth;
 			this.paneHeight = paneHeight;
-			this.calculatedPaneWidth = paneWidth;
-			this.calculatedPaneHeight = paneHeight;
 			this.maxScale = Math.min(paneWidth, paneHeight);
+			setInitialNumbers();
 			if (alg instanceof NaN) {
 				this.nanTester = (NaN<U>) alg;
 			}
@@ -757,6 +752,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			}
 		}
 
+		private void setInitialNumbers() {
+			this.calculatedPaneWidth = paneWidth;
+			this.calculatedPaneHeight = paneHeight;
+			this.scaleNumer = 1;
+			this.scaleDenom = 1;
+			long modelWidth = planeData.d0();
+			long modelHeight = planeData.d1();
+			long ctrX = modelWidth / 2;
+			long ctrY = modelHeight / 2;
+			long ctrViewX = paneWidth / 2;
+			long ctrViewY = paneHeight / 2;
+			this.originX = ctrX - ctrViewX;
+			this.originY = ctrY - ctrViewY;;
+		}
+		
 		private void calcPaneSize() {
 			if (scaleNumer == 1 && scaleDenom == 1) {
 				this.calculatedPaneWidth = paneWidth;
@@ -815,9 +825,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 
 		public void reset() {
-			this.originX = 0;
-			this.originY = 0;
-			setScaleVars(1, 1);
+			setInitialNumbers();
 		}
 		
 		public void increaseZoom() {

@@ -326,63 +326,69 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				pz.increaseZoom();
-				scaleLabel.setText("Scale: " + pz.effectiveScale());
-				pz.draw();
-				frame.repaint();
+				if (pz.increaseZoom()) {
+					scaleLabel.setText("Scale: " + pz.effectiveScale());
+					pz.draw();
+					frame.repaint();
+				}
 			}
 		});
 		decZoom.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				pz.decreaseZoom();
-				scaleLabel.setText("Scale: " + pz.effectiveScale());
-				pz.draw();
-				frame.repaint();
+				if (pz.decreaseZoom()) {
+					scaleLabel.setText("Scale: " + pz.effectiveScale());
+					pz.draw();
+					frame.repaint();
+				}
 			}
 		});
 		panLeft.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				pz.panLeft(75);
-				pz.draw();
-				frame.repaint();
+				if (pz.panLeft(75)) {
+					pz.draw();
+					frame.repaint();
+				}
 			}
 		});
 		panRight.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				pz.panRight(75);
-				pz.draw();
-				frame.repaint();
+				if (pz.panRight(75)) {
+					pz.draw();
+					frame.repaint();
+				}
 			}
 		});
 		panUp.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				pz.panUp(75);
-				pz.draw();
-				frame.repaint();
+				if (pz.panUp(75)) {
+					pz.draw();
+					frame.repaint();
+				}
 			}
 		});
 		panDown.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				pz.panDown(75);
-				pz.draw();
-				frame.repaint();
+				if (pz.panDown(75)) {
+					pz.draw();
+					frame.repaint();
+				}
 			}
 		});
 		resetZoom.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				pz.reset();  // no diff between pan reset and zoom reset. should there be?
+				pz.reset();
 				scaleLabel.setText("Scale: " + pz.effectiveScale());
 				pz.draw();
 				frame.repaint();
@@ -827,7 +833,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			setInitialNumbers();
 		}
 		
-		public void increaseZoom() {
+		public boolean increaseZoom() {
 			
 			boolean changed = false;
 
@@ -861,10 +867,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			}
 
 			if (changed) calcPaneSize();
+			
+			return changed;
 		}
 		
 		
-		public void decreaseZoom() {
+		public boolean decreaseZoom() {
 			
 			boolean changed = false;
 			
@@ -898,30 +906,52 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			}
 
 			if (changed) calcPaneSize();
+			
+			return changed;
 		}
 
-		public void panLeft(int numPixels) {
+		public boolean panLeft(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
-			if ((originX - numModelUnits) > -planeData.d0() + 5)
-				originX -= numModelUnits;
+			long newPos = originX - numModelUnits;
+			if ((newPos <= 5 - planeData.d0()))
+				return false;
+			if ((newPos >= planeData.d0() - 5))
+				return false;
+			originX = newPos;
+			return true;
 		}
 
-		public void panRight(int numPixels) {
+		public boolean panRight(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
-			if ((originX + numModelUnits) < planeData.d0() - 5)
-				originX += numModelUnits;
+			long newPos = originX + numModelUnits;
+			if ((newPos <= 5 - planeData.d0()))
+				return false;
+			if ((newPos >= planeData.d0() - 5))
+				return false;
+			originX = newPos;
+			return true;
 		}
 
-		public void panUp(int numPixels) {
+		public boolean panUp(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
-			if ((originY - numModelUnits) > -planeData.d1() + 5)
-				originY -= numModelUnits;
+			long newPos = originY - numModelUnits;
+			if ((newPos <= 5 - planeData.d1()))
+				return false;
+			if ((newPos >= planeData.d1() - 5))
+				return false;
+			originY = newPos;
+			return true;
 		}
 
-		public void panDown(int numPixels) {
+		public boolean panDown(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
-			if ((originY + numModelUnits) < planeData.d1() - 5)
-				originY += numModelUnits;
+			long newPos = originY + numModelUnits;
+			if ((newPos <= 5 - planeData.d1()))
+				return false;
+			if ((newPos >= planeData.d1() - 5))
+				return false;
+			originY = newPos;
+			return true;
 		}
 		
 		public String effectiveScale() {

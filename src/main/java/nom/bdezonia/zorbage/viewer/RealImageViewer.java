@@ -1217,8 +1217,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			CoordinateSpace origSpace = planeData.getDataSource().getCoordinateSpace();
 			if (origSpace instanceof LinearNdCoordinateSpace) {
 
-				LinearNdCoordinateSpace origLinSpace =
-						(LinearNdCoordinateSpace) planeData.getDataSource().getCoordinateSpace();
+				LinearNdCoordinateSpace origLinSpace = (LinearNdCoordinateSpace) origSpace;
 				
 				BigDecimal[] scales = new BigDecimal[2];
 

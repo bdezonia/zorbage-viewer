@@ -34,6 +34,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -55,9 +56,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
+import nom.bdezonia.zorbage.algebra.Allocatable;
+import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
+import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
+import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.dataview.PlaneView;
-import nom.bdezonia.zorbage.dataview.WindowView;
+import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
 import nom.bdezonia.zorbage.type.color.RgbMember;
 import nom.bdezonia.zorbage.type.color.RgbUtils;
@@ -70,13 +75,15 @@ import nom.bdezonia.zorbage.type.color.RgbUtils;
 public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 
 	private final T alg;
-	private final WindowView<U> view;
+	private final PlaneView<U> planeData;
+	private final PanZoomView pz;
 	private final BufferedImage argbData;
 	private final JLabel[] positionLabels;
 	private final JFrame frame;
-	
+	private final Font font = new Font("Verdana", Font.PLAIN, 18);
+
 	/**
-	 * Make an interactive graphical viewer for a a/rgb data source.
+	 * Make an interactive graphical viewer for a real data source.
 	 * @param alg The algebra that matches the type of data to display
 	 * @param dataSource The data to display
 	 */
@@ -85,7 +92,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 	}
 
 	/**
-	 * Make an interactive graphical viewer for an a/rgb data source.
+	 * Make an interactive graphical viewer for a real data source.
 	 * @param alg The algebra that matches the type of data to display
 	 * @param dataSource The data to display
 	 * @param axisNumber0 The first axis number defining the planes to view (x, y, z, c, t, etc.)
@@ -94,8 +101,9 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 	public RgbColorImageViewer(T alg, DimensionedDataSource<U> dataSource, int axisNumber0, int axisNumber1) {
 
 		this.alg = alg;
-		this.view = new WindowView<>(dataSource, 512, 512, axisNumber0, axisNumber1);
-		
+		this.planeData = new PlaneView<>(dataSource, axisNumber0, axisNumber1);
+		this.pz = new PanZoomView(512, 512);
+
 		String name = dataSource.getName();
 		if (name == null)
 			name = "<unknown name>";
@@ -109,34 +117,46 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 
 		String title = "Zorbage Viewer - "+name;
 	
-		String valueInfo = "<unknown type>";
+		// temperature, pressure, speed, etc
+		
+		String valueInfo = "(unknown family)";
 		if (dataType != null)
 			valueInfo = dataType;
-		String valueUnit = "(<unknown unit>)";
+	
+		// degrees K, mHg, km/h, etc
+		
+		String valueUnit = "(unknown unit)";
 		if (dataUnit != null)
 			valueUnit = " (" + dataUnit + ")";
-		String valueString = valueInfo + valueUnit;
 		
 		frame = new JFrame(title);
 		
 		frame.setLayout(new BorderLayout());
 		
-		argbData = new BufferedImage(view.d0(), view.d1(), BufferedImage.TYPE_INT_ARGB);
+		argbData = new BufferedImage(pz.paneWidth, pz.paneHeight, BufferedImage.TYPE_INT_ARGB);
 		
-		positionLabels = new JLabel[view.getPositionsCount()];
+		positionLabels = new JLabel[planeData.getPositionsCount()];
 		for (int i = 0; i < positionLabels.length; i++) {
 			positionLabels[i] = new JLabel();
+			positionLabels[i].setFont(font);
 		}
 		
 		JLabel sourceLabel = new JLabel("Source: "+source);
-		sourceLabel.setBackground(Color.WHITE);
+		sourceLabel.setFont(font);
 		sourceLabel.setOpaque(true);
 
 		JPanel headerPanel = new JPanel();
 		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
 		headerPanel.add(sourceLabel);
-		headerPanel.add(new JLabel(alg.typeDescription()));
-		headerPanel.add(new JLabel(valueString));
+		JLabel a = new JLabel("Data type: " + alg.typeDescription());
+		JLabel b = new JLabel("Data family: " + valueInfo);
+		JLabel c = new JLabel("Data unit: " + valueUnit);
+		a.setFont(font);
+		b.setFont(font);
+		c.setFont(font);
+		headerPanel.add(a);
+		headerPanel.add(b);
+		headerPanel.add(c);
 		
 		JPanel graphicsPanel = new JPanel();
 		JLabel image = new JLabel(new ImageIcon(argbData));
@@ -146,62 +166,28 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		JPanel buttonPanel = new JPanel();
 		BoxLayout buttonBoxLayout = new BoxLayout(buttonPanel, BoxLayout.Y_AXIS);
 		buttonPanel.setLayout(buttonBoxLayout);
+		JButton newView = new JButton("New View");
+		JButton snapshot = new JButton("1X Snapshot");
+		JButton incZoom = new JButton("Zoom In");
+		JButton decZoom = new JButton("Zoom Out");
 		JButton panLeft = new JButton("Left");
 		JButton panRight = new JButton("Right");
 		JButton panUp = new JButton("Up");
 		JButton panDown = new JButton("Down");
-		JButton newView = new JButton("New View");
-		JButton snapshot = new JButton("Snapshot");
+		JButton resetZoom = new JButton("Reset");
+		buttonPanel.add(newView);
+		buttonPanel.add(snapshot);
+		buttonPanel.add(incZoom);
+		buttonPanel.add(decZoom);
 		buttonPanel.add(panLeft);
 		buttonPanel.add(panRight);
 		buttonPanel.add(panUp);
 		buttonPanel.add(panDown);
-		buttonPanel.add(newView);
-		buttonPanel.add(snapshot);
+		buttonPanel.add(resetZoom);
 		buttonPanel.add(new JSeparator());
-		buttonPanel.add(new JLabel("Dimensions"));
-		for (int i = 0; i < dataSource.numDimensions(); i++) {
-			String axisName = dataSource.getAxisType(i);
-			if (axisName == null)
-				axisName = "d" + i;
-			buttonPanel.add(new JLabel(dataSource.dimension(i)+" : "+axisName));
-		}
-		panLeft.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				view.moveWindowLeft(75);
-				draw();
-				frame.repaint();
-			}
-		});
-		panRight.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				view.moveWindowRight(75);
-				draw();
-				frame.repaint();
-			}
-		});
-		panUp.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				view.moveWindowUp(75);
-				draw();
-				frame.repaint();
-			}
-		});
-		panDown.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				view.moveWindowDown(75);
-				draw();
-				frame.repaint();
-			}
-		});
+		JLabel scaleLabel = new JLabel("Scale: " + pz.effectiveScale());
+		scaleLabel.setFont(font);
+		buttonPanel.add(scaleLabel);
 		newView.addActionListener(new ActionListener() {
 			
 			boolean cancelled = false;
@@ -259,7 +245,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 					}
 					// make sure only two dims were chosen
 					if (i0 != -1 && i1 != -1 && iOthers == -1)
-						new RealImageViewer<>(alg, dataSource, i0, i1);
+						new RgbColorImageViewer<>(alg, dataSource, i0, i1);
 					//else
 					//	System.out.println("" + i0 + " " + i1 + " " + iOthers);
 				}
@@ -270,9 +256,81 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 
-				DimensionedDataSource<U> snap = view.takeSnapsot(alg.construct());
-				
-				new RealImageViewer<>(alg, snap);
+				DimensionedDataSource<U> snap = pz.takeSnapshot();
+
+				new RgbColorImageViewer<>(alg, snap);
+			}
+		});
+		incZoom.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (pz.increaseZoom()) {
+					scaleLabel.setText("Scale: " + pz.effectiveScale());
+					pz.draw();
+					frame.repaint();
+				}
+			}
+		});
+		decZoom.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (pz.decreaseZoom()) {
+					scaleLabel.setText("Scale: " + pz.effectiveScale());
+					pz.draw();
+					frame.repaint();
+				}
+			}
+		});
+		panLeft.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (pz.panLeft(75)) {
+					pz.draw();
+					frame.repaint();
+				}
+			}
+		});
+		panRight.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (pz.panRight(75)) {
+					pz.draw();
+					frame.repaint();
+				}
+			}
+		});
+		panUp.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (pz.panUp(75)) {
+					pz.draw();
+					frame.repaint();
+				}
+			}
+		});
+		panDown.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (pz.panDown(75)) {
+					pz.draw();
+					frame.repaint();
+				}
+			}
+		});
+		resetZoom.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				pz.reset();
+				scaleLabel.setText("Scale: " + pz.effectiveScale());
+				pz.draw();
+				frame.repaint();
 			}
 		});
 		
@@ -280,23 +338,24 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		BoxLayout positionsBoxLayout = new BoxLayout(positions, BoxLayout.Y_AXIS);
 		positions.setLayout(positionsBoxLayout);
 		
-		for (int i = 0; i < view.getPositionsCount(); i++) {
+		for (int i = 0; i < planeData.getPositionsCount(); i++) {
 			JPanel miniPanel = new JPanel();
 			miniPanel.setLayout(new FlowLayout());
 			JButton homeButton = new JButton("<<");
 			JButton decrementButton = new JButton("<");
 			JButton incrementButton = new JButton(">");
 			JButton endButton = new JButton(">>");
-			PlaneView<U> pView = view.getPlaneView();
-			long maxVal = pView.getDataSourceAxisSize(i);
-			positionLabels[i].setText(""+(view.getPositionValue(i)+1)+" / "+maxVal);
-			int pos = pView.getDataSourceAxisNumber(i);
+			long maxVal = planeData.getDataSourceAxisSize(i);
+			positionLabels[i].setText(""+(planeData.getPositionValue(i)+1)+" / "+maxVal);
+			int pos = planeData.getDataSourceAxisNumber(i);
 			String axisLabel;
-			if (view.getDataSource().getAxisType(pos) == null)
+			if (planeData.getDataSource().getAxisType(pos) == null)
 				axisLabel = "" + pos + " : ";
 			else
-				axisLabel = view.getDataSource().getAxisType(pos) + " : ";
-			miniPanel.add(new JLabel(axisLabel));
+				axisLabel = planeData.getDataSource().getAxisType(pos) + " : ";
+			JLabel jax = new JLabel(axisLabel);
+			jax.setFont(font);
+			miniPanel.add(jax);
 			miniPanel.add(positionLabels[i]);
 			miniPanel.add(homeButton);
 			miniPanel.add(decrementButton);
@@ -313,62 +372,32 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		readout.setBackground(Color.WHITE);
 		readout.setOpaque(true);
 		readout.setText("<placeholder>");
+		readout.setFont(font);
 		scrollPane.addMouseMotionListener(new MouseMotionListener() {
 
 			long[] modelCoords = new long[dataSource.numDimensions()];
 			BigDecimal[] realWorldCoords = new BigDecimal[dataSource.numDimensions()]; 
 			U value = alg.construct();
 			DecimalFormat df = new DecimalFormat("0.000");
-
+			RgbMember rgb = (value instanceof RgbMember) ? (RgbMember) value : null;
+			ArgbMember argb = (value instanceof ArgbMember) ? (ArgbMember) value : null;
+					
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				boolean troubleAxis;
-				ArgbMember argb = null;
-				if (value instanceof ArgbMember)
-					argb = (ArgbMember) value;
-				RgbMember rgb = null;
-				if (value instanceof RgbMember)
-					rgb = (RgbMember) value;
-				int i0 = e.getX();
-				int i1 = e.getY();
-				if (i0 >= 0 && i0 < view.d0() && i1 >= 0 && i1 < view.d1()) {
-					view.getModelCoords(i0, i1, modelCoords);
+				long i0 = pz.pixelToModel(e.getX(), pz.getVirtualOriginX());
+				long i1 = pz.pixelToModel(e.getY(), pz.getVirtualOriginY());
+				if (i0 >= 0 && i0 < planeData.d0() && i1 >= 0 && i1 < planeData.d1()) {
+					planeData.getModelCoords(i0, i1, modelCoords);
 					dataSource.getCoordinateSpace().project(modelCoords, realWorldCoords);
-					long dataU = view.origin0() + i0;
-					long dataV = view.origin1() + i1;
-					view.get(i0, i1, value);
-					String componentString = "";
-					if (argb != null) {
-						StringBuilder b = new StringBuilder();
-						b.append('(');
-						b.append(argb.a());
-						b.append(',');
-						b.append(argb.r());
-						b.append(',');
-						b.append(argb.g());
-						b.append(',');
-						b.append(argb.b());
-						b.append(')');
-						componentString = b.toString();
-					}
-					if (rgb != null) {
-						StringBuilder b = new StringBuilder();
-						b.append('(');
-						b.append(rgb.r());
-						b.append(',');
-						b.append(rgb.g());
-						b.append(',');
-						b.append(rgb.b());
-						b.append(')');
-						componentString = b.toString();
-					}
-					int axisNumber0 = view.getPlaneView().axisNumber0();
-					int axisNumber1 = view.getPlaneView().axisNumber1();
+					planeData.get(i0, i1, value);
+					int axisNumber0 = planeData.axisNumber0();
+					int axisNumber1 = planeData.axisNumber1();
 					StringBuilder sb = new StringBuilder();
 					troubleAxis = (axisNumber0 >= dataSource.numDimensions() || dataSource.getAxisType(axisNumber0) == null);
 					sb.append(troubleAxis ? "d0" : dataSource.getAxisType(axisNumber0));
 					sb.append(" = ");
-					sb.append(dataU);
+					sb.append(i0);
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
 					if (axisNumber0 < dataSource.numDimensions()) {
 						if (realWorldCoords[axisNumber0].subtract(BigDecimal.valueOf(modelCoords[axisNumber0])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
@@ -381,9 +410,9 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 					}
 					sb.append(", ");
 					troubleAxis = (axisNumber1 >= dataSource.numDimensions() || dataSource.getAxisType(axisNumber1) == null);
-					sb.append(troubleAxis ? "d1" : dataSource.getAxisType(axisNumber1));
+					sb.append( troubleAxis ? "d1" : dataSource.getAxisType(axisNumber1));
 					sb.append("= ");
-					sb.append(dataV);
+					sb.append(i1);
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
 					if (axisNumber1 < dataSource.numDimensions()) {
 						if (realWorldCoords[axisNumber1].subtract(BigDecimal.valueOf(modelCoords[axisNumber1])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
@@ -395,7 +424,30 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 						}
 					}
 					sb.append(", value = ");
-					sb.append(componentString);
+					if (rgb != null) {
+						sb.append('(');
+						sb.append(rgb.r());
+						sb.append(',');
+						sb.append(rgb.g());
+						sb.append(',');
+						sb.append(rgb.b());
+						sb.append(')');
+						
+					} else if (argb != null) {
+						sb.append('(');
+						sb.append(argb.a());
+						sb.append(',');
+						sb.append(argb.r());
+						sb.append(',');
+						sb.append(argb.g());
+						sb.append(',');
+						sb.append(argb.b());
+						sb.append(')');
+					}
+					else
+						throw new IllegalArgumentException("strange color type error");
+					sb.append(" ");
+					sb.append(dataSource.getValueUnit() == null ? "" : dataSource.getValueUnit());
 					readout.setText(sb.toString());
 				}
 			}
@@ -404,21 +456,40 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			public void mouseDragged(MouseEvent e) {
 			}
 		});
+		
+		JPanel miscPanel = new JPanel();
+		BoxLayout miscBoxLayout = new BoxLayout(miscPanel, BoxLayout.Y_AXIS);
+		miscPanel.setLayout(miscBoxLayout);
+		miscPanel.add(new JSeparator());
+		JLabel d = new JLabel("Dimensions");
+		d.setFont(font);
+		miscPanel.add(d);
+		for (int i = 0; i < dataSource.numDimensions(); i++) {
+			String axisName = dataSource.getAxisType(i);
+			if (axisName == null)
+				axisName = "d" + i;
+			JLabel dimLabel = new JLabel(dataSource.dimension(i)+" : "+axisName);
+			dimLabel.setFont(font);
+			miscPanel.add(dimLabel);
+		}
+		miscPanel.add(new JSeparator());
+
 		JPanel sliderPanel = new JPanel();
 		sliderPanel.setLayout(new BorderLayout());
 		sliderPanel.add(readout, BorderLayout.NORTH);
 		sliderPanel.add(positions, BorderLayout.CENTER);
 
-		frame.add(headerPanel, BorderLayout.NORTH);
 		frame.add(graphicsPanel, BorderLayout.CENTER);
-		frame.add(buttonPanel, BorderLayout.EAST);
+		frame.add(headerPanel, BorderLayout.NORTH);
 		frame.add(sliderPanel, BorderLayout.SOUTH);
+		frame.add(buttonPanel, BorderLayout.EAST);
+		frame.add(miscPanel, BorderLayout.WEST);
 		
 		frame.pack();
 
 		frame.setVisible(true);
 
-		draw();
+		pz.draw();
 		
 		frame.repaint();
 	}
@@ -436,14 +507,13 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			// find dim pos in real world data source of extra dims pos i
-			PlaneView<U> pView = view.getPlaneView();
-			long maxVal = pView.getDataSourceAxisSize(extraPos);
-			long pos = view.getPositionValue(extraPos);
+			long maxVal = planeData.getDataSourceAxisSize(extraPos);
+			long pos = planeData.getPositionValue(extraPos);
 			if (pos < maxVal - 1) {
 				pos++;
-				view.setPositionValue(extraPos, pos);
+				planeData.setPositionValue(extraPos, pos);
 				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
-				draw();
+				pz.draw();
 				frame.repaint();
 			}
 		}
@@ -461,14 +531,13 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			PlaneView<U> pView = view.getPlaneView();
-			long maxVal = pView.getDataSourceAxisSize(extraPos);
-			long pos = view.getPositionValue(extraPos);
+			long maxVal = planeData.getDataSourceAxisSize(extraPos);
+			long pos = planeData.getPositionValue(extraPos);
 			if (pos > 0) {
 				pos--;
-				view.setPositionValue(extraPos, pos);
+				planeData.setPositionValue(extraPos, pos);
 				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
-				draw();
+				pz.draw();
 				frame.repaint();
 			}
 		}
@@ -486,11 +555,10 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			PlaneView<U> pView = view.getPlaneView();
-			long maxVal = pView.getDataSourceAxisSize(extraPos);
-			view.setPositionValue(extraPos, 0);
+			long maxVal = planeData.getDataSourceAxisSize(extraPos);
+			planeData.setPositionValue(extraPos, 0);
 			positionLabels[extraPos].setText(""+(1)+" / "+maxVal);
-			draw();
+			pz.draw();
 			frame.repaint();
 		}
 	}
@@ -507,59 +575,400 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			PlaneView<U> pView = view.getPlaneView();
-			long maxVal = pView.getDataSourceAxisSize(extraPos);
-			view.setPositionValue(extraPos, maxVal-1);
+			long maxVal = planeData.getDataSourceAxisSize(extraPos);
+			planeData.setPositionValue(extraPos, maxVal-1);
 			positionLabels[extraPos].setText(""+(maxVal)+" / "+maxVal);
-			draw();
+			pz.draw();
 			frame.repaint();
 		}
 	}
 	
-	// draw the data
-	
-	private void draw() {
+	@SuppressWarnings("unchecked")
+	class PanZoomView {
+		
+		private int scaleNumer; // >= 1
+		private int scaleDenom; // >= 1
+		private long originX;  // model coords
+		private long originY;  // model coords
+		private final int paneWidth; // pixel window coords
+		private final int paneHeight;  // pixel window coords
+		private long calculatedPaneWidth; // the best guess at model width of paneWidth at curr scale/offset
+		private long calculatedPaneHeight; // the best guess at model height of paneHeight at curr scale/offset
+		private final int maxScale;
+		
+		public PanZoomView(int paneWidth, int paneHeight) {
+			this.paneWidth = paneWidth;
+			this.paneHeight = paneHeight;
+			this.maxScale = Math.min(paneWidth, paneHeight);
+			setInitialNumbers();
+		}
 
-		U value = alg.construct();
-
-		ArgbMember argb = null;
-		if (value instanceof ArgbMember) {
-			argb = (ArgbMember) value;
+		private void setInitialNumbers() {
+			this.calculatedPaneWidth = paneWidth;
+			this.calculatedPaneHeight = paneHeight;
+			this.scaleNumer = 1;
+			this.scaleDenom = 1;
+			long modelWidth = planeData.d0();
+			long modelHeight = planeData.d1();
+			long ctrX = modelWidth / 2;
+			long ctrY = modelHeight / 2;
+			long ctrViewX = paneWidth / 2;
+			long ctrViewY = paneHeight / 2;
+			this.originX = ctrX - ctrViewX;
+			this.originY = ctrY - ctrViewY;;
 		}
 		
-		RgbMember rgb = null;
-		if (value instanceof RgbMember) {
-			rgb = (RgbMember) value;
-		}
-		
-		// Safe cast as img is of correct type 
-		
-		DataBufferInt buffer = (DataBufferInt) argbData.getRaster().getDataBuffer();
-
-		// Conveniently, the buffer already contains the data array
-		int[] arrayInt = buffer.getData();
-
-		for (int y = 0; y < view.d1(); y++) {
-			for (int x = 0; x < view.d0(); x++) {
-
-				view.get(x, y, value);
-
-				int color = 0;
-				
-				if (argb != null) {
-					color = RgbUtils.argb(argb.a(), argb.r(), argb.g(), argb.b());
-				}
-				
-				if (rgb != null) {
-					color = RgbUtils.argb(255, rgb.r(), rgb.g(), rgb.b());
-				}
-
-				// put the color into the image at pos (x,y)
-				
-				int bufferPos = y * view.d0() + x;
-				
-				arrayInt[bufferPos] = color;
+		private void calcPaneSize() {
+			if (scaleNumer == 1 && scaleDenom == 1) {
+				this.calculatedPaneWidth = paneWidth;
+				this.calculatedPaneHeight = paneHeight;
 			}
+			else if (scaleNumer > 1) {
+				this.calculatedPaneWidth = paneWidth / scaleNumer;
+				this.calculatedPaneHeight = paneHeight / scaleNumer;
+			}
+			else if (scaleDenom > 1) {
+				this.calculatedPaneWidth = ((long) paneWidth) * scaleDenom;
+				this.calculatedPaneHeight = ((long) paneHeight) * scaleDenom;
+			}
+			else
+				throw new IllegalArgumentException("weird scale components "+scaleNumer+" "+scaleDenom);
+		}
+
+		public long getVirtualOriginX() {
+			return originX;
+		}
+		
+		public long getVirtualOriginY() {
+			return originY;
+		}
+		
+		public long getVirtualWidth() {
+			return calculatedPaneWidth;
+		}
+		
+		public long getVirtualHeight() {
+			return calculatedPaneHeight;
+		}
+		
+		public int drawingBoxHalfSize() {  // this works well when we only support odd zoom factors
+			return scaleNumer / 2;
+		}
+		
+		public int intensityBoxHalfSize() {
+			// old way
+			//return scaleDenom / 2;  // this works well when we only support odd zoom factors
+			
+			// new way: much much faster
+			return 0;
+		}
+		
+		public void setScaleVars(int numer, int denom) {
+			if (numer == 1) {
+				if (denom < 1)
+					throw new IllegalArgumentException("illegal scale denominator");
+			}
+			else if (denom == 1) {
+				if (numer < 1)
+					throw new IllegalArgumentException("illegal scale numerator");
+			}
+			else
+				throw new IllegalArgumentException("unsupported scale combo; either numer or denom must be 1");
+			scaleNumer = numer;
+			scaleDenom = denom;
+			calcPaneSize();
+		}
+
+		public void reset() {
+			setInitialNumbers();
+		}
+		
+		public boolean increaseZoom() {
+			
+			boolean changed = false;
+
+			if (scaleDenom >= 3) {
+				int origScale = scaleDenom;
+				int newScale = scaleDenom - 2;
+				long origXExtent = getVirtualWidth();
+				long origYExtent = getVirtualHeight();
+				long newXExtent = origXExtent * newScale / origScale;
+				long newYExtent = origYExtent * newScale / origScale;
+				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
+				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
+				originX += modelChangeForOriginX;
+				originY += modelChangeForOriginY;
+				scaleDenom = newScale;
+				changed = true;
+			}
+			else if (scaleNumer + 2 <= maxScale) {
+				int origScale = scaleNumer;
+				int newScale = scaleNumer + 2;
+				long origXExtent = getVirtualWidth();
+				long origYExtent = getVirtualHeight();
+				long newXExtent = origXExtent * origScale / newScale;
+				long newYExtent = origYExtent * origScale / newScale;
+				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
+				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
+				originX += modelChangeForOriginX;
+				originY += modelChangeForOriginY;
+				scaleNumer = newScale;
+				changed = true;
+			}
+
+			if (changed) calcPaneSize();
+			
+			return changed;
+		}
+		
+		
+		public boolean decreaseZoom() {
+			
+			boolean changed = false;
+			
+			if (scaleNumer >= 3) {
+				int origScale = scaleNumer;
+				int newScale = scaleNumer - 2;
+				long origXExtent = getVirtualWidth();
+				long origYExtent = getVirtualHeight();
+				long newXExtent = origXExtent * origScale / newScale;
+				long newYExtent = origYExtent * origScale / newScale;
+				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
+				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
+				originX -= modelChangeForOriginX;
+				originY -= modelChangeForOriginY;
+				scaleNumer = newScale;
+				changed = true;
+			}
+			else if (scaleDenom + 2 <= maxScale) {
+				int origScale = scaleDenom;
+				int newScale = scaleDenom + 2;
+				long origXExtent = getVirtualWidth();
+				long origYExtent = getVirtualHeight();
+				long newXExtent = origXExtent * newScale / origScale;
+				long newYExtent = origYExtent * newScale / origScale;
+				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
+				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
+				originX -= modelChangeForOriginX;
+				originY -= modelChangeForOriginY;
+				scaleDenom = newScale;
+				changed = true;
+			}
+
+			if (changed) calcPaneSize();
+			
+			return changed;
+		}
+
+		public boolean panLeft(int numPixels) {
+			long numModelUnits = pixelToModel(numPixels, 0);
+			long newPos = originX - numModelUnits;
+			if ((newPos <= 5 - planeData.d0()))
+				return false;
+			if ((newPos >= planeData.d0() - 5))
+				return false;
+			originX = newPos;
+			return true;
+		}
+
+		public boolean panRight(int numPixels) {
+			long numModelUnits = pixelToModel(numPixels, 0);
+			long newPos = originX + numModelUnits;
+			if ((newPos <= 5 - planeData.d0()))
+				return false;
+			if ((newPos >= planeData.d0() - 5))
+				return false;
+			originX = newPos;
+			return true;
+		}
+
+		public boolean panUp(int numPixels) {
+			long numModelUnits = pixelToModel(numPixels, 0);
+			long newPos = originY - numModelUnits;
+			if ((newPos <= 5 - planeData.d1()))
+				return false;
+			if ((newPos >= planeData.d1() - 5))
+				return false;
+			originY = newPos;
+			return true;
+		}
+
+		public boolean panDown(int numPixels) {
+			long numModelUnits = pixelToModel(numPixels, 0);
+			long newPos = originY + numModelUnits;
+			if ((newPos <= 5 - planeData.d1()))
+				return false;
+			if ((newPos >= planeData.d1() - 5))
+				return false;
+			originY = newPos;
+			return true;
+		}
+		
+		public String effectiveScale() {
+			if (scaleDenom == 1)
+				return "" + scaleNumer + "X";
+			else
+				return "1/" + scaleDenom + "X";
+		}
+		
+		private long pixelToModel(int pixelNum, long modelOffset) {
+			if (scaleNumer == 1 && scaleDenom == 1) {
+				return pixelNum + modelOffset;
+			}
+			else if (scaleNumer > 1) {
+				return (((long) pixelNum) / scaleNumer) + modelOffset;
+			}
+			else if (scaleDenom > 1) {
+				return (((long) pixelNum) * scaleDenom) + modelOffset;
+			}
+			else
+				throw new IllegalArgumentException("back to the drawing board");
+		}
+		
+		public void draw() {
+
+			U value = alg.construct();
+			RgbMember rgb = (value instanceof RgbMember) ? (RgbMember) value : null;
+			ArgbMember argb = (value instanceof ArgbMember) ? (ArgbMember) value : null;
+
+			// Safe cast as img is of correct type 
+			
+			DataBufferInt buffer = (DataBufferInt) argbData.getRaster().getDataBuffer();
+
+			// Conveniently, the buffer already contains the data array
+			int[] arrayInt = buffer.getData();
+			
+			long maxDimX = planeData.d0();
+			long maxDimY = planeData.d1();
+			for (int y = 0; y < paneHeight; y++) {
+				for (int x = 0; x < paneWidth; x++) {
+					boolean modelCoordsInBounds = false;
+					long mx = pixelToModel(x, originX);
+					long my = pixelToModel(y, originY);
+					if (mx >= 0 && mx < maxDimX && my >= 0 && my < maxDimY) {
+						modelCoordsInBounds = true;
+						planeData.get(mx, my, value);
+					}
+					int color = 0;
+					if (modelCoordsInBounds) {
+
+						if (rgb != null) {
+							color = RgbUtils.argb(255, rgb.r(), rgb.g(), rgb.b());
+						}
+						else if (argb != null) {
+							color = RgbUtils.argb(argb.a(), argb.r(), argb.g(), argb.b());
+						}
+						else
+							throw new IllegalArgumentException("Unknown color type "+value.getClass().getSimpleName());
+					}
+					else {
+						
+						color = RgbUtils.argb(255, 0, 0, 0);
+					}
+					
+					for (int dv = -drawingBoxHalfSize(); dv <= drawingBoxHalfSize(); dv++) {
+						for (int du = -drawingBoxHalfSize(); du <= drawingBoxHalfSize(); du++) {
+
+							// plot a point
+							plot(color, arrayInt, x+du, y+dv);
+						}
+					}
+					
+				}
+			}
+		}
+		
+		private void plot(int argb, int[] arrayInt, int x, int y) {
+			
+			if (x < 0 || x >= paneWidth || y < 0 || y >= paneHeight)
+				return;
+			
+			int bufferPos = y * paneWidth + x;
+			
+			arrayInt[bufferPos] = argb;
+		}
+		
+		
+		/**
+		 * Make a 2d image snapshot of the pan / zoom viewport.
+		 * Calibration and units are transferred to the snapshot
+		 * as much as is feasible. SNapshot is taken at 1x at origin
+		 * 0,0. No pan or zoom values are respected.
+		 * 
+		 * @return
+		 */
+		@SuppressWarnings("rawtypes")
+		public DimensionedDataSource<U> takeSnapshot()
+		{
+			int axisNumber0 = planeData.axisNumber0();
+			int axisNumber1 = planeData.axisNumber1();
+			
+			long dimX = planeData.d0();
+			if (dimX > paneWidth)
+				dimX = paneWidth;
+			
+			long dimY = planeData.d1();
+			if (dimY > paneHeight)
+				dimY = paneHeight;
+			
+			DimensionedDataSource<U> newDs = (DimensionedDataSource<U>)
+					DimensionedStorage.allocate((Allocatable) alg.construct(), new long[] {dimX, dimY});
+			
+			U tmp = alg.construct();
+			
+			TwoDView<U> view = new TwoDView<>(newDs);
+			
+			for (int y = 0; y < dimY; y++) {
+				for (int x = 0; x < dimX; x++) {
+					planeData.get(x, y , tmp);
+					view.set(x, y, tmp);
+				}
+			}
+			
+			DimensionedDataSource<U> origDs = planeData.getDataSource();
+
+			String d0Str = origDs.getAxisType(axisNumber0) == null ? ("dim "+axisNumber0) : origDs.getAxisType(axisNumber0);
+			String d1Str = origDs.getAxisType(axisNumber1) == null ? ("dim "+axisNumber1) : origDs.getAxisType(axisNumber1);
+			String axes = "["+d0Str+":"+d1Str+"]";
+			String miniTitle = axes + " : slice";
+
+			newDs.setName(origDs.getName() == null ? miniTitle : (miniTitle + " of "+origDs.getName()));
+			newDs.setAxisType(0, origDs.getAxisType(axisNumber0));
+			newDs.setAxisType(1, origDs.getAxisType(axisNumber1));
+			newDs.setAxisUnit(0, origDs.getAxisUnit(axisNumber0));
+			newDs.setAxisUnit(1, origDs.getAxisUnit(axisNumber1));
+			newDs.setValueType(origDs.getValueType());
+			newDs.setValueUnit(origDs.getValueUnit());
+			
+			CoordinateSpace origSpace = planeData.getDataSource().getCoordinateSpace();
+			if (origSpace instanceof LinearNdCoordinateSpace) {
+
+				LinearNdCoordinateSpace origLinSpace = (LinearNdCoordinateSpace) origSpace;
+				
+				BigDecimal[] scales = new BigDecimal[2];
+
+				scales[0] = origLinSpace.getScale(axisNumber0);
+				scales[1] = origLinSpace.getScale(axisNumber1);
+				
+				BigDecimal[] offsets = new BigDecimal[2];
+				
+				offsets[0] = origLinSpace.getOffset(axisNumber0);
+				offsets[1] = origLinSpace.getOffset(axisNumber1);
+				
+				long[] coord = new long[origDs.numDimensions()];
+				
+				coord[axisNumber0] = 0;
+				coord[axisNumber1] = 0;
+
+				offsets[0] = origLinSpace.project(coord, axisNumber0);
+				offsets[1] = origLinSpace.project(coord, axisNumber1);
+
+				LinearNdCoordinateSpace newLinSpace = new LinearNdCoordinateSpace(scales, offsets);
+				
+				newDs.setCoordinateSpace(newLinSpace);
+			}
+
+			return newDs;
 		}
 	}
 }

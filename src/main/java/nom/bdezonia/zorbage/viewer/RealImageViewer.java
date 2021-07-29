@@ -72,11 +72,6 @@ import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
 
-// TODO
-// - look and feel still quite bad
-// - should snapshot respect zoom?
-// - pan down and pan left not respecting boundaries (for boats)
-
 /**
  * 
  * @author Barry DeZonia
@@ -810,7 +805,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 		
 		public int intensityBoxHalfSize() {
-			return scaleDenom / 2;  // this works well when we only support odd zoom factors
+			// old way
+			//return scaleDenom / 2;  // this works well when we only support odd zoom factors
+			
+			// new way: much much faster
+			return 0;
 		}
 		
 		public void setScaleVars(int numer, int denom) {

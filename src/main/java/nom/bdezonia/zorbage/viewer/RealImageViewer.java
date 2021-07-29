@@ -202,7 +202,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton loadLut = new JButton("Load LUT");
 		JButton resetLut = new JButton("Reset LUT");
 		JButton newView = new JButton("New View");
-		JButton snapshot = new JButton("Snapshot");
+		JButton snapshot = new JButton("1X Snapshot");
 		JButton incZoom = new JButton("Zoom In");
 		JButton decZoom = new JButton("Zoom Out");
 		JButton panLeft = new JButton("Left");

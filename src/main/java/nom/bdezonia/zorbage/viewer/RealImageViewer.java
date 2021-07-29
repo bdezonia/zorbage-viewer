@@ -57,6 +57,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
+import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.Bounded;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
@@ -64,9 +65,13 @@ import nom.bdezonia.zorbage.algebra.Infinite;
 import nom.bdezonia.zorbage.algebra.NaN;
 import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
+import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
+import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
+import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
+import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
 import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
@@ -92,7 +97,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private NaN<U> nanTester = null;
 	private Infinite<U> infTester = null;
 	private Ordered<U> signumTester = null;
-	private int axisNumber0, axisNumber1;
 	private final Font font = new Font("Verdana", Font.PLAIN, 18);
 
 	/**
@@ -310,11 +314,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 
-				// TODO : restore me
-				//
-				//DimensionedDataSource<U> snap = view.takeSnapsot(alg.construct());
-				//
-				//new RealImageViewer<>(alg, snap);
+				DimensionedDataSource<U> snap = pz.takeSnapshot();
+
+				new RealImageViewer<>(alg, snap);
 			}
 		});
 		incZoom.addActionListener(new ActionListener() {
@@ -996,9 +998,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			HighPrecisionMember sum = G.HP.construct();
 			HighPrecisionMember tmp = G.HP.construct();
 			U value = alg.construct();
-			DimensionedDataSource<U> data = planeData.getDataSource();
-			long maxDimX = axisNumber0 < data.numDimensions() ? data.dimension(axisNumber0) : 1;
-			long maxDimY = axisNumber1 < data.numDimensions() ? data.dimension(axisNumber1) : 1;
+			long maxDimX = planeData.d0();
+			long maxDimY = planeData.d1();
 			for (int y = 0; y < paneHeight; y++) {
 				for (int x = 0; x < paneWidth; x++) {
 					G.HP.zero().call(sum);
@@ -1161,24 +1162,88 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			arrayInt[bufferPos] = argb;
 		}
 		
-		/*
-		 * If zoom is 4x
-		 *   numer = 4
-		 *   denom = 1
-		 *   model section to display is 1/4 of the existing pane's size'
-		 *   each pixel is drawn in a 4x4 box.
-		 *   
-		 * If zoom is 1/5x
-		 *   numer = 1
-		 *   denom = 5
-		 *   model section to display is 5x of the existing pane's size'
-		 *   each pixel 5x5 group of model pixels is drawn as a single pixel
-		 *     (using pixel averaging?).
+		
+		/**
+		 * Make a 2d image snapshot of the pan / zoom viewport.
+		 * Calibration and units are transferred to the snapshot
+		 * as much as is feasible. SNapshot is taken at 1x at origin
+		 * 0,0. No pan or zoom values are respected.
 		 * 
-		 * For displaying pixels outside model space just draw them as Black.
-		 *   Or maybe draw a border to delineate the bounds.
-		 * 
-		 * We display origin-halfWidth to origin=halfWidth
+		 * @return
 		 */
+		@SuppressWarnings("rawtypes")
+		public DimensionedDataSource<U> takeSnapshot()
+		{
+			int axisNumber0 = planeData.axisNumber0();
+			int axisNumber1 = planeData.axisNumber1();
+			
+			long dimX = planeData.d0();
+			if (dimX > paneWidth)
+				dimX = paneWidth;
+			
+			long dimY = planeData.d1();
+			if (dimY > paneHeight)
+				dimY = paneHeight;
+			
+			DimensionedDataSource<U> newDs = (DimensionedDataSource<U>)
+					DimensionedStorage.allocate((Allocatable) alg.construct(), new long[] {dimX, dimY});
+			
+			U tmp = alg.construct();
+			
+			TwoDView<U> view = new TwoDView<>(newDs);
+			
+			for (int y = 0; y < dimY; y++) {
+				for (int x = 0; x < dimX; x++) {
+					planeData.get(x, y , tmp);
+					view.set(x, y, tmp);
+				}
+			}
+			
+			DimensionedDataSource<U> origDs = planeData.getDataSource();
+
+			String d0Str = origDs.getAxisType(axisNumber0) == null ? ("dim "+axisNumber0) : origDs.getAxisType(axisNumber0);
+			String d1Str = origDs.getAxisType(axisNumber1) == null ? ("dim "+axisNumber1) : origDs.getAxisType(axisNumber1);
+			String axes = "["+d0Str+":"+d1Str+"]";
+			String miniTitle = axes + " : slice";
+
+			newDs.setName(origDs.getName() == null ? miniTitle : (miniTitle + " of "+origDs.getName()));
+			newDs.setAxisType(0, origDs.getAxisType(axisNumber0));
+			newDs.setAxisType(1, origDs.getAxisType(axisNumber1));
+			newDs.setAxisUnit(0, origDs.getAxisUnit(axisNumber0));
+			newDs.setAxisUnit(1, origDs.getAxisUnit(axisNumber1));
+			newDs.setValueType(origDs.getValueType());
+			newDs.setValueUnit(origDs.getValueUnit());
+			
+			CoordinateSpace origSpace = planeData.getDataSource().getCoordinateSpace();
+			if (origSpace instanceof LinearNdCoordinateSpace) {
+
+				LinearNdCoordinateSpace origLinSpace =
+						(LinearNdCoordinateSpace) planeData.getDataSource().getCoordinateSpace();
+				
+				BigDecimal[] scales = new BigDecimal[2];
+
+				scales[0] = origLinSpace.getScale(axisNumber0);
+				scales[1] = origLinSpace.getScale(axisNumber1);
+				
+				BigDecimal[] offsets = new BigDecimal[2];
+				
+				offsets[0] = origLinSpace.getOffset(axisNumber0);
+				offsets[1] = origLinSpace.getOffset(axisNumber1);
+				
+				long[] coord = new long[origDs.numDimensions()];
+				
+				coord[axisNumber0] = 0;
+				coord[axisNumber1] = 0;
+
+				offsets[0] = origLinSpace.project(coord, axisNumber0);
+				offsets[1] = origLinSpace.project(coord, axisNumber1);
+
+				LinearNdCoordinateSpace newLinSpace = new LinearNdCoordinateSpace(scales, offsets);
+				
+				newDs.setCoordinateSpace(newLinSpace);
+			}
+
+			return newDs;
+		}
 	}
 }

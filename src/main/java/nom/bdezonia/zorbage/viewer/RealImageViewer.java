@@ -53,6 +53,7 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -407,14 +408,28 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				if (value instanceof UnsignedInt8Member) {
 					DimensionedDataSource<UnsignedInt8Member> casted = 
 							(DimensionedDataSource<UnsignedInt8Member>) planeData.getDataSource();
-					long channels = casted.dimension(2);
-					if (channels == 3 || channels == 4)
-						dataSource = MakeColorDatasource.compute(casted, 2);
+					// search for channel dim: start at far end of dimensions
+					int channelDim = -1;
+					for (int i = casted.numDimensions()-1; i >= 0; i--) {
+						long theVal = casted.dimension(i);
+						if (theVal == 3 || theVal == 4) {
+							channelDim = i;
+							break;
+						}
+					}
+					if (channelDim != -1)
+						dataSource = MakeColorDatasource.compute(casted, channelDim);
 					else
-						System.out.println("Data does not have 3 or 4 channels");
+						JOptionPane.showMessageDialog(frame,
+							    "Image is not 3 or 4 channel data. Cannot make color image.",
+							    "WARNING",
+							    JOptionPane.WARNING_MESSAGE);
 				}
 				else
-					System.out.println("Data is not UINT8");
+					JOptionPane.showMessageDialog(frame,
+						    "Image is not unsigned 8 bit type. Cannot make color image.",
+						    "WARNING",
+						    JOptionPane.WARNING_MESSAGE);
 				if (dataSource != null)
 					new RgbColorImageViewer<ArgbAlgebra,ArgbMember>(G.ARGB, dataSource);
 			}

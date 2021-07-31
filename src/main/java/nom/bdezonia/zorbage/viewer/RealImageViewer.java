@@ -153,13 +153,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		// temperature, pressure, speed, etc
 		
 		String valueInfo = "(unknown family)";
-		if (dataType != null)
+		if (dataType != null && dataType.length() != 0)
 			valueInfo = dataType;
 	
 		// degrees K, mHg, km/h, etc
 		
 		String valueUnit = "(unknown unit)";
-		if (dataUnit != null)
+		if (dataUnit != null && dataUnit.length() != 0)
 			valueUnit = " (" + dataUnit + ")";
 		
 		frame = new JFrame(title);

@@ -43,6 +43,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -98,7 +99,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private Infinite<U> infTester = null;
 	private Ordered<U> signumTester = null;
 	private final Font font = new Font("Verdana", Font.PLAIN, 18);
-
+	private AtomicBoolean animatingRightNow = new AtomicBoolean();
 	/**
 	 * Make an interactive graphical viewer for a real data source.
 	 * @param alg The algebra that matches the type of data to display
@@ -677,6 +678,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			boolean wasAlreadyAnimating = animatingRightNow.getAndSet(true);
+			if (wasAlreadyAnimating) return;
 			long maxVal = planeData.getDataSourceAxisSize(extraPos);
 			for (long i = 0; i < maxVal; i++) {
 				planeData.setPositionValue(extraPos, i);
@@ -693,6 +696,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					;
 				}
 			}
+			animatingRightNow.set(false);
 		}
 	}
 	

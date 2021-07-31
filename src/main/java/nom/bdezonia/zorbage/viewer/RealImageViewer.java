@@ -403,6 +403,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			JButton decrementButton = new JButton("<");
 			JButton incrementButton = new JButton(">");
 			JButton endButton = new JButton(">>");
+			JButton animButton = new JButton("Animate");
 			long maxVal = planeData.getDataSourceAxisSize(i);
 			positionLabels[i].setText(""+(planeData.getPositionValue(i)+1)+" / "+maxVal);
 			int pos = planeData.getDataSourceAxisNumber(i);
@@ -419,11 +420,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			miniPanel.add(decrementButton);
 			miniPanel.add(incrementButton);
 			miniPanel.add(endButton);
+			miniPanel.add(animButton);
 			positions.add(miniPanel);
 			decrementButton.addActionListener(new Decrementer(i));
 			incrementButton.addActionListener(new Incrementer(i));
 			homeButton.addActionListener(new Home(i));
 			endButton.addActionListener(new End(i));
+			animButton.addActionListener(new Animator(i));
 		}
 
 		JLabel readout = new JLabel();
@@ -659,6 +662,37 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			positionLabels[extraPos].setText(""+(maxVal)+" / "+maxVal);
 			pz.draw();
 			frame.repaint();
+		}
+	}
+	
+	// code to set a slider to its max value and react
+	
+	private class Animator implements ActionListener {
+		
+		private final int extraPos;
+		
+		public Animator(int extraNum) {
+			extraPos = extraNum;
+		}
+		
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			long maxVal = planeData.getDataSourceAxisSize(extraPos);
+			for (long i = 0; i < maxVal; i++) {
+				planeData.setPositionValue(extraPos, i);
+				positionLabels[extraPos].setText(""+(i+1)+" / "+maxVal);
+				pz.draw();
+				// paint needed instead of repaint to show immediate animation
+				// But this method has a LOT of flicker. ImageJ1 uses double
+				// buffered drawing to avoid flicker. See ImageCanvas paint()
+				// I think.
+				frame.paint(frame.getGraphics());
+				try {
+					Thread.sleep(100);
+				} catch(InterruptedException excep) {
+					;
+				}
+			}
 		}
 	}
 	

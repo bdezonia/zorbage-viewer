@@ -65,6 +65,7 @@ import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
 import nom.bdezonia.zorbage.algebra.Infinite;
 import nom.bdezonia.zorbage.algebra.NaN;
 import nom.bdezonia.zorbage.algebra.Ordered;
+import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
 import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
@@ -74,7 +75,10 @@ import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
+import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
+import nom.bdezonia.zorbage.type.color.ArgbMember;
 import nom.bdezonia.zorbage.type.color.RgbUtils;
+import nom.bdezonia.zorbage.type.integer.int8.UnsignedInt8Member;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
 
@@ -211,6 +215,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton panUp = new JButton("Up");
 		JButton panDown = new JButton("Down");
 		JButton resetZoom = new JButton("Reset");
+		JButton toColor = new JButton("To Color");
 		JCheckBox check = new JCheckBox("Use data range");
 		check.setSelected(preferDataRange);
 		check.setFont(font);
@@ -225,6 +230,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(panUp);
 		buttonPanel.add(panDown);
 		buttonPanel.add(resetZoom);
+		buttonPanel.add(toColor);
 		buttonPanel.add(new JSeparator());
 		JLabel scaleLabel = new JLabel("Scale: " + pz.effectiveScale());
 		scaleLabel.setFont(font);
@@ -390,6 +396,27 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				scaleLabel.setText("Scale: " + pz.effectiveScale());
 				pz.draw();
 				frame.repaint();
+			}
+		});
+		toColor.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				U value = alg.construct();
+				DimensionedDataSource<ArgbMember> dataSource = null;
+				if (value instanceof UnsignedInt8Member) {
+					DimensionedDataSource<UnsignedInt8Member> casted = 
+							(DimensionedDataSource<UnsignedInt8Member>) planeData.getDataSource();
+					long channels = casted.dimension(2);
+					if (channels == 3 || channels == 4)
+						dataSource = MakeColorDatasource.compute(casted, 2);
+					else
+						System.out.println("Data does not have 3 or 4 channels");
+				}
+				else
+					System.out.println("Data is not UINT8");
+				if (dataSource != null)
+					new RgbColorImageViewer<ArgbAlgebra,ArgbMember>(G.ARGB, dataSource);
 			}
 		});
 		

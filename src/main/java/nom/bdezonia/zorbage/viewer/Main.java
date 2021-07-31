@@ -42,6 +42,7 @@ import javax.swing.*;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
+import nom.bdezonia.zorbage.ecat.Ecat;
 import nom.bdezonia.zorbage.gdal.Gdal;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
@@ -126,6 +127,42 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
  
+		JButton loadEcat = new JButton("Load using ecat");
+		loadEcat.addMouseListener(new MouseListener() {
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+			}
+			
+			public void mousePressed(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+
+				JFileChooser chooser = new JFileChooser();
+				
+				chooser.showOpenDialog(frame);
+				
+				File f = chooser.getSelectedFile();
+
+				if (f != null) {
+				
+					DataBundle bundle = Ecat.loadAllDatasets(f.getAbsolutePath());
+				
+					displayAll(bundle);
+				}
+			}
+		});
+
 		JButton loadGdal = new JButton("Load using gdal");
 		loadGdal.addMouseListener(new MouseListener() {
 			
@@ -282,8 +319,11 @@ public class Main<T extends Algebra<T,U>, U> {
 			}
 		});
 
+
 		Panel bp = new Panel();
+		bp.setLayout(new BoxLayout(bp, BoxLayout.Y_AXIS));
 		
+		bp.add(loadEcat);
 		bp.add(loadGdal);
 		bp.add(loadNetcdf);
 		bp.add(loadNifti);
@@ -293,7 +333,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		pane.setLayout(new BorderLayout());
 		
-		pane.add(bp, BorderLayout.NORTH);
+		pane.add(bp, BorderLayout.CENTER);
 		frame.pack();
 
 		frame.setVisible(true);

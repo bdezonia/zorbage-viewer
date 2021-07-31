@@ -168,7 +168,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		JPanel buttonPanel = new JPanel();
 		BoxLayout buttonBoxLayout = new BoxLayout(buttonPanel, BoxLayout.Y_AXIS);
 		buttonPanel.setLayout(buttonBoxLayout);
-		JButton newView = new JButton("New View");
+		JButton swapAxes = new JButton("Swap Axes");
 		JButton snapshot = new JButton("1X Snapshot");
 		JButton incZoom = new JButton("Zoom In");
 		JButton decZoom = new JButton("Zoom Out");
@@ -177,7 +177,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		JButton panUp = new JButton("Up");
 		JButton panDown = new JButton("Down");
 		JButton resetZoom = new JButton("Reset");
-		buttonPanel.add(newView);
+		buttonPanel.add(swapAxes);
 		buttonPanel.add(snapshot);
 		buttonPanel.add(incZoom);
 		buttonPanel.add(decZoom);
@@ -190,7 +190,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		JLabel scaleLabel = new JLabel("Scale: " + pz.effectiveScale());
 		scaleLabel.setFont(font);
 		buttonPanel.add(scaleLabel);
-		newView.addActionListener(new ActionListener() {
+		swapAxes.addActionListener(new ActionListener() {
 			
 			boolean cancelled = false;
 			boolean[] checked = new boolean[dataSource.numDimensions()];

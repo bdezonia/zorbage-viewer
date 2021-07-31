@@ -207,7 +207,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.setLayout(buttonBoxLayout);
 		JButton loadLut = new JButton("Load LUT");
 		JButton resetLut = new JButton("Reset LUT");
-		JButton newView = new JButton("New View");
+		JButton swapAxes = new JButton("Swap Axes");
 		JButton snapshot = new JButton("1X Snapshot");
 		JButton incZoom = new JButton("Zoom In");
 		JButton decZoom = new JButton("Zoom Out");
@@ -222,7 +222,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		check.setFont(font);
 		buttonPanel.add(loadLut);
 		buttonPanel.add(resetLut);
-		buttonPanel.add(newView);
+		buttonPanel.add(swapAxes);
 		buttonPanel.add(snapshot);
 		buttonPanel.add(incZoom);
 		buttonPanel.add(decZoom);
@@ -254,7 +254,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				setColorTable(LutUtils.DEFAULT_COLOR_TABLE);
 			}
 		});
-		newView.addActionListener(new ActionListener() {
+		swapAxes.addActionListener(new ActionListener() {
 			
 			boolean cancelled = false;
 			boolean[] checked = new boolean[dataSource.numDimensions()];

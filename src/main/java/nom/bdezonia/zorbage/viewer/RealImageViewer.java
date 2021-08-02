@@ -108,6 +108,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private AtomicBoolean animatingRightNow = new AtomicBoolean();
 	private HighPrecisionMember dispMin = null;
 	private HighPrecisionMember dispMax = null;
+	private final JLabel ctrXLabel;
+	private final JLabel ctrYLabel;
 
 	/**
 	 * Make an interactive graphical viewer for a real data source.
@@ -193,6 +195,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JLabel scaleLabel = new JLabel("Scale: 1X");
 		scaleLabel.setFont(font);
 
+		ctrXLabel = new JLabel("Zoom center d0:");
+		ctrXLabel.setFont(font);
+
+		ctrYLabel = new JLabel("Zoom center d1:");
+		ctrYLabel.setFont(font);
+
+		setZoomCenterLabels();
+		
 		JLabel sourceLabel = new JLabel("Source: "+source);
 		sourceLabel.setFont(font);
 		sourceLabel.setOpaque(true);
@@ -342,6 +352,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e) {
 				if (pz.increaseZoom()) {
 					scaleLabel.setText("Scale: " + pz.effectiveScale());
+					setZoomCenterLabels();
 					pz.draw();
 					frame.repaint();
 				}
@@ -353,6 +364,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e) {
 				if (pz.decreaseZoom()) {
 					scaleLabel.setText("Scale: " + pz.effectiveScale());
+					setZoomCenterLabels();
 					pz.draw();
 					frame.repaint();
 				}
@@ -363,6 +375,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (pz.panLeft(75)) {
+					setZoomCenterLabels();
 					pz.draw();
 					frame.repaint();
 				}
@@ -373,6 +386,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (pz.panRight(75)) {
+					setZoomCenterLabels();
 					pz.draw();
 					frame.repaint();
 				}
@@ -383,6 +397,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (pz.panUp(75)) {
+					setZoomCenterLabels();
 					pz.draw();
 					frame.repaint();
 				}
@@ -393,6 +408,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (pz.panDown(75)) {
+					setZoomCenterLabels();
 					pz.draw();
 					frame.repaint();
 				}
@@ -404,6 +420,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e) {
 				pz.reset();
 				scaleLabel.setText("Scale: " + pz.effectiveScale());
+				setZoomCenterLabels();
 				pz.draw();
 				frame.repaint();
 			}
@@ -658,6 +675,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 		miscPanel.add(new JSeparator());
 		miscPanel.add(scaleLabel);
+		miscPanel.add(ctrXLabel);
+		miscPanel.add(ctrYLabel);
 		miscPanel.add(new JSeparator());
 		miscPanel.add(check);
 		miscPanel.add(new JSeparator());
@@ -845,6 +864,30 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			}
 			animatingRightNow.set(false);
 		}
+	}
+	
+	private void setZoomCenterLabels() {
+
+		// TODO - take this code and make a viewCoord to modelCoord xform. Use it
+		// in mouse listener and here to DRY code up
+		
+		DimensionedDataSource<?> model = planeData.getDataSource();
+
+		long[] modelCoords = new long[model.numDimensions()];
+		BigDecimal[] realWorldCoords = new BigDecimal[model.numDimensions()];
+
+		int axisNumber0 = planeData.axisNumber0();
+		int axisNumber1 = planeData.axisNumber1();
+
+		long i0 = pz.pixelToModel(pz.paneWidth/2, pz.getVirtualOriginX());
+		long i1 = pz.pixelToModel(pz.paneHeight/2, pz.getVirtualOriginY());
+		
+		planeData.getModelCoords(i0, i1, modelCoords);
+		
+		model.getCoordinateSpace().project(modelCoords, realWorldCoords);
+		
+		ctrXLabel.setText("Zoom Ctr d0: "+realWorldCoords[axisNumber0]);
+		ctrYLabel.setText("Zoom Ctr d1: "+realWorldCoords[axisNumber1]);
 	}
 	
 	// calcs the pixel type's value bounds
@@ -1193,53 +1236,49 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					boolean includesNegInfs = false; 
 					long numCounted = 0;
 					boolean modelCoordsInBounds = false;
-					for (int dy = -intensityBoxHalfSize(); dy <= intensityBoxHalfSize(); dy++) {
-						for (int dx = -intensityBoxHalfSize(); dx <= intensityBoxHalfSize(); dx++) {
-							long mx = pixelToModel(x+dx, originX);
-							long my = pixelToModel(y+dy, originY);
-							if (mx >= 0 && mx < maxDimX && my >= 0 && my < maxDimY) {
-								modelCoordsInBounds = true;
-								planeData.get(mx, my, value);
-								if (nanTester != null && nanTester.isNaN().call(value))
-									includesNans = true;
-								else if (infTester != null && infTester.isInfinite().call(value)) {
-									if (signumTester.signum().call(value) < 0)
-										includesNegInfs = true;
-									else
-										includesPosInfs = true;
-								}
-								else {
-									((HighPrecRepresentation) value).toHighPrec(tmp);
-									G.HP.add().call(sum, tmp, sum);
-									numCounted++;
-								}
-							}
-							int argb = 0;
-							if (modelCoordsInBounds) {
-
-								// calc average intensity
-
-								BigDecimal avgIntensity = getIntensity(sum, numCounted, includesNans, includesPosInfs, includesNegInfs);
-								
-								argb = getColor(avgIntensity);
-							}
-							else {
-								
-								argb = RgbUtils.argb(255, 0, 0, 0);
-							}
-							
-							for (int dv = -drawingBoxHalfSize(); dv <= drawingBoxHalfSize(); dv++) {
-								for (int du = -drawingBoxHalfSize(); du <= drawingBoxHalfSize(); du++) {
-
-									// plot a point
-									plot(argb, arrayInt, x+du, y+dv);
-								}
-							}
+					long mx = pixelToModel(x, originX);
+					long my = pixelToModel(y, originY);
+					if (mx >= 0 && mx < maxDimX && my >= 0 && my < maxDimY) {
+						modelCoordsInBounds = true;
+						planeData.get(mx, my, value);
+						if (nanTester != null && nanTester.isNaN().call(value))
+							includesNans = true;
+						else if (infTester != null && infTester.isInfinite().call(value)) {
+							if (signumTester.signum().call(value) < 0)
+								includesNegInfs = true;
+							else
+								includesPosInfs = true;
+						}
+						else {
+							((HighPrecRepresentation) value).toHighPrec(tmp);
+							G.HP.add().call(sum, tmp, sum);
+							numCounted++;
 						}
 					}
+					int color = 0;
+					if (modelCoordsInBounds) {
+
+						// calc average intensity
+
+						BigDecimal avgIntensity = getIntensity(sum, numCounted, includesNans, includesPosInfs, includesNegInfs);
+						
+						color = getColor(avgIntensity);
+					}
+					else {
+						
+						color = RgbUtils.argb(255, 0, 0, 0);
+					}
 					
+					for (int dv = -drawingBoxHalfSize(); dv <= drawingBoxHalfSize(); dv++) {
+						for (int du = -drawingBoxHalfSize(); du <= drawingBoxHalfSize(); du++) {
+
+							// plot a point
+							plot(color, arrayInt, x+du, y+dv);
+						}
+					}
 				}
 			}
+			
 		}
 
 		private BigDecimal getIntensity(HighPrecisionMember valueSum, long numValues, boolean includesNans, boolean includesPosInfs, boolean includesNegInfs) {

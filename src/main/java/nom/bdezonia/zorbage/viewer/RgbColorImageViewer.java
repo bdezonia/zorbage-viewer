@@ -143,6 +143,9 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			positionLabels[i].setFont(font);
 		}
 		
+		JLabel scaleLabel = new JLabel("Scale: 1X");
+		scaleLabel.setFont(font);
+
 		JLabel sourceLabel = new JLabel("Source: "+source);
 		sourceLabel.setFont(font);
 		sourceLabel.setOpaque(true);
@@ -187,8 +190,6 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(panDown);
 		buttonPanel.add(resetZoom);
 		buttonPanel.add(new JSeparator());
-		JLabel scaleLabel = new JLabel("Scale: " + pz.effectiveScale());
-		scaleLabel.setFont(font);
 		buttonPanel.add(scaleLabel);
 		swapAxes.addActionListener(new ActionListener() {
 			
@@ -477,6 +478,8 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			dimLabel.setFont(font);
 			miscPanel.add(dimLabel);
 		}
+		miscPanel.add(new JSeparator());
+		miscPanel.add(scaleLabel);
 		miscPanel.add(new JSeparator());
 
 		JPanel sliderPanel = new JPanel();

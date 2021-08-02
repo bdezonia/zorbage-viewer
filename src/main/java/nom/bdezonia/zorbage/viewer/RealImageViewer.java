@@ -180,6 +180,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			positionLabels[i].setFont(font);
 		}
 		
+		JLabel scaleLabel = new JLabel("Scale: 1X");
+		scaleLabel.setFont(font);
+
 		JLabel sourceLabel = new JLabel("Source: "+source);
 		sourceLabel.setFont(font);
 		sourceLabel.setOpaque(true);
@@ -217,9 +220,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton panDown = new JButton("Down");
 		JButton resetZoom = new JButton("Reset");
 		JButton toColor = new JButton("To Color");
-		JCheckBox check = new JCheckBox("Use data range");
-		check.setSelected(preferDataRange);
-		check.setFont(font);
 		buttonPanel.add(loadLut);
 		buttonPanel.add(resetLut);
 		buttonPanel.add(swapAxes);
@@ -233,9 +233,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(resetZoom);
 		buttonPanel.add(toColor);
 		buttonPanel.add(new JSeparator());
-		JLabel scaleLabel = new JLabel("Scale: " + pz.effectiveScale());
-		scaleLabel.setFont(font);
-		buttonPanel.add(scaleLabel);
 		loadLut.addActionListener(new ActionListener() {
 			
 			@Override
@@ -558,6 +555,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			}
 		});
 		
+		JCheckBox check = new JCheckBox("Use data range");
+		check.setSelected(preferDataRange);
+		check.setFont(font);
+
 		JPanel miscPanel = new JPanel();
 		BoxLayout miscBoxLayout = new BoxLayout(miscPanel, BoxLayout.Y_AXIS);
 		miscPanel.setLayout(miscBoxLayout);
@@ -573,7 +574,17 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			dimLabel.setFont(font);
 			miscPanel.add(dimLabel);
 		}
+		miscPanel.add(new JSeparator());
+		miscPanel.add(scaleLabel);
+		miscPanel.add(new JSeparator());
 		miscPanel.add(check);
+		miscPanel.add(new JSeparator());
+		JLabel minLabel = new JLabel("Min: ");
+		minLabel.setFont(font);
+		JLabel maxLabel = new JLabel("Max: ");
+		maxLabel.setFont(font);
+		miscPanel.add(minLabel);
+		miscPanel.add(maxLabel);
 		miscPanel.add(new JSeparator());
 		check.addActionListener(new ActionListener() {
 			
@@ -581,6 +592,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e) {
 				preferDataRange = !preferDataRange;
 				calcMinMax();
+				minLabel.setText("Min: " + min);
+				maxLabel.setText("Max: " + max);
 				pz.draw();
 				frame.repaint();
 			}
@@ -603,6 +616,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		calcMinMax();
 		
+		minLabel.setText("Min: " + min);
+		maxLabel.setText("Max: " + max);
+
 		pz.draw();
 		
 		frame.repaint();

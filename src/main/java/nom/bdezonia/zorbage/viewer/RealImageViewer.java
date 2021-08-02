@@ -57,6 +57,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTextField;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
@@ -105,6 +106,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private Ordered<U> signumTester = null;
 	private final Font font = new Font("Verdana", Font.PLAIN, 18);
 	private AtomicBoolean animatingRightNow = new AtomicBoolean();
+	private HighPrecisionMember dispMin = null;
+	private HighPrecisionMember dispMax = null;
+
 	/**
 	 * Make an interactive graphical viewer for a real data source.
 	 * @param alg The algebra that matches the type of data to display
@@ -179,7 +183,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			positionLabels[i] = new JLabel();
 			positionLabels[i].setFont(font);
 		}
+
+		JLabel dispMinLabel = new JLabel("Display Min: ");
+		dispMinLabel.setFont(font);
 		
+		JLabel dispMaxLabel = new JLabel("Display Max: ");
+		dispMaxLabel.setFont(font);
+
 		JLabel scaleLabel = new JLabel("Scale: 1X");
 		scaleLabel.setFont(font);
 
@@ -208,9 +218,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JPanel buttonPanel = new JPanel();
 		BoxLayout buttonBoxLayout = new BoxLayout(buttonPanel, BoxLayout.Y_AXIS);
 		buttonPanel.setLayout(buttonBoxLayout);
-		JButton loadLut = new JButton("Load LUT");
+		JButton loadLut = new JButton("Load LUT ...");
 		JButton resetLut = new JButton("Reset LUT");
-		JButton swapAxes = new JButton("Swap Axes");
+		JButton swapAxes = new JButton("Swap Axes ...");
 		JButton snapshot = new JButton("1X Snapshot");
 		JButton incZoom = new JButton("Zoom In");
 		JButton decZoom = new JButton("Zoom Out");
@@ -220,6 +230,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton panDown = new JButton("Down");
 		JButton resetZoom = new JButton("Reset");
 		JButton toColor = new JButton("To Color");
+		JButton dispRange = new JButton("Display Range ...");
 		buttonPanel.add(loadLut);
 		buttonPanel.add(resetLut);
 		buttonPanel.add(swapAxes);
@@ -231,6 +242,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(panUp);
 		buttonPanel.add(panDown);
 		buttonPanel.add(resetZoom);
+		buttonPanel.add(dispRange);
 		buttonPanel.add(toColor);
 		buttonPanel.add(new JSeparator());
 		loadLut.addActionListener(new ActionListener() {
@@ -394,6 +406,76 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				scaleLabel.setText("Scale: " + pz.effectiveScale());
 				pz.draw();
 				frame.repaint();
+			}
+		});
+		dispRange.addActionListener(new ActionListener() {
+			
+			boolean cancelled = false;
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+				dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
+				dlg.add(new JLabel("Choose two values that specify the range of values to display"));
+				JButton clrButton = new JButton("Clear");
+				dlg.add(clrButton);
+				dlg.add(new JLabel("Min displayable value"));
+				JTextField minField = new JTextField(20);
+				minField.setText(dispMin == null ? "" : dispMin.toString());
+				dlg.add(minField);
+				dlg.add(new JLabel("Max displayable value"));
+				JTextField maxField = new JTextField(20);
+				maxField.setText(dispMax == null ? "" : dispMax.toString());
+				dlg.add(maxField);
+				clrButton.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						dispMin = null;
+						dispMax = null;
+						minField.setText("");
+						maxField.setText("");
+					}
+				});
+				JButton ok = new JButton("Ok");
+				ok.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						cancelled = false;
+						dlg.setVisible(false);
+					}
+				});
+				JButton cancel = new JButton("Cancel");
+				cancel.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						cancelled = true;
+						dlg.setVisible(false);
+					}
+				});
+				dlg.add(ok);
+				dlg.add(cancel);
+				dlg.pack();
+				dlg.setVisible(true);
+				if (!cancelled) {
+					String minStr = minField.getText();
+					String maxStr = maxField.getText();
+					if (minStr == null || minStr.length() == 0) {
+						dispMin = null;
+					}
+					else {
+						dispMin = G.HP.construct(minStr);
+					}
+					if (maxStr == null || maxStr.length() == 0) {
+						dispMax = null;
+					}
+					else {
+						dispMax = G.HP.construct(maxStr);
+					}
+					dispMinLabel.setText("Display Min: " + (dispMin == null ? min : dispMin));
+					dispMaxLabel.setText("Display Max: " + (dispMax == null ? max : dispMax));
+					pz.draw();
+					frame.repaint();
+				}
 			}
 		});
 		toColor.addActionListener(new ActionListener() {
@@ -586,6 +668,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		miscPanel.add(minLabel);
 		miscPanel.add(maxLabel);
 		miscPanel.add(new JSeparator());
+		miscPanel.add(dispMinLabel);
+		miscPanel.add(dispMaxLabel);
+		miscPanel.add(new JSeparator());
 		check.addActionListener(new ActionListener() {
 			
 			@Override
@@ -594,6 +679,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				calcMinMax();
 				minLabel.setText("Min: " + min);
 				maxLabel.setText("Max: " + max);
+				dispMinLabel.setText("Display Min: " + (dispMin == null ? min : dispMin));
+				dispMaxLabel.setText("Display Max: " + (dispMax == null ? max : dispMax));
 				pz.draw();
 				frame.repaint();
 			}
@@ -618,6 +705,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		minLabel.setText("Min: " + min);
 		maxLabel.setText("Max: " + max);
+		dispMinLabel.setText("Display Min: " + (dispMin == null ? min : dispMin));
+		dispMaxLabel.setText("Display Max: " + (dispMax == null ? max : dispMax));
 
 		pz.draw();
 		
@@ -1195,6 +1284,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			HighPrecisionMember hpMax = new HighPrecisionMember();
 			((HighPrecRepresentation) min).toHighPrec(hpMin);
 			((HighPrecRepresentation) max).toHighPrec(hpMax);
+			if (dispMin != null && G.HP.isGreater().call(dispMin, hpMin))
+				G.HP.assign().call(dispMin, hpMin);
+			if (dispMax != null && G.HP.isLess().call(dispMax, hpMax))
+				G.HP.assign().call(dispMax, hpMax);
 
 			BigDecimal average =
 					valueSum.v().divide(BigDecimal.valueOf(numValues), HighPrecisionAlgebra.getContext());

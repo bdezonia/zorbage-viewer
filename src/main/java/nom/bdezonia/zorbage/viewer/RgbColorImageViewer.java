@@ -83,6 +83,8 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 	private final JFrame frame;
 	private final Font font = new Font("Verdana", Font.PLAIN, 18);
 	private final AtomicBoolean animatingRightNow = new AtomicBoolean();
+	private final JLabel ctrXLabel; 
+	private final JLabel ctrYLabel; 
 
 	/**
 	 * Make an interactive graphical viewer for a real data source.
@@ -146,6 +148,14 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		JLabel scaleLabel = new JLabel("Scale: 1X");
 		scaleLabel.setFont(font);
 
+		ctrXLabel = new JLabel("Zoom center d0:");
+		ctrXLabel.setFont(font);
+
+		ctrYLabel = new JLabel("Zoom center d1:");
+		ctrYLabel.setFont(font);
+
+		setZoomCenterLabels();
+		
 		JLabel sourceLabel = new JLabel("Source: "+source);
 		sourceLabel.setFont(font);
 		sourceLabel.setOpaque(true);
@@ -190,7 +200,6 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(panDown);
 		buttonPanel.add(resetZoom);
 		buttonPanel.add(new JSeparator());
-		buttonPanel.add(scaleLabel);
 		swapAxes.addActionListener(new ActionListener() {
 			
 			boolean cancelled = false;
@@ -270,6 +279,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e) {
 				if (pz.increaseZoom()) {
 					scaleLabel.setText("Scale: " + pz.effectiveScale());
+					setZoomCenterLabels();
 					pz.draw();
 					frame.repaint();
 				}
@@ -281,6 +291,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e) {
 				if (pz.decreaseZoom()) {
 					scaleLabel.setText("Scale: " + pz.effectiveScale());
+					setZoomCenterLabels();
 					pz.draw();
 					frame.repaint();
 				}
@@ -291,6 +302,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (pz.panLeft(75)) {
+					setZoomCenterLabels();
 					pz.draw();
 					frame.repaint();
 				}
@@ -301,6 +313,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (pz.panRight(75)) {
+					setZoomCenterLabels();
 					pz.draw();
 					frame.repaint();
 				}
@@ -311,6 +324,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (pz.panUp(75)) {
+					setZoomCenterLabels();
 					pz.draw();
 					frame.repaint();
 				}
@@ -321,6 +335,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (pz.panDown(75)) {
+					setZoomCenterLabels();
 					pz.draw();
 					frame.repaint();
 				}
@@ -332,6 +347,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e) {
 				pz.reset();
 				scaleLabel.setText("Scale: " + pz.effectiveScale());
+				setZoomCenterLabels();
 				pz.draw();
 				frame.repaint();
 			}
@@ -480,6 +496,8 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		}
 		miscPanel.add(new JSeparator());
 		miscPanel.add(scaleLabel);
+		miscPanel.add(ctrXLabel);
+		miscPanel.add(ctrYLabel);
 		miscPanel.add(new JSeparator());
 
 		JPanel sliderPanel = new JPanel();
@@ -623,6 +641,30 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			animatingRightNow.set(false);
 		}
 	}
+
+	private void setZoomCenterLabels() {
+
+		// TODO - take this code and make a viewCoord to modelCoord xform. Use it
+		// in mouse listener and here to DRY code up
+		
+		DimensionedDataSource<?> model = planeData.getDataSource();
+
+		long[] modelCoords = new long[model.numDimensions()];
+		BigDecimal[] realWorldCoords = new BigDecimal[model.numDimensions()];
+
+		int axisNumber0 = planeData.axisNumber0();
+		int axisNumber1 = planeData.axisNumber1();
+
+		long i0 = pz.pixelToModel(pz.paneWidth/2, pz.getVirtualOriginX());
+		long i1 = pz.pixelToModel(pz.paneHeight/2, pz.getVirtualOriginY());
+		
+		planeData.getModelCoords(i0, i1, modelCoords);
+		
+		model.getCoordinateSpace().project(modelCoords, realWorldCoords);
+		
+		ctrXLabel.setText("Zoom Ctr d0: "+realWorldCoords[axisNumber0]);
+		ctrYLabel.setText("Zoom Ctr d1: "+realWorldCoords[axisNumber1]);
+	}
 	
 	@SuppressWarnings("unchecked")
 	class PanZoomView {
@@ -691,7 +733,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		public long getVirtualHeight() {
 			return calculatedPaneHeight;
 		}
-		
+
 		public int drawingBoxHalfSize() {  // this works well when we only support odd zoom factors
 			return scaleNumer / 2;
 		}

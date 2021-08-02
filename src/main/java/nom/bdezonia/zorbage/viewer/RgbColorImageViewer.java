@@ -662,8 +662,10 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		
 		model.getCoordinateSpace().project(modelCoords, realWorldCoords);
 		
-		ctrXLabel.setText("Zoom Ctr d0: "+realWorldCoords[axisNumber0]);
-		ctrYLabel.setText("Zoom Ctr d1: "+realWorldCoords[axisNumber1]);
+		DecimalFormat df = new DecimalFormat("0.000");
+
+		ctrXLabel.setText("Zoom Ctr d0: "+df.format(realWorldCoords[axisNumber0]));
+		ctrYLabel.setText("Zoom Ctr d1: "+df.format(realWorldCoords[axisNumber1]));
 	}
 	
 	@SuppressWarnings("unchecked")

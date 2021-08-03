@@ -1492,19 +1492,17 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			N extends Algebra<N,O> & Trigonometric<O> & RealConstants<O> &
 				Multiplication<O> & Addition<O> & Invertible<O> & Unity<O>,
 			O>
-		void doFFT(Object cAlg, Object rAlg, DimensionedDataSource<O> input)
+		void doFFT(Algebra<?,?> complexAlgebra, Algebra<?,?> realAlgebra, DimensionedDataSource<O> input)
 	{
 		boolean error = false;
 		
-		if (!(cAlg instanceof Algebra))
+		if (!(complexAlgebra instanceof Addition))
 			error = false;
-		if (!(cAlg instanceof Addition))
-			error = false;
-		if (!(cAlg instanceof Multiplication))
+		if (!(complexAlgebra instanceof Multiplication))
 			error = false;
 		
 		@SuppressWarnings("unchecked")
-		L cmplxAlg = (L) cAlg;
+		L cmplxAlg = (L) complexAlgebra;
 		
 		M tmpM = cmplxAlg.construct();
 		
@@ -1513,23 +1511,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		if (!(tmpM instanceof Allocatable))
 			error = false;
 		
-		if (!(rAlg instanceof Algebra))
+		if (!(realAlgebra instanceof Trigonometric))
 			error = false;
-		if (!(rAlg instanceof Trigonometric))
+		if (!(realAlgebra instanceof RealConstants))
 			error = false;
-		if (!(rAlg instanceof RealConstants))
+		if (!(realAlgebra instanceof Multiplication))
 			error = false;
-		if (!(rAlg instanceof Multiplication))
+		if (!(realAlgebra instanceof Addition))
 			error = false;
-		if (!(rAlg instanceof Addition))
+		if (!(realAlgebra instanceof Invertible))
 			error = false;
-		if (!(rAlg instanceof Invertible))
-			error = false;
-		if (!(rAlg instanceof Unity))
+		if (!(realAlgebra instanceof Unity))
 			error = false;
 
 		@SuppressWarnings("unchecked")
-		N realAlg = (N) rAlg;
+		N realAlg = (N) realAlgebra;
 		
 		if (error)
 			throw new IllegalArgumentException("FFT inputs do not match contract");

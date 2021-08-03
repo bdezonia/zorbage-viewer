@@ -59,24 +59,37 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
 
+import nom.bdezonia.zorbage.algebra.Addition;
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.Bounded;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
 import nom.bdezonia.zorbage.algebra.Infinite;
+import nom.bdezonia.zorbage.algebra.Invertible;
+import nom.bdezonia.zorbage.algebra.Multiplication;
 import nom.bdezonia.zorbage.algebra.NaN;
 import nom.bdezonia.zorbage.algebra.Ordered;
+import nom.bdezonia.zorbage.algebra.RealConstants;
+import nom.bdezonia.zorbage.algebra.SetComplex;
+import nom.bdezonia.zorbage.algebra.Trigonometric;
+import nom.bdezonia.zorbage.algebra.Unity;
+import nom.bdezonia.zorbage.algorithm.FFT;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
 import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
+import nom.bdezonia.zorbage.data.NdData;
+import nom.bdezonia.zorbage.datasource.FixedSizeDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
+import nom.bdezonia.zorbage.datasource.ProcedurePaddedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
+import nom.bdezonia.zorbage.procedure.Procedure2;
+import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
 import nom.bdezonia.zorbage.type.color.RgbUtils;
@@ -1472,5 +1485,118 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 			return newDs;
 		}
+	}
+	
+	public <L extends Algebra<L,M> & Addition<M> & Multiplication<M>,
+			M extends SetComplex<O> & Allocatable<M>,
+			N extends Algebra<N,O> & Trigonometric<O> & RealConstants<O> &
+				Multiplication<O> & Addition<O> & Invertible<O> & Unity<O>,
+			O>
+		void doFFT(Object cAlg, Object rAlg, DimensionedDataSource<O> input)
+	{
+		boolean error = false;
+		
+		if (!(cAlg instanceof Algebra))
+			error = false;
+		if (!(cAlg instanceof Addition))
+			error = false;
+		if (!(cAlg instanceof Multiplication))
+			error = false;
+		
+		@SuppressWarnings("unchecked")
+		L cmplxAlg = (L) cAlg;
+		
+		M tmpM = cmplxAlg.construct();
+		
+		if (!(tmpM instanceof SetComplex))
+			error = false;
+		if (!(tmpM instanceof Allocatable))
+			error = false;
+		
+		if (!(rAlg instanceof Algebra))
+			error = false;
+		if (!(rAlg instanceof Trigonometric))
+			error = false;
+		if (!(rAlg instanceof RealConstants))
+			error = false;
+		if (!(rAlg instanceof Multiplication))
+			error = false;
+		if (!(rAlg instanceof Addition))
+			error = false;
+		if (!(rAlg instanceof Invertible))
+			error = false;
+		if (!(rAlg instanceof Unity))
+			error = false;
+
+		@SuppressWarnings("unchecked")
+		N realAlg = (N) rAlg;
+		
+		if (error)
+			throw new IllegalArgumentException("FFT inputs do not match contract");
+
+		long successfulSize = -1;
+		long edgeSize = -1;
+		for (long i = 1; i < 63; i++) {
+			
+			edgeSize = i;
+			
+			long sqSz = edgeSize * edgeSize;
+			
+			if (sqSz >= input.rawData().size()) {
+				successfulSize = sqSz;
+				break;
+			}
+		}
+
+		if ((successfulSize < 0)) {
+			throw new IllegalArgumentException("can't find an enclosing power for FFT");
+		}
+		
+		// zero pad the real input
+		
+		IndexedDataSource<O> padded =
+				new ProcedurePaddedDataSource<N,O>(
+						realAlg,
+						input.rawData(),
+						new Procedure2<Long, O>()
+						{
+							public void call(Long a, O b) {
+								realAlg.zero().call(b);
+							}
+						}
+					);
+		
+		// and make sure its size is a power of 2
+		
+		IndexedDataSource<O> correctSizeInput = new FixedSizeDataSource<>(successfulSize, padded);
+		
+		// now make a complex data source with real values set to input
+		
+		IndexedDataSource<M> complexInput = Storage.allocate(cmplxAlg.construct(), successfulSize);
+		
+		// And define where we will put the result
+		
+		IndexedDataSource<M> complexOutput = Storage.allocate(cmplxAlg.construct(), successfulSize);
+
+		// copy the real data to the r values of a complex data set
+		
+		O realValue = realAlg.construct();
+		O zero = realAlg.construct();
+		M complexValue = cmplxAlg.construct();
+		for (long i = 0; i < successfulSize; i++) {
+			correctSizeInput.get(i, realValue);
+			complexValue.setR(realValue);
+			complexValue.setI(zero);
+			complexInput.set(i, complexValue);
+		}
+		
+		// run the FFT on that data
+		
+		FFT.compute(cmplxAlg, realAlg, complexInput, complexOutput);
+		
+		DimensionedDataSource<M> complexDs = new NdData<M>(new long[] {edgeSize, edgeSize}, complexOutput);
+
+		// TODO
+		// new ComplexImageViewer(complexDs);
 	}
 }

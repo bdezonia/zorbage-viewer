@@ -94,6 +94,10 @@ import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
 import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.integer.int8.UnsignedInt8Member;
+import nom.bdezonia.zorbage.type.real.float128.Float128Member;
+import nom.bdezonia.zorbage.type.real.float16.Float16Member;
+import nom.bdezonia.zorbage.type.real.float32.Float32Member;
+import nom.bdezonia.zorbage.type.real.float64.Float64Member;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
 
@@ -255,6 +259,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton resetZoom = new JButton("Reset");
 		JButton toColor = new JButton("To Color");
 		JButton dispRange = new JButton("Display Range ...");
+		JButton fft = new JButton("FFT");
 		buttonPanel.add(loadLut);
 		buttonPanel.add(resetLut);
 		buttonPanel.add(swapAxes);
@@ -268,6 +273,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(resetZoom);
 		buttonPanel.add(dispRange);
 		buttonPanel.add(toColor);
+		buttonPanel.add(fft);
 		buttonPanel.add(new JSeparator());
 		loadLut.addActionListener(new ActionListener() {
 			
@@ -544,6 +550,35 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					new RgbColorImageViewer<ArgbAlgebra,ArgbMember>(G.ARGB, dataSource);
 			}
 		});
+		fft.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				
+				DimensionedDataSource<U> data = planeData.getDataSource();
+				
+				if (min instanceof Float16Member) {
+					doFFT(G.CHLF, G.HLF, data);
+				}
+				else if (min instanceof Float32Member) {
+					doFFT(G.CFLT, G.FLT, data);
+				}
+				else if (min instanceof Float64Member) {
+					doFFT(G.CDBL, G.DBL, data);
+				}
+				else if (min instanceof Float128Member) {
+					doFFT(G.CQUAD, G.QUAD, data);
+				}
+				else if (min instanceof HighPrecisionMember) {
+					doFFT(G.CHP, G.HP, data);
+				}
+				else
+					JOptionPane.showMessageDialog(frame,
+						    "Image is not in a recognizable floating point format.",
+						    "WARNING",
+						    JOptionPane.WARNING_MESSAGE);
+			}
+		});
 		
 		JPanel positions = new JPanel();
 		BoxLayout positionsBoxLayout = new BoxLayout(positions, BoxLayout.Y_AXIS);
@@ -655,7 +690,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					if (alternateValue != null)
 						sb.append(alternateValue);
 					else
-						sb.append(df.format(hpVal));
+						sb.append(df.format(hpVal.v()));
 					sb.append(" ");
 					sb.append(dataSource.getValueUnit() == null ? "" : dataSource.getValueUnit());
 					readout.setText(sb.toString());
@@ -709,10 +744,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e) {
 				preferDataRange = !preferDataRange;
 				calcMinMax();
-				minLabel.setText("Min: " + df.format(min));
-				maxLabel.setText("Max: " + df.format(max));
-				dispMinLabel.setText("Display Min: " + df.format(dispMin == null ? min : dispMin));
-				dispMaxLabel.setText("Display Max: " + df.format(dispMax == null ? max : dispMax));
+				minLabel.setText("Min: " + min);
+				maxLabel.setText("Max: " + max);
+				dispMinLabel.setText("Display Min: " + (dispMin == null ? min : dispMin));
+				dispMaxLabel.setText("Display Max: " + (dispMax == null ? max : dispMax));
 				pz.draw();
 				frame.repaint();
 			}
@@ -735,10 +770,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		calcMinMax();
 		
-		minLabel.setText("Min: " + df.format(min));
-		maxLabel.setText("Max: " + df.format(max));
-		dispMinLabel.setText("Display Min: " + df.format(dispMin == null ? min : dispMin));
-		dispMaxLabel.setText("Display Max: " + df.format(dispMax == null ? max : dispMax));
+		minLabel.setText("Min: " + min);
+		maxLabel.setText("Max: " + max);
+		dispMinLabel.setText("Display Min: " + (dispMin == null ? min : dispMin));
+		dispMaxLabel.setText("Display Max: " + (dispMax == null ? max : dispMax));
 
 		pz.draw();
 		
@@ -1492,7 +1527,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			N extends Algebra<N,O> & Trigonometric<O> & RealConstants<O> &
 				Multiplication<O> & Addition<O> & Invertible<O> & Unity<O>,
 			O>
-		void doFFT(Algebra<?,?> complexAlgebra, Algebra<?,?> realAlgebra, DimensionedDataSource<O> input)
+		void doFFT(Algebra<?,?> complexAlgebra, Algebra<?,?> realAlgebra, DimensionedDataSource<?> input)
 	{
 		boolean error = false;
 		
@@ -1532,9 +1567,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		long successfulSize = -1;
 		long edgeSize = -1;
-		for (long i = 1; i < 63; i++) {
+		for (long i = 0; i < 63; i++) {
 			
-			edgeSize = i;
+			edgeSize = 1 << i;
 			
 			long sqSz = edgeSize * edgeSize;
 			
@@ -1549,11 +1584,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 		
 		// zero pad the real input
-		
+		@SuppressWarnings("unchecked")
 		IndexedDataSource<O> padded =
 				new ProcedurePaddedDataSource<N,O>(
 						realAlg,
-						input.rawData(),
+						(IndexedDataSource<O>) input.rawData(),
 						new Procedure2<Long, O>()
 						{
 							public void call(Long a, O b) {
@@ -1592,7 +1627,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		DimensionedDataSource<M> complexDs = new NdData<M>(new long[] {edgeSize, edgeSize}, complexOutput);
 
-		// TODO
-		// new ComplexImageViewer(complexDs);
+		new ComplexImageViewer<L,M,N,O>(cmplxAlg, realAlg, complexDs);
 	}
 }

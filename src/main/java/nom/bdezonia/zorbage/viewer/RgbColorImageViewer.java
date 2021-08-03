@@ -85,6 +85,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 	private final AtomicBoolean animatingRightNow = new AtomicBoolean();
 	private final JLabel ctrXLabel; 
 	private final JLabel ctrYLabel; 
+	DecimalFormat df = new DecimalFormat("0.000");
 
 	/**
 	 * Make an interactive graphical viewer for a real data source.
@@ -400,7 +401,6 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			long[] modelCoords = new long[dataSource.numDimensions()];
 			BigDecimal[] realWorldCoords = new BigDecimal[dataSource.numDimensions()]; 
 			U value = alg.construct();
-			DecimalFormat df = new DecimalFormat("0.000");
 			RgbMember rgb = (value instanceof RgbMember) ? (RgbMember) value : null;
 			ArgbMember argb = (value instanceof ArgbMember) ? (ArgbMember) value : null;
 					
@@ -662,10 +662,8 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		
 		model.getCoordinateSpace().project(modelCoords, realWorldCoords);
 		
-		DecimalFormat df = new DecimalFormat("0.000");
-
-		ctrXLabel.setText("Zoom Ctr d0: "+df.format(realWorldCoords[axisNumber0]));
-		ctrYLabel.setText("Zoom Ctr d1: "+df.format(realWorldCoords[axisNumber1]));
+		ctrXLabel.setText("Zoom Ctr d0: " + df.format(realWorldCoords[axisNumber0]));
+		ctrYLabel.setText("Zoom Ctr d1: " + df.format(realWorldCoords[axisNumber1]));
 	}
 	
 	@SuppressWarnings("unchecked")

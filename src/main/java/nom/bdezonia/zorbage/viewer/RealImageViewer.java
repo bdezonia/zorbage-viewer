@@ -110,6 +110,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private HighPrecisionMember dispMax = null;
 	private final JLabel ctrXLabel;
 	private final JLabel ctrYLabel;
+	DecimalFormat df = new DecimalFormat("0.000");
 
 	/**
 	 * Make an interactive graphical viewer for a real data source.
@@ -579,7 +580,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			long[] modelCoords = new long[dataSource.numDimensions()];
 			BigDecimal[] realWorldCoords = new BigDecimal[dataSource.numDimensions()]; 
 			U value = alg.construct();
-			DecimalFormat df = new DecimalFormat("0.000");
 					
 			@Override
 			public void mouseMoved(MouseEvent e) {
@@ -642,7 +642,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					if (alternateValue != null)
 						sb.append(alternateValue);
 					else
-						sb.append(hpVal);
+						sb.append(df.format(hpVal));
 					sb.append(" ");
 					sb.append(dataSource.getValueUnit() == null ? "" : dataSource.getValueUnit());
 					readout.setText(sb.toString());
@@ -696,10 +696,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e) {
 				preferDataRange = !preferDataRange;
 				calcMinMax();
-				minLabel.setText("Min: " + min);
-				maxLabel.setText("Max: " + max);
-				dispMinLabel.setText("Display Min: " + (dispMin == null ? min : dispMin));
-				dispMaxLabel.setText("Display Max: " + (dispMax == null ? max : dispMax));
+				minLabel.setText("Min: " + df.format(min));
+				maxLabel.setText("Max: " + df.format(max));
+				dispMinLabel.setText("Display Min: " + df.format(dispMin == null ? min : dispMin));
+				dispMaxLabel.setText("Display Max: " + df.format(dispMax == null ? max : dispMax));
 				pz.draw();
 				frame.repaint();
 			}
@@ -722,10 +722,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		calcMinMax();
 		
-		minLabel.setText("Min: " + min);
-		maxLabel.setText("Max: " + max);
-		dispMinLabel.setText("Display Min: " + (dispMin == null ? min : dispMin));
-		dispMaxLabel.setText("Display Max: " + (dispMax == null ? max : dispMax));
+		minLabel.setText("Min: " + df.format(min));
+		maxLabel.setText("Max: " + df.format(max));
+		dispMinLabel.setText("Display Min: " + df.format(dispMin == null ? min : dispMin));
+		dispMaxLabel.setText("Display Max: " + df.format(dispMax == null ? max : dispMax));
 
 		pz.draw();
 		
@@ -886,10 +886,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		model.getCoordinateSpace().project(modelCoords, realWorldCoords);
 		
-		DecimalFormat df = new DecimalFormat("0.000");
-
-		ctrXLabel.setText("Zoom Ctr d0: "+df.format(realWorldCoords[axisNumber0]));
-		ctrYLabel.setText("Zoom Ctr d1: "+df.format(realWorldCoords[axisNumber1]));
+		ctrXLabel.setText("Zoom Ctr d0: " + df.format(realWorldCoords[axisNumber0]));
+		ctrYLabel.setText("Zoom Ctr d1: " + df.format(realWorldCoords[axisNumber1]));
 	}
 	
 	// calcs the pixel type's value bounds

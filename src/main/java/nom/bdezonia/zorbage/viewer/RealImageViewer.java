@@ -1636,9 +1636,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		boolean error = false;
 		
 		if (!(complexAlgebra instanceof Addition))
-			error = false;
+			error = true;
 		if (!(complexAlgebra instanceof Multiplication))
-			error = false;
+			error = true;
 		
 		@SuppressWarnings("unchecked")
 		L cmplxAlg = (L) complexAlgebra;
@@ -1646,22 +1646,22 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		M tmpM = cmplxAlg.construct();
 		
 		if (!(tmpM instanceof SetComplex))
-			error = false;
+			error = true;
 		if (!(tmpM instanceof Allocatable))
-			error = false;
+			error = true;
 		
 		if (!(realAlgebra instanceof Trigonometric))
-			error = false;
+			error = true;
 		if (!(realAlgebra instanceof RealConstants))
-			error = false;
+			error = true;
 		if (!(realAlgebra instanceof Multiplication))
-			error = false;
+			error = true;
 		if (!(realAlgebra instanceof Addition))
-			error = false;
+			error = true;
 		if (!(realAlgebra instanceof Invertible))
-			error = false;
+			error = true;
 		if (!(realAlgebra instanceof Unity))
-			error = false;
+			error = true;
 
 		@SuppressWarnings("unchecked")
 		N realAlg = (N) realAlgebra;

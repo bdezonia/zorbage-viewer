@@ -42,6 +42,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -908,6 +909,21 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 				throw new IllegalArgumentException("back to the drawing board");
 		}
 		
+		private BigInteger modelToPixel(long modelNum, long modelOffset) {
+
+			if (scaleNumer == 1 && scaleDenom == 1) {
+				return BigInteger.valueOf(modelNum).subtract(BigInteger.valueOf(modelOffset));
+			}
+			else if (scaleNumer > 1) {
+				return BigInteger.valueOf(modelNum).subtract(BigInteger.valueOf(modelOffset)).multiply(BigInteger.valueOf(scaleNumer));
+			}
+			else if (scaleDenom > 1) {
+				return BigInteger.valueOf(modelNum).subtract(BigInteger.valueOf(modelOffset)).divide(BigInteger.valueOf(scaleDenom));
+			}
+			else
+				throw new IllegalArgumentException("back to the drawing board");
+		}
+		
 		public void draw() {
 
 			U value = alg.construct();
@@ -959,6 +975,12 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 					
 				}
 			}
+			long maxX1 = planeData.d0()-1;
+			long maxY1 = planeData.d1()-1;
+			line(arrayInt, 0, 0, 0, maxY1);
+			line(arrayInt, 0, maxY1, maxX1, maxY1);
+			line(arrayInt, maxX1, maxY1, maxX1, 0);
+			line(arrayInt, maxX1, 0, 0, 0);
 		}
 		
 		private void plot(int argb, int[] arrayInt, int x, int y) {
@@ -971,6 +993,66 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			arrayInt[bufferPos] = argb;
 		}
 		
+		private void line(int[] arrayInt, long modelX0, long modelY0, long modelX1, long modelY1) {
+
+			// yellow
+			int COLOR = RgbUtils.argb(180, 0xff, 0xff, 0);
+			
+			BigInteger pX0 = modelToPixel(modelX0, originX);
+			BigInteger pX1 = modelToPixel(modelX1, originX);
+			BigInteger pY0 = modelToPixel(modelY0, originY);
+			BigInteger pY1 = modelToPixel(modelY1, originY);
+			
+			// if the line coords are totally out of bounds then skip drawing
+			
+			if (pX0.compareTo(BigInteger.ZERO) < 0 &&
+					pX1.compareTo(BigInteger.ZERO) < 0)
+				return;
+			
+			if (pX0.compareTo(BigInteger.valueOf(paneWidth-1)) > 0 &&
+					pX1.compareTo(BigInteger.valueOf(paneWidth-1)) > 0)
+				return;
+			
+			if (pY0.compareTo(BigInteger.ZERO) < 0 &&
+					pY1.compareTo(BigInteger.ZERO) < 0)
+				return;
+			
+			if (pY0.compareTo(BigInteger.valueOf(paneHeight-1)) > 0 &&
+					pY1.compareTo(BigInteger.valueOf(paneHeight-1)) > 0)
+				return;
+			
+			// clip line if necessary
+			
+			if (pX0.compareTo(BigInteger.ZERO) < 0)
+				pX0 = BigInteger.ZERO;
+
+			if (pX1.compareTo(BigInteger.valueOf(paneWidth-1)) > 0)
+				pX1 = BigInteger.valueOf(paneWidth-1);
+
+			if (pY0.compareTo(BigInteger.ZERO) < 0)
+				pY0 = BigInteger.ZERO;
+
+			if (pY1.compareTo(BigInteger.valueOf(paneHeight-1)) > 0)
+				pY1 = BigInteger.valueOf(paneHeight-1);
+			
+			if (pX0.compareTo(pX1) == 0) {
+				int x = pX0.intValue();
+				int minY = Math.min(pY0.intValue(), pY1.intValue());
+				int maxY = Math.max(pY0.intValue(), pY1.intValue());
+				for (int y = minY; y <= maxY; y++)
+					plot(COLOR, arrayInt, x, y);
+			}
+			else if (pY0.compareTo(pY1) == 0) {
+				int y = pY0.intValue();
+				int minX = Math.min(pX0.intValue(), pX1.intValue());
+				int maxX = Math.max(pX0.intValue(), pX1.intValue());
+				for (int x = minX; x <= maxX; x++)
+					plot(COLOR, arrayInt, x, y);
+			}
+			else {
+				throw new IllegalArgumentException("the line() routine only deals in horz or vert lines");
+			}
+		}
 		
 		/**
 		 * Make a 2d image snapshot of the pan / zoom viewport.

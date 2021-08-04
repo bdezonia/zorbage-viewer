@@ -1636,6 +1636,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		if (!(complexAlgebra instanceof Addition))
 			error = "Complex algebra does not implement Addition";
+		
 		if (!(complexAlgebra instanceof Multiplication))
 			error = "Complex algebra does not implement Multiplication";
 		
@@ -1646,27 +1647,49 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		if (!(tmpM instanceof SetComplex))
 			error = "Complex number does not implement SetComplex";
+		
 		if (!(tmpM instanceof Allocatable))
 			error = "Complex number does not implement Allocatable";
 		
 		if (!(realAlgebra instanceof Trigonometric))
 			error = "Real algebra does not implement Trigonometric";
+		
 		if (!(realAlgebra instanceof RealConstants))
 			error = "Real algebra does not implement RealConstants";
+		
 		if (!(realAlgebra instanceof Multiplication))
 			error = "Real algebra does not implement Multiplication";
+		
 		if (!(realAlgebra instanceof Addition))
 			error = "Real algebra does not implement Addition";
+		
 		if (!(realAlgebra instanceof Invertible))
 			error = "Real algebra does not implement Invertible";
+		
 		if (!(realAlgebra instanceof Unity))
 			error = "Real algebra does not implement Unity";
 
 		@SuppressWarnings("unchecked")
 		N realAlg = (N) realAlgebra;
 		
-		if (error != null)
-			throw new IllegalArgumentException("FFT error: "+error);
+		O tmpO = realAlg.construct();
+		
+		try {
+			
+			tmpM.setR(tmpO);
+			
+		} catch (ClassCastException e) {
+			
+			error = "Complex algebra and real algebra are not compatible";
+		}
+		
+		if (error != null) {
+			JOptionPane.showMessageDialog(frame,
+				    "FFT error: ."+error,
+				    "WARNING",
+				    JOptionPane.WARNING_MESSAGE);
+			return;
+		}
 
 		long successfulSize = -1;
 		long edgeSize = -1;

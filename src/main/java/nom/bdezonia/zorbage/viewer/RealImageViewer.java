@@ -1538,7 +1538,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					plot(COLOR, arrayInt, x, y);
 			}
 			else {
-				System.out.println("" + pX0 + " " + pY0 + " " + pX1 + " " + pY1);
 				throw new IllegalArgumentException("the line() routine only deals in horz or vert lines");
 			}
 		}
@@ -1546,7 +1545,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		/**
 		 * Make a 2d image snapshot of the pan / zoom viewport.
 		 * Calibration and units are transferred to the snapshot
-		 * as much as is feasible. SNapshot is taken at 1x at origin
+		 * as much as is feasible. Snapshot is taken at 1x at origin
 		 * 0,0. No pan or zoom values are respected.
 		 * 
 		 * @return
@@ -1633,12 +1632,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			O>
 		void doFFT(Algebra<?,?> complexAlgebra, Algebra<?,?> realAlgebra, DimensionedDataSource<?> input)
 	{
-		boolean error = false;
+		String error = null;
 		
 		if (!(complexAlgebra instanceof Addition))
-			error = true;
+			error = "Complex algebra does not implement Addition";
 		if (!(complexAlgebra instanceof Multiplication))
-			error = true;
+			error = "Complex algebra does not implement Multiplication";
 		
 		@SuppressWarnings("unchecked")
 		L cmplxAlg = (L) complexAlgebra;
@@ -1646,28 +1645,28 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		M tmpM = cmplxAlg.construct();
 		
 		if (!(tmpM instanceof SetComplex))
-			error = true;
+			error = "Complex number does not implement SetComplex";
 		if (!(tmpM instanceof Allocatable))
-			error = true;
+			error = "Complex number does not implement Allocatable";
 		
 		if (!(realAlgebra instanceof Trigonometric))
-			error = true;
+			error = "Real algebra does not implement Trigonometric";
 		if (!(realAlgebra instanceof RealConstants))
-			error = true;
+			error = "Real algebra does not implement RealConstants";
 		if (!(realAlgebra instanceof Multiplication))
-			error = true;
+			error = "Real algebra does not implement Multiplication";
 		if (!(realAlgebra instanceof Addition))
-			error = true;
+			error = "Real algebra does not implement Addition";
 		if (!(realAlgebra instanceof Invertible))
-			error = true;
+			error = "Real algebra does not implement Invertible";
 		if (!(realAlgebra instanceof Unity))
-			error = true;
+			error = "Real algebra does not implement Unity";
 
 		@SuppressWarnings("unchecked")
 		N realAlg = (N) realAlgebra;
 		
-		if (error)
-			throw new IllegalArgumentException("FFT inputs do not match contract");
+		if (error != null)
+			throw new IllegalArgumentException("FFT error: "+error);
 
 		long successfulSize = -1;
 		long edgeSize = -1;
@@ -1684,7 +1683,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 
 		if ((successfulSize < 0)) {
-			throw new IllegalArgumentException("can't find an enclosing power for FFT");
+			throw new IllegalArgumentException("can't find an enclosing image size for FFT");
 		}
 		
 		// zero pad the real input

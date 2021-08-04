@@ -42,6 +42,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -1044,7 +1045,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			this.originX = ctrX - ctrViewX;
 			this.originY = ctrY - ctrViewY;;
 		}
-		
+
+		// TODO: use BigInts in calcs?		
+
 		private void calcPaneSize() {
 			if (scaleNumer == 1 && scaleDenom == 1) {
 				this.calculatedPaneWidth = paneWidth;
@@ -1062,17 +1065,25 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				throw new IllegalArgumentException("weird scale components "+scaleNumer+" "+scaleDenom);
 		}
 
+		// TODO: use BigInts in calcs?
+		
 		public long getVirtualOriginX() {
 			return originX;
 		}
+		
+		// TODO: use BigInts in calcs?
 		
 		public long getVirtualOriginY() {
 			return originY;
 		}
 		
+		// TODO: use BigInts in calcs?
+		
 		public long getVirtualWidth() {
 			return calculatedPaneWidth;
 		}
+		
+		// TODO: use BigInts in calcs?
 		
 		public long getVirtualHeight() {
 			return calculatedPaneHeight;
@@ -1109,6 +1120,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		public void reset() {
 			setInitialNumbers();
 		}
+		
+		// TODO: use BigInts in calcs?
 		
 		public boolean increaseZoom() {
 			
@@ -1149,6 +1162,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 		
 		
+		// TODO: use BigInts in calcs?
+		
 		public boolean decreaseZoom() {
 			
 			boolean changed = false;
@@ -1187,6 +1202,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			return changed;
 		}
 
+		// TODO: use BigInts in calcs?
+		
 		public boolean panLeft(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
 			long newPos = originX - numModelUnits;
@@ -1198,6 +1215,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			return true;
 		}
 
+		// TODO: use BigInts in calcs?
+		
 		public boolean panRight(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
 			long newPos = originX + numModelUnits;
@@ -1209,6 +1228,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			return true;
 		}
 
+		// TODO: use BigInts in calcs?
+		
 		public boolean panUp(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
 			long newPos = originY - numModelUnits;
@@ -1220,6 +1241,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			return true;
 		}
 
+		// TODO: use BigInts in calcs?
+		
 		public boolean panDown(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
 			long newPos = originY + numModelUnits;
@@ -1247,6 +1270,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			}
 			else if (scaleDenom > 1) {
 				return (((long) pixelNum) * scaleDenom) + modelOffset;
+			}
+			else
+				throw new IllegalArgumentException("back to the drawing board");
+		}
+		
+		private BigInteger modelToPixel(long modelNum, long modelOffset) {
+
+			if (scaleNumer == 1 && scaleDenom == 1) {
+				return BigInteger.valueOf(modelNum).subtract(BigInteger.valueOf(modelOffset));
+			}
+			else if (scaleNumer > 1) {
+				return BigInteger.valueOf(modelNum).subtract(BigInteger.valueOf(modelOffset)).multiply(BigInteger.valueOf(scaleNumer));
+			}
+			else if (scaleDenom > 1) {
+				return BigInteger.valueOf(modelNum).subtract(BigInteger.valueOf(modelOffset)).divide(BigInteger.valueOf(scaleDenom));
 			}
 			else
 				throw new IllegalArgumentException("back to the drawing board");
@@ -1326,7 +1364,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					}
 				}
 			}
-			
+			long maxX1 = planeData.d0()-1;
+			long maxY1 = planeData.d1()-1;
+			line(arrayInt, 0, 0, 0, maxY1);
+			line(arrayInt, 0, maxY1, maxX1, maxY1);
+			line(arrayInt, maxX1, maxY1, maxX1, 0);
+			line(arrayInt, maxX1, 0, 0, 0);
 		}
 
 		private BigDecimal getIntensity(HighPrecisionMember valueSum, long numValues, boolean includesNans, boolean includesPosInfs, boolean includesNegInfs) {
@@ -1438,6 +1481,67 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			arrayInt[bufferPos] = argb;
 		}
 		
+		private void line(int[] arrayInt, long modelX0, long modelY0, long modelX1, long modelY1) {
+
+			// yellow
+			int COLOR = RgbUtils.argb(180, 0xff, 0xff, 0);
+			
+			BigInteger pX0 = modelToPixel(modelX0, originX);
+			BigInteger pX1 = modelToPixel(modelX1, originX);
+			BigInteger pY0 = modelToPixel(modelY0, originY);
+			BigInteger pY1 = modelToPixel(modelY1, originY);
+			
+			// if the line coords are totally out of bounds then skip drawing
+			
+			if (pX0.compareTo(BigInteger.ZERO) < 0 &&
+					pX1.compareTo(BigInteger.ZERO) < 0)
+				return;
+			
+			if (pX0.compareTo(BigInteger.valueOf(paneWidth-1)) > 0 &&
+					pX1.compareTo(BigInteger.valueOf(paneWidth-1)) > 0)
+				return;
+			
+			if (pY0.compareTo(BigInteger.ZERO) < 0 &&
+					pY1.compareTo(BigInteger.ZERO) < 0)
+				return;
+			
+			if (pY0.compareTo(BigInteger.valueOf(paneHeight-1)) > 0 &&
+					pY1.compareTo(BigInteger.valueOf(paneHeight-1)) > 0)
+				return;
+			
+			// clip line if necessary
+			
+			if (pX0.compareTo(BigInteger.ZERO) < 0)
+				pX0 = BigInteger.ZERO;
+
+			if (pX1.compareTo(BigInteger.valueOf(paneWidth-1)) > 0)
+				pX1 = BigInteger.valueOf(paneWidth-1);
+
+			if (pY0.compareTo(BigInteger.ZERO) < 0)
+				pY0 = BigInteger.ZERO;
+
+			if (pY1.compareTo(BigInteger.valueOf(paneHeight-1)) > 0)
+				pY1 = BigInteger.valueOf(paneHeight-1);
+			
+			if (pX0.compareTo(pX1) == 0) {
+				int x = pX0.intValue();
+				int minY = Math.min(pY0.intValue(), pY1.intValue());
+				int maxY = Math.max(pY0.intValue(), pY1.intValue());
+				for (int y = minY; y <= maxY; y++)
+					plot(COLOR, arrayInt, x, y);
+			}
+			else if (pY0.compareTo(pY1) == 0) {
+				int y = pY0.intValue();
+				int minX = Math.min(pX0.intValue(), pX1.intValue());
+				int maxX = Math.max(pX0.intValue(), pX1.intValue());
+				for (int x = minX; x <= maxX; x++)
+					plot(COLOR, arrayInt, x, y);
+			}
+			else {
+				System.out.println("" + pX0 + " " + pY0 + " " + pX1 + " " + pY1);
+				throw new IllegalArgumentException("the line() routine only deals in horz or vert lines");
+			}
+		}
 		
 		/**
 		 * Make a 2d image snapshot of the pan / zoom viewport.
@@ -1627,6 +1731,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		DimensionedDataSource<M> complexDs = new NdData<M>(new long[] {edgeSize, edgeSize}, complexOutput);
 
+		complexDs.setName("FFT of "+input.getName());
+		
+		complexDs.setSource(input.getSource());
+		
 		new ComplexImageViewer<L,M,N,O>(cmplxAlg, realAlg, complexDs);
 	}
 }

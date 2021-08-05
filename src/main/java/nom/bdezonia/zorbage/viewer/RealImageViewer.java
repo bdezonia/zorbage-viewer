@@ -634,68 +634,76 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void mouseMoved(MouseEvent e) {
 				boolean troubleAxis;
 				String alternateValue = null;
-				long i0 = pz.pixelToModel(e.getX(), pz.getVirtualOriginX());
-				long i1 = pz.pixelToModel(e.getY(), pz.getVirtualOriginY());
-				if (i0 >= 0 && i0 < planeData.d0() && i1 >= 0 && i1 < planeData.d1()) {
-					planeData.getModelCoords(i0, i1, modelCoords);
-					dataSource.getCoordinateSpace().project(modelCoords, realWorldCoords);
-					planeData.get(i0, i1, value);
-					if ((nanTester != null) && nanTester.isNaN().call(value)) {
-						alternateValue = "nan";
-					}
-					else if ((infTester != null) && infTester.isInfinite().call(value)) {
-						
-						if (signumTester.signum().call(value) <= 0)
-							alternateValue = "-Inf";
-						else
-							alternateValue = "+Inf";
-					}
-					else {
-						alternateValue = null;
-						HighPrecRepresentation rep = (HighPrecRepresentation) value;
-						rep.toHighPrec(hpVal);
-					}
-					int axisNumber0 = planeData.axisNumber0();
-					int axisNumber1 = planeData.axisNumber1();
-					StringBuilder sb = new StringBuilder();
-					troubleAxis = (axisNumber0 >= dataSource.numDimensions() || dataSource.getAxisType(axisNumber0) == null);
-					sb.append(troubleAxis ? "d0" : dataSource.getAxisType(axisNumber0));
-					sb.append(" = ");
-					sb.append(i0);
-					// only display calibrated values if they are not == 1.0 * uncalibrated values
-					if (axisNumber0 < dataSource.numDimensions()) {
-						if (realWorldCoords[axisNumber0].subtract(BigDecimal.valueOf(modelCoords[axisNumber0])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
-							sb.append(" (");
-							sb.append(df.format(realWorldCoords[axisNumber0]));
-							sb.append(" ");
-							sb.append(dataSource.getAxisUnit(axisNumber0) == null ? "" : dataSource.getAxisUnit(axisNumber0));
-							sb.append(")");
-						}
-					}
-					sb.append(", ");
-					troubleAxis = (axisNumber1 >= dataSource.numDimensions() || dataSource.getAxisType(axisNumber1) == null);
-					sb.append( troubleAxis ? "d1" : dataSource.getAxisType(axisNumber1));
-					sb.append("= ");
-					sb.append(i1);
-					// only display calibrated values if they are not == 1.0 * uncalibrated values
-					if (axisNumber1 < dataSource.numDimensions()) {
-						if (realWorldCoords[axisNumber1].subtract(BigDecimal.valueOf(modelCoords[axisNumber1])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
-							sb.append(" (");
-							sb.append(df.format(realWorldCoords[axisNumber1]));
-							sb.append(" ");
-							sb.append(dataSource.getAxisUnit(axisNumber1) == null ? "" : dataSource.getAxisUnit(axisNumber1));
-							sb.append(")");
-						}
-					}
-					sb.append(", value = ");
-					if (alternateValue != null)
-						sb.append(alternateValue);
-					else
-						sb.append(df.format(hpVal.v()));
-					sb.append(" ");
-					sb.append(dataSource.getValueUnit() == null ? "" : dataSource.getValueUnit());
-					readout.setText(sb.toString());
+				BigInteger bi0 = pz.pixelToModel(e.getX(), pz.getVirtualOriginX());
+				BigInteger bi1 = pz.pixelToModel(e.getY(), pz.getVirtualOriginY());
+				if (bi0.compareTo(BigInteger.ZERO) < 0)
+					return;
+				if (bi1.compareTo(BigInteger.ZERO) < 0)
+					return;
+				if (bi0.compareTo(BigInteger.valueOf(planeData.d0())) >= 0)
+					return;
+				if (bi1.compareTo(BigInteger.valueOf(planeData.d1())) >= 0)
+					return;
+				long i0 = bi0.longValue();
+				long i1 = bi1.longValue();
+				planeData.getModelCoords(i0, i1, modelCoords);
+				dataSource.getCoordinateSpace().project(modelCoords, realWorldCoords);
+				planeData.get(i0, i1, value);
+				if ((nanTester != null) && nanTester.isNaN().call(value)) {
+					alternateValue = "nan";
 				}
+				else if ((infTester != null) && infTester.isInfinite().call(value)) {
+					
+					if (signumTester.signum().call(value) <= 0)
+						alternateValue = "-Inf";
+					else
+						alternateValue = "+Inf";
+				}
+				else {
+					alternateValue = null;
+					HighPrecRepresentation rep = (HighPrecRepresentation) value;
+					rep.toHighPrec(hpVal);
+				}
+				int axisNumber0 = planeData.axisNumber0();
+				int axisNumber1 = planeData.axisNumber1();
+				StringBuilder sb = new StringBuilder();
+				troubleAxis = (axisNumber0 >= dataSource.numDimensions() || dataSource.getAxisType(axisNumber0) == null);
+				sb.append(troubleAxis ? "d0" : dataSource.getAxisType(axisNumber0));
+				sb.append(" = ");
+				sb.append(i0);
+				// only display calibrated values if they are not == 1.0 * uncalibrated values
+				if (axisNumber0 < dataSource.numDimensions()) {
+					if (realWorldCoords[axisNumber0].subtract(BigDecimal.valueOf(modelCoords[axisNumber0])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
+						sb.append(" (");
+						sb.append(df.format(realWorldCoords[axisNumber0]));
+						sb.append(" ");
+						sb.append(dataSource.getAxisUnit(axisNumber0) == null ? "" : dataSource.getAxisUnit(axisNumber0));
+						sb.append(")");
+					}
+				}
+				sb.append(", ");
+				troubleAxis = (axisNumber1 >= dataSource.numDimensions() || dataSource.getAxisType(axisNumber1) == null);
+				sb.append( troubleAxis ? "d1" : dataSource.getAxisType(axisNumber1));
+				sb.append("= ");
+				sb.append(i1);
+				// only display calibrated values if they are not == 1.0 * uncalibrated values
+				if (axisNumber1 < dataSource.numDimensions()) {
+					if (realWorldCoords[axisNumber1].subtract(BigDecimal.valueOf(modelCoords[axisNumber1])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
+						sb.append(" (");
+						sb.append(df.format(realWorldCoords[axisNumber1]));
+						sb.append(" ");
+						sb.append(dataSource.getAxisUnit(axisNumber1) == null ? "" : dataSource.getAxisUnit(axisNumber1));
+						sb.append(")");
+					}
+				}
+				sb.append(", value = ");
+				if (alternateValue != null)
+					sb.append(alternateValue);
+				else
+					sb.append(df.format(hpVal.v()));
+				sb.append(" ");
+				sb.append(dataSource.getValueUnit() == null ? "" : dataSource.getValueUnit());
+				readout.setText(sb.toString());
 			}
 			
 			@Override
@@ -928,8 +936,20 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		int axisNumber0 = planeData.axisNumber0();
 		int axisNumber1 = planeData.axisNumber1();
 
-		long i0 = pz.pixelToModel(pz.paneWidth/2, pz.getVirtualOriginX());
-		long i1 = pz.pixelToModel(pz.paneHeight/2, pz.getVirtualOriginY());
+		BigInteger bi0 = pz.pixelToModel(pz.paneWidth/2, pz.getVirtualOriginX());
+		BigInteger bi1 = pz.pixelToModel(pz.paneHeight/2, pz.getVirtualOriginY());
+		
+		if (bi0.compareTo(BigInteger.valueOf(Long.MIN_VALUE)) < 0)
+			return;
+		if (bi1.compareTo(BigInteger.valueOf(Long.MIN_VALUE)) < 0)
+			return;
+		if (bi0.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) > 0)
+			return;
+		if (bi1.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) > 0)
+			return;
+
+		long i0 = bi0.longValue();
+		long i1 = bi1.longValue();
 		
 		planeData.getModelCoords(i0, i1, modelCoords);
 		
@@ -991,18 +1011,20 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	@SuppressWarnings("unchecked")
 	class PanZoomView {
 		
+		private final BigInteger TWO = BigInteger.valueOf(2);
+		
 		private final BigDecimal NAN_CODE = BigDecimal.valueOf(-100);
 		private final BigDecimal POSINF_CODE = BigDecimal.valueOf(-200);
 		private final BigDecimal NEGINF_CODE = BigDecimal.valueOf(-300);
 
 		private int scaleNumer; // >= 1
 		private int scaleDenom; // >= 1
-		private long originX;  // model coords
-		private long originY;  // model coords
+		private BigInteger originX;  // model coords
+		private BigInteger originY;  // model coords
 		private final int paneWidth; // pixel window coords
 		private final int paneHeight;  // pixel window coords
-		private long calculatedPaneWidth; // the best guess at model width of paneWidth at curr scale/offset
-		private long calculatedPaneHeight; // the best guess at model height of paneHeight at curr scale/offset
+		private BigInteger calculatedPaneWidth; // the best guess at model width of paneWidth at curr scale/offset
+		private BigInteger calculatedPaneHeight; // the best guess at model height of paneHeight at curr scale/offset
 		private final int maxScale;
 		NaN<U> nanTester = null;
 		Infinite<U> infTester = null;
@@ -1032,8 +1054,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 
 		private void setInitialNumbers() {
-			this.calculatedPaneWidth = paneWidth;
-			this.calculatedPaneHeight = paneHeight;
+			this.calculatedPaneWidth = BigInteger.valueOf(paneWidth);
+			this.calculatedPaneHeight = BigInteger.valueOf(paneHeight);
 			this.scaleNumer = 1;
 			this.scaleDenom = 1;
 			long modelWidth = planeData.d0();
@@ -1042,50 +1064,42 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			long ctrY = modelHeight / 2;
 			long ctrViewX = paneWidth / 2;
 			long ctrViewY = paneHeight / 2;
-			this.originX = ctrX - ctrViewX;
-			this.originY = ctrY - ctrViewY;;
+			this.originX = BigInteger.valueOf(ctrX).subtract(BigInteger.valueOf(ctrViewX));
+			this.originY = BigInteger.valueOf(ctrY).subtract(BigInteger.valueOf(ctrViewY));
 		}
 
 		// TODO: use BigInts in calcs?		
 
 		private void calcPaneSize() {
 			if (scaleNumer == 1 && scaleDenom == 1) {
-				this.calculatedPaneWidth = paneWidth;
-				this.calculatedPaneHeight = paneHeight;
+				this.calculatedPaneWidth = BigInteger.valueOf(paneWidth);
+				this.calculatedPaneHeight = BigInteger.valueOf(paneHeight);
 			}
 			else if (scaleNumer > 1) {
-				this.calculatedPaneWidth = paneWidth / scaleNumer;
-				this.calculatedPaneHeight = paneHeight / scaleNumer;
+				this.calculatedPaneWidth = BigInteger.valueOf(paneWidth).divide(BigInteger.valueOf(scaleNumer));
+				this.calculatedPaneHeight = BigInteger.valueOf(paneHeight).divide(BigInteger.valueOf(scaleNumer));
 			}
 			else if (scaleDenom > 1) {
-				this.calculatedPaneWidth = ((long) paneWidth) * scaleDenom;
-				this.calculatedPaneHeight = ((long) paneHeight) * scaleDenom;
+				this.calculatedPaneWidth = BigInteger.valueOf(paneWidth).multiply(BigInteger.valueOf(scaleDenom));
+				this.calculatedPaneHeight = BigInteger.valueOf(paneHeight).multiply(BigInteger.valueOf(scaleDenom));
 			}
 			else
 				throw new IllegalArgumentException("weird scale components "+scaleNumer+" "+scaleDenom);
 		}
 
-		// TODO: use BigInts in calcs?
-		
-		public long getVirtualOriginX() {
+		public BigInteger getVirtualOriginX() {
 			return originX;
 		}
 		
-		// TODO: use BigInts in calcs?
-		
-		public long getVirtualOriginY() {
+		public BigInteger getVirtualOriginY() {
 			return originY;
 		}
 		
-		// TODO: use BigInts in calcs?
-		
-		public long getVirtualWidth() {
+		public BigInteger getVirtualWidth() {
 			return calculatedPaneWidth;
 		}
 		
-		// TODO: use BigInts in calcs?
-		
-		public long getVirtualHeight() {
+		public BigInteger getVirtualHeight() {
 			return calculatedPaneHeight;
 		}
 		
@@ -1121,8 +1135,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			setInitialNumbers();
 		}
 		
-		// TODO: use BigInts in calcs?
-		
 		public boolean increaseZoom() {
 			
 			boolean changed = false;
@@ -1130,28 +1142,28 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			if (scaleDenom >= 3) {
 				int origScale = scaleDenom;
 				int newScale = scaleDenom - 2;
-				long origXExtent = getVirtualWidth();
-				long origYExtent = getVirtualHeight();
-				long newXExtent = origXExtent * newScale / origScale;
-				long newYExtent = origYExtent * newScale / origScale;
-				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
-				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
-				originX += modelChangeForOriginX;
-				originY += modelChangeForOriginY;
+				BigInteger origXExtent = getVirtualWidth();
+				BigInteger origYExtent = getVirtualHeight();
+				BigInteger newXExtent = origXExtent.multiply(BigInteger.valueOf(newScale)).divide(BigInteger.valueOf(origScale));
+				BigInteger newYExtent = origYExtent.multiply(BigInteger.valueOf(newScale)).divide(BigInteger.valueOf(origScale));
+				BigInteger modelChangeForOriginX = origXExtent.subtract(newXExtent).abs().divide(TWO);
+				BigInteger modelChangeForOriginY = origXExtent.subtract(newYExtent).abs().divide(TWO);
+				originX = originX.add(modelChangeForOriginX);
+				originY = originY.add(modelChangeForOriginY);
 				scaleDenom = newScale;
 				changed = true;
 			}
 			else if (scaleNumer + 2 <= maxScale) {
 				int origScale = scaleNumer;
 				int newScale = scaleNumer + 2;
-				long origXExtent = getVirtualWidth();
-				long origYExtent = getVirtualHeight();
-				long newXExtent = origXExtent * origScale / newScale;
-				long newYExtent = origYExtent * origScale / newScale;
-				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
-				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
-				originX += modelChangeForOriginX;
-				originY += modelChangeForOriginY;
+				BigInteger origXExtent = getVirtualWidth();
+				BigInteger origYExtent = getVirtualHeight();
+				BigInteger newXExtent = origXExtent.multiply(BigInteger.valueOf(origScale)).divide(BigInteger.valueOf(newScale));
+				BigInteger newYExtent = origYExtent.multiply(BigInteger.valueOf(origScale)).divide(BigInteger.valueOf(newScale));
+				BigInteger modelChangeForOriginX = origXExtent.subtract(newXExtent).abs().divide(TWO);
+				BigInteger modelChangeForOriginY = origXExtent.subtract(newYExtent).abs().divide(TWO);
+				originX = originX.add(modelChangeForOriginX);
+				originY = originY.add(modelChangeForOriginY);
 				scaleNumer = newScale;
 				changed = true;
 			}
@@ -1171,28 +1183,28 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			if (scaleNumer >= 3) {
 				int origScale = scaleNumer;
 				int newScale = scaleNumer - 2;
-				long origXExtent = getVirtualWidth();
-				long origYExtent = getVirtualHeight();
-				long newXExtent = origXExtent * origScale / newScale;
-				long newYExtent = origYExtent * origScale / newScale;
-				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
-				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
-				originX -= modelChangeForOriginX;
-				originY -= modelChangeForOriginY;
+				BigInteger origXExtent = getVirtualWidth();
+				BigInteger origYExtent = getVirtualHeight();
+				BigInteger newXExtent = origXExtent.multiply(BigInteger.valueOf(origScale)).divide(BigInteger.valueOf(newScale));
+				BigInteger newYExtent = origYExtent.multiply(BigInteger.valueOf(origScale)).divide(BigInteger.valueOf(newScale));
+				BigInteger modelChangeForOriginX = origXExtent.subtract(newXExtent).abs().divide(TWO);
+				BigInteger modelChangeForOriginY = origXExtent.subtract(newYExtent).abs().divide(TWO);
+				originX = originX.subtract(modelChangeForOriginX);
+				originX = originX.subtract(modelChangeForOriginY);
 				scaleNumer = newScale;
 				changed = true;
 			}
 			else if (scaleDenom + 2 <= maxScale) {
 				int origScale = scaleDenom;
 				int newScale = scaleDenom + 2;
-				long origXExtent = getVirtualWidth();
-				long origYExtent = getVirtualHeight();
-				long newXExtent = origXExtent * newScale / origScale;
-				long newYExtent = origYExtent * newScale / origScale;
-				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
-				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
-				originX -= modelChangeForOriginX;
-				originY -= modelChangeForOriginY;
+				BigInteger origXExtent = getVirtualWidth();
+				BigInteger origYExtent = getVirtualHeight();
+				BigInteger newXExtent = origXExtent.multiply(BigInteger.valueOf(newScale)).divide(BigInteger.valueOf(origScale));
+				BigInteger newYExtent = origYExtent.multiply(BigInteger.valueOf(newScale)).divide(BigInteger.valueOf(origScale));
+				BigInteger modelChangeForOriginX = origXExtent.subtract(newXExtent).abs().divide(TWO);
+				BigInteger modelChangeForOriginY = origXExtent.subtract(newYExtent).abs().divide(TWO);
+				originX = originX.subtract(modelChangeForOriginX);
+				originY = originY.subtract(modelChangeForOriginY);
 				scaleDenom = newScale;
 				changed = true;
 			}
@@ -1202,53 +1214,45 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			return changed;
 		}
 
-		// TODO: use BigInts in calcs?
-		
 		public boolean panLeft(int numPixels) {
-			long numModelUnits = pixelToModel(numPixels, 0);
-			long newPos = originX - numModelUnits;
-			if ((newPos <= 5 - planeData.d0()))
+			BigInteger numModelUnits = pixelToModel(numPixels, BigInteger.ZERO);
+			BigInteger newPos = originX.subtract(numModelUnits);
+			if (newPos.compareTo(BigInteger.valueOf(5).subtract(BigInteger.valueOf(planeData.d0()))) <= 0)
 				return false;
-			if ((newPos >= planeData.d0() - 5))
+			if (newPos.compareTo(BigInteger.valueOf(planeData.d0()).subtract(BigInteger.valueOf(5))) >= 0)
 				return false;
 			originX = newPos;
 			return true;
 		}
 
-		// TODO: use BigInts in calcs?
-		
 		public boolean panRight(int numPixels) {
-			long numModelUnits = pixelToModel(numPixels, 0);
-			long newPos = originX + numModelUnits;
-			if ((newPos <= 5 - planeData.d0()))
+			BigInteger numModelUnits = pixelToModel(numPixels, BigInteger.ZERO);
+			BigInteger newPos = originX.add(numModelUnits);
+			if (newPos.compareTo(BigInteger.valueOf(5).subtract(BigInteger.valueOf(planeData.d0()))) <= 0)
 				return false;
-			if ((newPos >= planeData.d0() - 5))
+			if (newPos.compareTo(BigInteger.valueOf(planeData.d0()).subtract(BigInteger.valueOf(5))) >= 0)
 				return false;
 			originX = newPos;
 			return true;
 		}
 
-		// TODO: use BigInts in calcs?
-		
 		public boolean panUp(int numPixels) {
-			long numModelUnits = pixelToModel(numPixels, 0);
-			long newPos = originY - numModelUnits;
-			if ((newPos <= 5 - planeData.d1()))
+			BigInteger numModelUnits = pixelToModel(numPixels, BigInteger.ZERO);
+			BigInteger newPos = originY.subtract(numModelUnits);
+			if (newPos.compareTo(BigInteger.valueOf(5).subtract(BigInteger.valueOf(planeData.d1()))) <= 0)
 				return false;
-			if ((newPos >= planeData.d1() - 5))
+			if (newPos.compareTo(BigInteger.valueOf(planeData.d1()).subtract(BigInteger.valueOf(5))) >= 0)
 				return false;
 			originY = newPos;
 			return true;
 		}
 
-		// TODO: use BigInts in calcs?
-		
 		public boolean panDown(int numPixels) {
-			long numModelUnits = pixelToModel(numPixels, 0);
-			long newPos = originY + numModelUnits;
-			if ((newPos <= 5 - planeData.d1()))
+			BigInteger numModelUnits = pixelToModel(numPixels, BigInteger.ZERO);
+			BigInteger newPos = originY.add(numModelUnits);
+			if (newPos.compareTo(BigInteger.valueOf(5).subtract(BigInteger.valueOf(planeData.d1()))) <= 0)
 				return false;
-			if ((newPos >= planeData.d1() - 5))
+			if (newPos.compareTo(BigInteger.valueOf(planeData.d1()).subtract(BigInteger.valueOf(5))) >= 0)
 				return false;
 			originY = newPos;
 			return true;
@@ -1261,30 +1265,30 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				return "1/" + scaleDenom + "X";
 		}
 		
-		private long pixelToModel(int pixelNum, long modelOffset) {
+		private BigInteger pixelToModel(int pixelNum, BigInteger modelOffset) {
 			if (scaleNumer == 1 && scaleDenom == 1) {
-				return pixelNum + modelOffset;
+				return BigInteger.valueOf(pixelNum).add(modelOffset);
 			}
 			else if (scaleNumer > 1) {
-				return (((long) pixelNum) / scaleNumer) + modelOffset;
+				return BigInteger.valueOf(pixelNum).divide(BigInteger.valueOf(scaleNumer)).add(modelOffset);
 			}
 			else if (scaleDenom > 1) {
-				return (((long) pixelNum) * scaleDenom) + modelOffset;
+				return BigInteger.valueOf(pixelNum).multiply(BigInteger.valueOf(scaleDenom)).add(modelOffset);
 			}
 			else
 				throw new IllegalArgumentException("back to the drawing board");
 		}
 		
-		private BigInteger modelToPixel(long modelNum, long modelOffset) {
+		private BigInteger modelToPixel(long modelNum, BigInteger modelOffset) {
 
 			if (scaleNumer == 1 && scaleDenom == 1) {
-				return BigInteger.valueOf(modelNum).subtract(BigInteger.valueOf(modelOffset));
+				return BigInteger.valueOf(modelNum).subtract(modelOffset);
 			}
 			else if (scaleNumer > 1) {
-				return BigInteger.valueOf(modelNum).subtract(BigInteger.valueOf(modelOffset)).multiply(BigInteger.valueOf(scaleNumer));
+				return BigInteger.valueOf(modelNum).subtract(modelOffset).multiply(BigInteger.valueOf(scaleNumer));
 			}
 			else if (scaleDenom > 1) {
-				return BigInteger.valueOf(modelNum).subtract(BigInteger.valueOf(modelOffset)).divide(BigInteger.valueOf(scaleDenom));
+				return BigInteger.valueOf(modelNum).subtract(modelOffset).divide(BigInteger.valueOf(scaleDenom));
 			}
 			else
 				throw new IllegalArgumentException("back to the drawing board");
@@ -1312,8 +1316,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			HighPrecisionMember sum = G.HP.construct();
 			HighPrecisionMember tmp = G.HP.construct();
 			U value = alg.construct();
-			long maxDimX = planeData.d0();
-			long maxDimY = planeData.d1();
 			for (int y = 0; y < paneHeight; y++) {
 				for (int x = 0; x < paneWidth; x++) {
 					G.HP.zero().call(sum);
@@ -1321,11 +1323,23 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					boolean includesPosInfs = false; 
 					boolean includesNegInfs = false; 
 					long numCounted = 0;
-					boolean modelCoordsInBounds = false;
-					long mx = pixelToModel(x, originX);
-					long my = pixelToModel(y, originY);
-					if (mx >= 0 && mx < maxDimX && my >= 0 && my < maxDimY) {
-						modelCoordsInBounds = true;
+
+					boolean modelCoordsInBounds = true;
+					
+					BigInteger bmx = pixelToModel(x, originX);
+					BigInteger bmy = pixelToModel(y, originY);
+					
+					if ((bmx.compareTo(BigInteger.ZERO) < 0) ||
+							(bmy.compareTo(BigInteger.ZERO) < 0) ||
+							(bmx.compareTo(BigInteger.valueOf(planeData.d0())) >= 0) ||
+							(bmy.compareTo(BigInteger.valueOf(planeData.d1())) >= 0)) {
+						
+						modelCoordsInBounds = false;
+					}
+					
+					if (modelCoordsInBounds) {
+						long mx = bmx.longValue();
+						long my = bmy.longValue();
 						planeData.get(mx, my, value);
 						if (nanTester != null && nanTester.isNaN().call(value))
 							includesNans = true;
@@ -1341,7 +1355,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							numCounted++;
 						}
 					}
+
 					int color = 0;
+					
 					if (modelCoordsInBounds) {
 
 						// calc average intensity
@@ -1637,7 +1653,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		if (!(complexAlgebra instanceof Addition))
 			error = "Complex algebra does not implement Addition";
 		
-		if (!(complexAlgebra instanceof Multiplication))
+		else if (!(complexAlgebra instanceof Multiplication))
 			error = "Complex algebra does not implement Multiplication";
 		
 		@SuppressWarnings("unchecked")
@@ -1648,25 +1664,25 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		if (!(tmpM instanceof SetComplex))
 			error = "Complex number does not implement SetComplex";
 		
-		if (!(tmpM instanceof Allocatable))
+		else if (!(tmpM instanceof Allocatable))
 			error = "Complex number does not implement Allocatable";
 		
-		if (!(realAlgebra instanceof Trigonometric))
+		else if (!(realAlgebra instanceof Trigonometric))
 			error = "Real algebra does not implement Trigonometric";
 		
-		if (!(realAlgebra instanceof RealConstants))
+		else if (!(realAlgebra instanceof RealConstants))
 			error = "Real algebra does not implement RealConstants";
 		
-		if (!(realAlgebra instanceof Multiplication))
+		else if (!(realAlgebra instanceof Multiplication))
 			error = "Real algebra does not implement Multiplication";
 		
-		if (!(realAlgebra instanceof Addition))
+		else if (!(realAlgebra instanceof Addition))
 			error = "Real algebra does not implement Addition";
 		
-		if (!(realAlgebra instanceof Invertible))
+		else if (!(realAlgebra instanceof Invertible))
 			error = "Real algebra does not implement Invertible";
 		
-		if (!(realAlgebra instanceof Unity))
+		else if (!(realAlgebra instanceof Unity))
 			error = "Real algebra does not implement Unity";
 
 		@SuppressWarnings("unchecked")
@@ -1751,7 +1767,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		FFT.compute(cmplxAlg, realAlg, complexInput, complexOutput);
 		
-		DimensionedDataSource<M> complexDs = new NdData<M>(new long[] {edgeSize, edgeSize}, complexOutput);
+		DimensionedDataSource<M> complexDs =
+				new NdData<M>(new long[] {edgeSize, edgeSize}, complexOutput);
 
 		complexDs.setName("FFT of "+input.getName());
 		

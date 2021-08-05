@@ -1637,7 +1637,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		if (!(complexAlgebra instanceof Addition))
 			error = "Complex algebra does not implement Addition";
 		
-		if (!(complexAlgebra instanceof Multiplication))
+		else if (!(complexAlgebra instanceof Multiplication))
 			error = "Complex algebra does not implement Multiplication";
 		
 		@SuppressWarnings("unchecked")
@@ -1648,25 +1648,25 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		if (!(tmpM instanceof SetComplex))
 			error = "Complex number does not implement SetComplex";
 		
-		if (!(tmpM instanceof Allocatable))
+		else if (!(tmpM instanceof Allocatable))
 			error = "Complex number does not implement Allocatable";
 		
-		if (!(realAlgebra instanceof Trigonometric))
+		else if (!(realAlgebra instanceof Trigonometric))
 			error = "Real algebra does not implement Trigonometric";
 		
-		if (!(realAlgebra instanceof RealConstants))
+		else if (!(realAlgebra instanceof RealConstants))
 			error = "Real algebra does not implement RealConstants";
 		
-		if (!(realAlgebra instanceof Multiplication))
+		else if (!(realAlgebra instanceof Multiplication))
 			error = "Real algebra does not implement Multiplication";
 		
-		if (!(realAlgebra instanceof Addition))
+		else if (!(realAlgebra instanceof Addition))
 			error = "Real algebra does not implement Addition";
 		
-		if (!(realAlgebra instanceof Invertible))
+		else if (!(realAlgebra instanceof Invertible))
 			error = "Real algebra does not implement Invertible";
 		
-		if (!(realAlgebra instanceof Unity))
+		else if (!(realAlgebra instanceof Unity))
 			error = "Real algebra does not implement Unity";
 
 		@SuppressWarnings("unchecked")
@@ -1751,7 +1751,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		FFT.compute(cmplxAlg, realAlg, complexInput, complexOutput);
 		
-		DimensionedDataSource<M> complexDs = new NdData<M>(new long[] {edgeSize, edgeSize}, complexOutput);
+		DimensionedDataSource<M> complexDs =
+				new NdData<M>(new long[] {edgeSize, edgeSize}, complexOutput);
 
 		complexDs.setName("FFT of "+input.getName());
 		

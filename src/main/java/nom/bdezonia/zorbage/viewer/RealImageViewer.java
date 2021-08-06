@@ -35,6 +35,7 @@ import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -1298,6 +1299,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		public void draw() {
 
+			// Reduce flicker while not needing to make any changes for double buffering or page flipping.
+			
+			Toolkit.getDefaultToolkit().sync();
+			
 			if (alg instanceof NaN) {
 				this.nanTester = (NaN<U>) alg;
 			}

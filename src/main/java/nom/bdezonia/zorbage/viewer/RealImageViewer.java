@@ -1655,6 +1655,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		if (!(tmpM instanceof SetComplex))
 			error = "Complex number does not implement SetComplex";
 		
+		else if (!(tmpM instanceof GetComplex))
+			error = "Complex number does not implement GetComplex";
+		
 		else if (!(tmpM instanceof Allocatable))
 			error = "Complex number does not implement Allocatable";
 		
@@ -1676,6 +1679,18 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		else if (!(realAlgebra instanceof Unity))
 			error = "Real algebra does not implement Unity";
 
+		else if (!(realAlgebra instanceof NaN))
+			error = "Real algebra does not implement NaN";
+		
+		else if (!(realAlgebra instanceof InverseTrigonometric))
+			error = "Real algebra does not implement InverseTrigonometric";
+		
+		else if (!(realAlgebra instanceof Roots))
+			error = "Real algebra does not implement Roots";
+		
+		else if (!(realAlgebra instanceof Ordered))
+			error = "Real algebra does not implement Ordered";
+		
 		@SuppressWarnings("unchecked")
 		N realAlg = (N) realAlgebra;
 		
@@ -1684,6 +1699,17 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		try {
 			
 			tmpM.setR(tmpO);
+			tmpM.setI(tmpO);
+			
+		} catch (ClassCastException e) {
+			
+			error = "Complex algebra and real algebra are not compatible";
+		}
+		
+		try {
+			
+			tmpM.getR(tmpO);
+			tmpM.getI(tmpO);
 			
 		} catch (ClassCastException e) {
 			

@@ -48,6 +48,7 @@ import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -57,6 +58,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
@@ -97,17 +99,24 @@ import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
 import nom.bdezonia.zorbage.procedure.Procedure2;
+import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
 import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.integer.int8.UnsignedInt8Member;
+import nom.bdezonia.zorbage.type.real.float128.Float128Algebra;
 import nom.bdezonia.zorbage.type.real.float128.Float128Member;
+import nom.bdezonia.zorbage.type.real.float16.Float16Algebra;
 import nom.bdezonia.zorbage.type.real.float16.Float16Member;
+import nom.bdezonia.zorbage.type.real.float32.Float32Algebra;
 import nom.bdezonia.zorbage.type.real.float32.Float32Member;
+import nom.bdezonia.zorbage.type.real.float64.Float64Algebra;
 import nom.bdezonia.zorbage.type.real.float64.Float64Member;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionAlgebra;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMember;
+import nom.bdezonia.zorbage.type.universal.PrimitiveConversion;
+import nom.bdezonia.zorbage.type.universal.PrimitiveConverter;
 
 /**
  * 
@@ -266,6 +275,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton panDown = new JButton("Down");
 		JButton resetZoom = new JButton("Reset");
 		JButton toColor = new JButton("To Color");
+		JButton toFloat = new JButton("To Float ...");
 		JButton dispRange = new JButton("Display Range ...");
 		JButton fft = new JButton("FFT");
 		buttonPanel.add(loadLut);
@@ -281,6 +291,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(resetZoom);
 		buttonPanel.add(dispRange);
 		buttonPanel.add(toColor);
+		buttonPanel.add(toFloat);
 		buttonPanel.add(fft);
 		buttonPanel.add(new JSeparator());
 		loadLut.addActionListener(new ActionListener() {
@@ -556,6 +567,93 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						    JOptionPane.WARNING_MESSAGE);
 				if (dataSource != null)
 					new RgbColorImageViewer<ArgbAlgebra,ArgbMember>(G.ARGB, dataSource);
+			}
+		});
+		toFloat.addActionListener(new ActionListener() {
+
+			boolean cancelled = false;
+			Algebra<?,?> fltAlg = null;
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+				dlg.setLayout(new FlowLayout());
+				dlg.add(new JLabel("Choose floating point type of output"));
+				ButtonGroup bg = new ButtonGroup();
+				JRadioButton f16 = new JRadioButton("16 bit float");
+				JRadioButton f32 = new JRadioButton("32 bit float");
+				JRadioButton f64 = new JRadioButton("64 bit float");
+				JRadioButton f128 = new JRadioButton("128 bit float");
+				JRadioButton fhp = new JRadioButton("Unbounded float");
+				bg.add(f16);
+				bg.add(f32);
+				bg.add(f64);
+				bg.add(f128);
+				bg.add(fhp);
+				dlg.add(f16);
+				dlg.add(f32);
+				dlg.add(f64);
+				dlg.add(f128);
+				dlg.add(fhp);
+				f16.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						fltAlg = G.HLF;
+					}
+				});
+				f32.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						fltAlg = G.FLT;
+					}
+				});
+				f64.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						fltAlg = G.DBL;
+					}
+				});
+				f128.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						fltAlg = G.QUAD;
+					}
+				});
+				fhp.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						fltAlg = G.HP;
+					}
+				});
+				
+				JButton ok = new JButton("Ok");
+				ok.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						cancelled = false;
+						dlg.setVisible(false);
+					}
+				});
+				JButton cancel = new JButton("Cancel");
+				cancel.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						cancelled = true;
+						dlg.setVisible(false);
+					}
+				});
+				dlg.add(ok);
+				dlg.add(cancel);
+				dlg.pack();
+				dlg.setVisible(true);
+				if (!cancelled && fltAlg != null) {
+					convertToFloat(fltAlg, alg, planeData.getDataSource());
+				}
 			}
 		});
 		fft.addActionListener(new ActionListener() {
@@ -1833,5 +1931,60 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		new ComplexImageViewer<L,M,N,O>(cmplxAlg, realAlg, complexDs);
 		*/
+	}
+	
+	<L extends Algebra<L,M>, M extends PrimitiveConversion & Allocatable<M>, N extends Algebra<N,O>, O>
+		void convertToFloat(Algebra<?,?> oAlg, N inAlg, DimensionedDataSource<O> input)
+	{
+		if (!(oAlg instanceof Float16Algebra) && !(oAlg instanceof Float32Algebra) &&
+				!(oAlg instanceof Float64Algebra) && !(oAlg instanceof Float128Algebra) &&
+				!(oAlg instanceof HighPrecisionAlgebra))
+		{
+			JOptionPane.showMessageDialog(frame,
+				    "To float command not passed a real algebra to use for the output type",
+				    "WARNING",
+				    JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		
+		if (!(inAlg.construct() instanceof PrimitiveConversion)) {
+			JOptionPane.showMessageDialog(frame,
+				    "To float command input type does not support primitive conversion",
+				    "WARNING",
+				    JOptionPane.WARNING_MESSAGE);
+		}
+
+		int numD = input.numDimensions();
+		
+		long[] dims = new long[numD];
+		for (int i = 0; i < numD; i++) {
+			dims[i] = input.dimension(i);
+		}
+		
+		IntegerIndex tmp1 = new IntegerIndex(0);
+		IntegerIndex tmp2 = new IntegerIndex(0);
+		IntegerIndex tmp3 = new IntegerIndex(0);
+		
+		@SuppressWarnings("unchecked")
+		L outAlg = (L) oAlg;
+		
+		DimensionedDataSource<M> output = DimensionedStorage.allocate(outAlg.construct(), dims);
+
+		IndexedDataSource<O> inList =  input.rawData();  
+		IndexedDataSource<M> outList =  output.rawData();
+
+		O in =  inAlg.construct();
+		M out = outAlg.construct();
+
+		long size = inList.size();
+		for (long i = 0; i < size; i++) {
+			inList.get(i, in);
+			PrimitiveConverter.convert(tmp1, tmp2, tmp3, (PrimitiveConversion) in, out);
+			outList.set(i, out);
+		}
+		
+		// TODO: copy metadata to output!
+		
+		new RealImageViewer<L,M>(outAlg, output);
 	}
 }

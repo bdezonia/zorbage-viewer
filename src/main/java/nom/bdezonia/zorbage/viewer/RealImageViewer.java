@@ -65,17 +65,23 @@ import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.Bounded;
 import nom.bdezonia.zorbage.algebra.G;
+import nom.bdezonia.zorbage.algebra.GetComplex;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
 import nom.bdezonia.zorbage.algebra.Infinite;
+import nom.bdezonia.zorbage.algebra.InverseTrigonometric;
 import nom.bdezonia.zorbage.algebra.Invertible;
 import nom.bdezonia.zorbage.algebra.Multiplication;
 import nom.bdezonia.zorbage.algebra.NaN;
 import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algebra.RealConstants;
+import nom.bdezonia.zorbage.algebra.Roots;
 import nom.bdezonia.zorbage.algebra.SetComplex;
 import nom.bdezonia.zorbage.algebra.Trigonometric;
 import nom.bdezonia.zorbage.algebra.Unity;
+import nom.bdezonia.zorbage.algorithm.ComplexPolar;
 import nom.bdezonia.zorbage.algorithm.FFT;
+import nom.bdezonia.zorbage.algorithm.GetIValues;
+import nom.bdezonia.zorbage.algorithm.GetRValues;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
@@ -1626,10 +1632,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	}
 	
 	public <L extends Algebra<L,M> & Addition<M> & Multiplication<M>,
-			M extends SetComplex<O> & Allocatable<M>,
+			M extends SetComplex<O> & GetComplex<O> & Allocatable<M>,
 			N extends Algebra<N,O> & Trigonometric<O> & RealConstants<O> &
-				Multiplication<O> & Addition<O> & Invertible<O> & Unity<O>,
-			O>
+				Multiplication<O> & Addition<O> & Invertible<O> & Unity<O> &
+				NaN<O> & InverseTrigonometric<O> & Roots<O> & Ordered<O>,
+			O extends Allocatable<O>>
 		void doFFT(Algebra<?,?> complexAlgebra, Algebra<?,?> realAlgebra, DimensionedDataSource<?> input)
 	{
 		String error = null;
@@ -1738,6 +1745,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		// copy the real data to the r values of a complex data set
 		
 		O realValue = realAlg.construct();
+		O imagValue = realAlg.construct();
 		O zero = realAlg.construct();
 		M complexValue = cmplxAlg.construct();
 		for (long i = 0; i < successfulSize; i++) {
@@ -1751,6 +1759,40 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		FFT.compute(cmplxAlg, realAlg, complexInput, complexOutput);
 		
+		long sz = complexOutput.size();
+		
+		IndexedDataSource<O> m = Storage.allocate(realValue, sz);
+		IndexedDataSource<O> p = Storage.allocate(realValue, sz);
+		
+		GetRValues.compute(cmplxAlg, realAlg, complexOutput, m);
+		GetIValues.compute(cmplxAlg, realAlg, complexOutput, p);
+		
+		O mag = realAlg.construct();
+		O phas = realAlg.construct();
+		for (long i = 0; i < sz; i++) {
+			m.get(i, realValue);
+			p.get(i, imagValue);
+			ComplexPolar.magnitude(realAlg, realValue, imagValue, mag);
+			ComplexPolar.phase(realAlg, realValue, imagValue, phas);
+			m.set(i, mag);
+			p.set(i, phas);
+		}
+
+		DimensionedDataSource<O> magDs =
+				new NdData<O>(new long[] {edgeSize, edgeSize}, m);
+
+		DimensionedDataSource<O> phasDs =
+				new NdData<O>(new long[] {edgeSize, edgeSize}, p);
+
+		magDs.setName("Magnitudes of FFT of "+input.getName());
+		
+		phasDs.setName("Phases of FFT of "+input.getName());
+
+		new RealImageViewer<>(realAlg, magDs);
+
+		new RealImageViewer<>(realAlg, phasDs);
+		
+		/*
 		DimensionedDataSource<M> complexDs =
 				new NdData<M>(new long[] {edgeSize, edgeSize}, complexOutput);
 
@@ -1759,5 +1801,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		complexDs.setSource(input.getSource());
 		
 		new ComplexImageViewer<L,M,N,O>(cmplxAlg, realAlg, complexDs);
+		*/
 	}
 }

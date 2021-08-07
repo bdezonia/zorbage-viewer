@@ -45,6 +45,7 @@ import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DecimalFormat;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.BoxLayout;
@@ -87,6 +88,7 @@ import nom.bdezonia.zorbage.algorithm.GetIValues;
 import nom.bdezonia.zorbage.algorithm.GetRValues;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
+import nom.bdezonia.zorbage.algorithm.NdSplit;
 import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
 import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
@@ -274,9 +276,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton panUp = new JButton("Up");
 		JButton panDown = new JButton("Down");
 		JButton resetZoom = new JButton("Reset");
+		JButton dispRange = new JButton("Display Range ...");
 		JButton toColor = new JButton("To Color");
 		JButton toFloat = new JButton("To Float ...");
-		JButton dispRange = new JButton("Display Range ...");
+		JButton explode = new JButton("Explode ...");
 		JButton fft = new JButton("FFT");
 		buttonPanel.add(loadLut);
 		buttonPanel.add(resetLut);
@@ -292,6 +295,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(dispRange);
 		buttonPanel.add(toColor);
 		buttonPanel.add(toFloat);
+		buttonPanel.add(explode);
 		buttonPanel.add(fft);
 		buttonPanel.add(new JSeparator());
 		loadLut.addActionListener(new ActionListener() {
@@ -653,6 +657,23 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				dlg.setVisible(true);
 				if (!cancelled && fltAlg != null) {
 					convertToFloat(fltAlg, alg, planeData.getDataSource());
+				}
+			}
+		});
+		explode.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				DimensionedDataSource<U> dataSource = planeData.getDataSource();
+				String input = JOptionPane.showInputDialog("Choose axis number along which the data will be exploded (0 - "+(dataSource.numDimensions()-1)+")");
+				try {
+					int axis = Integer.parseInt(input);
+					if (axis >= 0 || axis < dataSource.numDimensions()) {
+						explode(dataSource, axis);
+					}
+				} catch (NumberFormatException exc) {
+					;
 				}
 			}
 		});
@@ -1986,5 +2007,17 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		// TODO: copy metadata to output!
 		
 		new RealImageViewer<L,M>(outAlg, output);
+	}
+	
+	@SuppressWarnings("unchecked")
+	<V extends Algebra<V,W>, W extends Allocatable<W>>
+		void explode(DimensionedDataSource<U> dataSource, int axis)
+	{
+		V enhancedAlg = (V) alg;
+		DimensionedDataSource<W> ds = (DimensionedDataSource<W>) dataSource;
+		List<DimensionedDataSource<W>>  results = NdSplit.compute(enhancedAlg, axis, 1L, ds);
+		for (DimensionedDataSource<W> dataset : results) {
+			new RealImageViewer<V,W>(enhancedAlg, dataset);
+		}
 	}
 }

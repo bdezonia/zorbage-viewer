@@ -146,7 +146,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private HighPrecisionMember dispMax = null;
 	private final JLabel ctrXLabel;
 	private final JLabel ctrYLabel;
-	DecimalFormat df = new DecimalFormat("0.000");
+	private final DecimalFormat df = new DecimalFormat("0.000");
+	private static final int MIN_MAX_CHAR_COUNT = 15;
+	private static final int DISP_MIN_MAX_CHAR_COUNT = MIN_MAX_CHAR_COUNT - 5;
 
 	/**
 	 * Make an interactive graphical viewer for a real data source.
@@ -530,8 +532,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					else {
 						dispMax = G.HP.construct(maxStr);
 					}
-					dispMinLabel.setText("Display Min: " + (dispMin == null ? min : dispMin));
-					dispMaxLabel.setText("Display Max: " + (dispMax == null ? max : dispMax));
+					String dispMinStr = (dispMin == null ? minStr : dispMin.toString());
+					String dispMaxStr = (dispMin == null ? maxStr : dispMax.toString());
+					dispMinLabel.setToolTipText(dispMinStr);
+					dispMaxLabel.setToolTipText(dispMaxStr);
+					if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT) dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+					if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT) dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+					dispMinLabel.setText("Disp Min: " + dispMinStr);
+					dispMaxLabel.setText("Disp Max: " + dispMaxStr);
 					pz.draw();
 					frame.repaint();
 				}
@@ -870,10 +878,22 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e) {
 				preferDataRange = !preferDataRange;
 				calcMinMax();
-				minLabel.setText("Min: " + min);
-				maxLabel.setText("Max: " + max);
-				dispMinLabel.setText("Display Min: " + (dispMin == null ? min : dispMin));
-				dispMaxLabel.setText("Display Max: " + (dispMax == null ? max : dispMax));
+				String minStr = min.toString();
+				String maxStr = max.toString();
+				String dispMinStr = (dispMin == null ? minStr : dispMin.toString());
+				String dispMaxStr = (dispMin == null ? maxStr : dispMax.toString());
+				minLabel.setToolTipText(minStr);
+				maxLabel.setToolTipText(maxStr);
+				dispMinLabel.setToolTipText(dispMinStr);
+				dispMaxLabel.setToolTipText(dispMaxStr);
+				if (minStr.length() > MIN_MAX_CHAR_COUNT) minStr = minStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
+				if (maxStr.length() > MIN_MAX_CHAR_COUNT) maxStr = maxStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
+				if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT) dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+				if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT) dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+				minLabel.setText("Min: " + minStr);
+				maxLabel.setText("Max: " + maxStr);
+				dispMinLabel.setText("Disp Min: " + dispMinStr);
+				dispMaxLabel.setText("Disp Max: " + dispMaxStr);
 				pz.draw();
 				frame.repaint();
 			}
@@ -896,10 +916,22 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		calcMinMax();
 		
-		minLabel.setText("Min: " + min);
-		maxLabel.setText("Max: " + max);
-		dispMinLabel.setText("Display Min: " + (dispMin == null ? min : dispMin));
-		dispMaxLabel.setText("Display Max: " + (dispMax == null ? max : dispMax));
+		String minStr = min.toString();
+		String maxStr = max.toString();
+		String dispMinStr = (dispMin == null ? minStr : dispMin.toString());
+		String dispMaxStr = (dispMin == null ? maxStr : dispMax.toString());
+		minLabel.setToolTipText(minStr);
+		maxLabel.setToolTipText(maxStr);
+		dispMinLabel.setToolTipText(dispMinStr);
+		dispMaxLabel.setToolTipText(dispMaxStr);
+		if (minStr.length() > MIN_MAX_CHAR_COUNT) minStr = minStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
+		if (maxStr.length() > MIN_MAX_CHAR_COUNT) maxStr = maxStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
+		if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT) dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+		if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT) dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+		minLabel.setText("Min: " + minStr);
+		maxLabel.setText("Max: " + maxStr);
+		dispMinLabel.setText("Disp Min: " + dispMinStr);
+		dispMaxLabel.setText("Disp Max: " + dispMaxStr);
 
 		pz.draw();
 		

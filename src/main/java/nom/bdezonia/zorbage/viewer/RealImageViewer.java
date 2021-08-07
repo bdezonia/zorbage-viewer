@@ -82,13 +82,13 @@ import nom.bdezonia.zorbage.algebra.Roots;
 import nom.bdezonia.zorbage.algebra.SetComplex;
 import nom.bdezonia.zorbage.algebra.Trigonometric;
 import nom.bdezonia.zorbage.algebra.Unity;
-import nom.bdezonia.zorbage.algorithm.ComplexPolar;
 import nom.bdezonia.zorbage.algorithm.FFT;
 import nom.bdezonia.zorbage.algorithm.GetIValues;
 import nom.bdezonia.zorbage.algorithm.GetRValues;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.algorithm.NdSplit;
+import nom.bdezonia.zorbage.algorithm.PolarCoords;
 import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
 import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
@@ -1922,8 +1922,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		for (long i = 0; i < sz; i++) {
 			m.get(i, realValue);
 			p.get(i, imagValue);
-			ComplexPolar.magnitude(realAlg, realValue, imagValue, mag);
-			ComplexPolar.phase(realAlg, realValue, imagValue, phas);
+			PolarCoords.magnitude(realAlg, realValue, imagValue, mag);
+			PolarCoords.phase(realAlg, realValue, imagValue, phas);
 			m.set(i, mag);
 			p.set(i, phas);
 		}

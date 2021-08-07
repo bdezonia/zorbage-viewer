@@ -283,8 +283,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton fft = new JButton("FFT");
 		buttonPanel.add(loadLut);
 		buttonPanel.add(resetLut);
-		buttonPanel.add(swapAxes);
-		buttonPanel.add(snapshot);
 		buttonPanel.add(incZoom);
 		buttonPanel.add(decZoom);
 		buttonPanel.add(panLeft);
@@ -295,9 +293,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		buttonPanel.add(dispRange);
 		buttonPanel.add(toColor);
 		buttonPanel.add(toFloat);
+		buttonPanel.add(snapshot);
+		buttonPanel.add(swapAxes);
 		buttonPanel.add(explode);
 		buttonPanel.add(fft);
-		buttonPanel.add(new JSeparator());
 		loadLut.addActionListener(new ActionListener() {
 			
 			@Override

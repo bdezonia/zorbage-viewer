@@ -1259,25 +1259,17 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				throw new IllegalArgumentException("weird scale components "+scaleNumer+" "+scaleDenom);
 		}
 
-		// TODO: use BigInts in calcs?
-		
 		public long getVirtualOriginX() {
 			return originX;
 		}
-		
-		// TODO: use BigInts in calcs?
 		
 		public long getVirtualOriginY() {
 			return originY;
 		}
 		
-		// TODO: use BigInts in calcs?
-		
 		public long getVirtualWidth() {
 			return calculatedPaneWidth;
 		}
-		
-		// TODO: use BigInts in calcs?
 		
 		public long getVirtualHeight() {
 			return calculatedPaneHeight;
@@ -1295,27 +1287,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			return 0;
 		}
 		
-		public void setScaleVars(int numer, int denom) {
-			if (numer == 1) {
-				if (denom < 1)
-					throw new IllegalArgumentException("illegal scale denominator");
-			}
-			else if (denom == 1) {
-				if (numer < 1)
-					throw new IllegalArgumentException("illegal scale numerator");
-			}
-			else
-				throw new IllegalArgumentException("unsupported scale combo; either numer or denom must be 1");
-			scaleNumer = numer;
-			scaleDenom = denom;
-			calcPaneSize();
-		}
-
 		public void reset() {
 			setInitialNumbers();
 		}
-		
-		// TODO: use BigInts in calcs?
 		
 		public boolean increaseZoom() {
 			
@@ -1356,8 +1330,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 		
 		
-		// TODO: use BigInts in calcs?
-		
 		public boolean decreaseZoom() {
 			
 			boolean changed = false;
@@ -1396,8 +1368,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			return changed;
 		}
 
-		// TODO: use BigInts in calcs?
-		
 		public boolean panLeft(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
 			long newPos = originX - numModelUnits;
@@ -1409,8 +1379,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			return true;
 		}
 
-		// TODO: use BigInts in calcs?
-		
 		public boolean panRight(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
 			long newPos = originX + numModelUnits;
@@ -1422,8 +1390,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			return true;
 		}
 
-		// TODO: use BigInts in calcs?
-		
 		public boolean panUp(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
 			long newPos = originY - numModelUnits;
@@ -1435,8 +1401,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			return true;
 		}
 
-		// TODO: use BigInts in calcs?
-		
 		public boolean panDown(int numPixels) {
 			long numModelUnits = pixelToModel(numPixels, 0);
 			long newPos = originY + numModelUnits;

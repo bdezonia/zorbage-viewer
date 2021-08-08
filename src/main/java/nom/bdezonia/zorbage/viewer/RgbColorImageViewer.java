@@ -33,8 +33,10 @@ package nom.bdezonia.zorbage.viewer;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dialog;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -44,8 +46,10 @@ import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DecimalFormat;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -53,12 +57,14 @@ import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
+import nom.bdezonia.zorbage.algorithm.NdSplit;
 import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
 import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
@@ -183,27 +189,49 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		graphicsPanel.add(scrollPane, BorderLayout.CENTER);
 
 		JPanel buttonPanel = new JPanel();
-		BoxLayout buttonBoxLayout = new BoxLayout(buttonPanel, BoxLayout.Y_AXIS);
-		buttonPanel.setLayout(buttonBoxLayout);
 		JButton swapAxes = new JButton("Swap Axes");
 		JButton snapshot = new JButton("1X Snapshot");
 		JButton incZoom = new JButton("Zoom In");
 		JButton decZoom = new JButton("Zoom Out");
-		JButton panLeft = new JButton("Left");
-		JButton panRight = new JButton("Right");
-		JButton panUp = new JButton("Up");
-		JButton panDown = new JButton("Down");
-		JButton resetZoom = new JButton("Reset");
-		buttonPanel.add(swapAxes);
-		buttonPanel.add(snapshot);
-		buttonPanel.add(incZoom);
-		buttonPanel.add(decZoom);
-		buttonPanel.add(panLeft);
-		buttonPanel.add(panRight);
-		buttonPanel.add(panUp);
-		buttonPanel.add(panDown);
-		buttonPanel.add(resetZoom);
-		buttonPanel.add(new JSeparator());
+		JButton panLeft = new JButton("Pan Left");
+		JButton panRight = new JButton("Pan Right");
+		JButton panUp = new JButton("Pan Up");
+		JButton panDown = new JButton("Pan Down");
+		JButton resetZoom = new JButton("Reset Pan/Zoom");
+		JButton explode = new JButton("Explode ...");
+		Dimension size = new Dimension(150, 40);
+		incZoom.setMinimumSize(size);
+		decZoom.setMinimumSize(size);
+		panLeft.setMinimumSize(size);
+		panRight.setMinimumSize(size);
+		panUp.setMinimumSize(size);
+		panDown.setMinimumSize(size);
+		resetZoom.setMinimumSize(size);
+		snapshot.setMinimumSize(size);
+		swapAxes.setMinimumSize(size);
+		explode.setMinimumSize(size);
+		incZoom.setMaximumSize(size);
+		decZoom.setMaximumSize(size);
+		panLeft.setMaximumSize(size);
+		panRight.setMaximumSize(size);
+		panUp.setMaximumSize(size);
+		panDown.setMaximumSize(size);
+		resetZoom.setMaximumSize(size);
+		snapshot.setMaximumSize(size);
+		swapAxes.setMaximumSize(size);
+		explode.setMaximumSize(size);
+		Box vertBox = Box.createVerticalBox();
+		vertBox.add(incZoom);
+		vertBox.add(decZoom);
+		vertBox.add(panLeft);
+		vertBox.add(panRight);
+		vertBox.add(panUp);
+		vertBox.add(panDown);
+		vertBox.add(resetZoom);
+		vertBox.add(snapshot);
+		vertBox.add(swapAxes);
+		vertBox.add(explode);
+		buttonPanel.add(vertBox);
 		swapAxes.addActionListener(new ActionListener() {
 			
 			boolean cancelled = false;
@@ -354,6 +382,23 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 				setZoomCenterLabels();
 				pz.draw();
 				frame.repaint();
+			}
+		});
+		explode.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				DimensionedDataSource<U> dataSource = planeData.getDataSource();
+				String input = JOptionPane.showInputDialog("Choose axis number along which the data will be exploded (0 - "+(dataSource.numDimensions()-1)+")");
+				try {
+					int axis = Integer.parseInt(input);
+					if (axis >= 0 || axis < dataSource.numDimensions()) {
+						explode(dataSource, axis);
+					}
+				} catch (NumberFormatException exc) {
+					;
+				}
 			}
 		});
 		
@@ -749,22 +794,6 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			return 0;
 		}
 		
-		public void setScaleVars(int numer, int denom) {
-			if (numer == 1) {
-				if (denom < 1)
-					throw new IllegalArgumentException("illegal scale denominator");
-			}
-			else if (denom == 1) {
-				if (numer < 1)
-					throw new IllegalArgumentException("illegal scale numerator");
-			}
-			else
-				throw new IllegalArgumentException("unsupported scale combo; either numer or denom must be 1");
-			scaleNumer = numer;
-			scaleDenom = denom;
-			calcPaneSize();
-		}
-
 		public void reset() {
 			setInitialNumbers();
 		}
@@ -928,6 +957,10 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		
 		public void draw() {
 
+			// Reduce flicker while not needing to make any changes for double buffering or page flipping.
+			
+			Toolkit.getDefaultToolkit().sync();
+			
 			U value = alg.construct();
 			RgbMember rgb = (value instanceof RgbMember) ? (RgbMember) value : null;
 			ArgbMember argb = (value instanceof ArgbMember) ? (ArgbMember) value : null;
@@ -1097,7 +1130,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			String d0Str = origDs.getAxisType(axisNumber0) == null ? ("dim "+axisNumber0) : origDs.getAxisType(axisNumber0);
 			String d1Str = origDs.getAxisType(axisNumber1) == null ? ("dim "+axisNumber1) : origDs.getAxisType(axisNumber1);
 			String axes = "["+d0Str+":"+d1Str+"]";
-			String miniTitle = axes + " : slice";
+			String miniTitle = axes + " slice";
 			String extendedDims = "";
 			if (origDs.numDimensions() > 2) {
 				extendedDims = " at";
@@ -1152,4 +1185,17 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			return newDs;
 		}
 	}
+	
+	@SuppressWarnings("unchecked")
+	<V extends Algebra<V,W>, W extends Allocatable<W>>
+		void explode(DimensionedDataSource<U> dataSource, int axis)
+	{
+		V enhancedAlg = (V) alg;
+		DimensionedDataSource<W> ds = (DimensionedDataSource<W>) dataSource;
+		List<DimensionedDataSource<W>>  results = NdSplit.compute(enhancedAlg, axis, 1L, ds);
+		for (DimensionedDataSource<W> dataset : results) {
+			new RgbColorImageViewer<V,W>(enhancedAlg, dataset);
+		}
+	}
+
 }

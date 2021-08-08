@@ -355,24 +355,26 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			}
 		});
 		swapAxes.addActionListener(new ActionListener() {
-			
+
 			boolean cancelled = false;
 			boolean[] checked = new boolean[dataSource.numDimensions()];
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+				dlg.setLocationByPlatform(true);
 				dlg.setLayout(new FlowLayout());
 				dlg.add(new JLabel("Choose two dimensions that specify the planes of interest"));
 				for (int i = 0; i < dataSource.numDimensions(); i++) {
 					checked[i] = false;
-					JCheckBox bx = new JCheckBox("d" + i);
+					String label = "" + i + ": " + dataSource.getAxisType(i);
+					JCheckBox bx = new JCheckBox((label == null || label.length() == 0) ? ("d"+i): label);
 					bx.addActionListener(new ActionListener() {
-						
 						@Override
 						public void actionPerformed(ActionEvent e) {
 							String label = bx.getText();
-							int dimNum = Integer.parseInt(label.substring(1));
+							int pos = label.indexOf(':');
+							int dimNum = Integer.parseInt(label.substring(0,pos));
 							checked[dimNum] = !checked[dimNum];
 						}
 					});
@@ -513,6 +515,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+				dlg.setLocationByPlatform(true);
 				dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
 				dlg.add(new JLabel("Choose two values that specify the range of values to display"));
 				JButton clrButton = new JButton("Clear");
@@ -625,6 +628,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+				dlg.setLocationByPlatform(true);
 				dlg.setLayout(new FlowLayout());
 				dlg.add(new JLabel("Choose floating point type of output"));
 				ButtonGroup bg = new ButtonGroup();
@@ -710,15 +714,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e)
 			{
 				DimensionedDataSource<U> dataSource = planeData.getDataSource();
-				String input = JOptionPane.showInputDialog("Choose axis number along which the data will be exploded (0 - "+(dataSource.numDimensions()-1)+")");
-				try {
-					int axis = Integer.parseInt(input);
-					if (axis >= 0 || axis < dataSource.numDimensions()) {
-						explode(dataSource, axis);
-					}
-				} catch (NumberFormatException exc) {
-					;
+				String[] axes = new String[dataSource.numDimensions()];
+				for (int i = 0; i < axes.length; i++) {
+					String label = dataSource.getAxisType(i);
+					axes[i] = (label == null || label.length() == 0) ? ("d"+i): label;
 				}
+				int axis = JOptionPane.showOptionDialog(frame, "Choose an axis to explode along", "Axis chooser",
+						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, axes, null);
+				if (axis >= 0 && axis < dataSource.numDimensions())
+					explode(dataSource, axis);
 			}
 		});
 		fft.addActionListener(new ActionListener() {

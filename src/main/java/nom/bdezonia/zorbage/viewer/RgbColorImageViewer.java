@@ -240,6 +240,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+				dlg.setLocationByPlatform(true);
 				dlg.setLayout(new FlowLayout());
 				dlg.add(new JLabel("Choose two dimensions that specify the planes of interest"));
 				for (int i = 0; i < dataSource.numDimensions(); i++) {

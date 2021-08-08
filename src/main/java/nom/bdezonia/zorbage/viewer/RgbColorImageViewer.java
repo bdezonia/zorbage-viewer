@@ -1098,6 +1098,20 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			String d1Str = origDs.getAxisType(axisNumber1) == null ? ("dim "+axisNumber1) : origDs.getAxisType(axisNumber1);
 			String axes = "["+d0Str+":"+d1Str+"]";
 			String miniTitle = axes + " : slice";
+			String extendedDims = "";
+			if (origDs.numDimensions() > 2) {
+				extendedDims = " at";
+				int count = 0;;
+				for (int i = 0; i < origDs.numDimensions(); i++) {
+					if (i == axisNumber0 || i == axisNumber1)
+						continue;
+					String axisLabel = origDs.getAxisType(i);
+					long pos = planeData.getPositionValue(count);
+					count++;
+					extendedDims = extendedDims + " " + axisLabel + "("+pos+")"; 
+				}
+			}
+			miniTitle = miniTitle + extendedDims;
 
 			newDs.setName(origDs.getName() == null ? miniTitle : (miniTitle + " of "+origDs.getName()));
 			newDs.setAxisType(0, origDs.getAxisType(axisNumber0));

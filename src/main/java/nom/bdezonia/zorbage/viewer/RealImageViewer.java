@@ -217,6 +217,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		frame = new JFrame(title);
 		
+		frame.setLocationByPlatform(true);
+		
 		frame.setLayout(new BorderLayout());
 		
 		argbData = new BufferedImage(pz.paneWidth, pz.paneHeight, BufferedImage.TYPE_INT_ARGB);

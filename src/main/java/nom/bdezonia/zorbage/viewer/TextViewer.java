@@ -63,6 +63,8 @@ public class TextViewer<T extends Algebra<T, U>,U> {
 
 		frame = new JFrame();
 		
+		frame.setLocationByPlatform(true);
+		
 		Container pane = frame.getContentPane();
 		
 		Component image = new JTextPane();

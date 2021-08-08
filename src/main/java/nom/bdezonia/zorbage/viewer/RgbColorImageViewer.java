@@ -117,30 +117,19 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		this.pz = new PanZoomView(512, 512);
 
 		String name = dataSource.getName();
-		if (name == null)
-			name = "<unknown name>";
 		
 		String source = dataSource.getSource();
-		if (source == null)
-			source = "<unknown source>";
 		
-		String dataType = dataSource.getValueType();
-		String dataUnit = dataSource.getValueUnit();
-
 		String title = "Zorbage Viewer - "+name;
 	
 		// temperature, pressure, speed, etc
 		
-		String valueInfo = "(unknown family)";
-		if (dataType != null && dataType.length() != 0)
-			valueInfo = dataType;
-	
+		String valueType = dataSource.getValueType();
+
 		// degrees K, mHg, km/h, etc
 		
-		String valueUnit = "(unknown unit)";
-		if (dataUnit != null && dataUnit.length() != 0)
-			valueUnit = " (" + dataUnit + ")";
-		
+		String valueUnit = dataSource.getValueUnit();
+
 		frame = new JFrame(title);
 		
 		frame.setLocationByPlatform(true);
@@ -174,7 +163,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
 		headerPanel.add(sourceLabel);
 		JLabel a = new JLabel("Data type: " + alg.typeDescription());
-		JLabel b = new JLabel("Data family: " + valueInfo);
+		JLabel b = new JLabel("Data family: " + valueType);
 		JLabel c = new JLabel("Data unit: " + valueUnit);
 		a.setFont(font);
 		b.setFont(font);
@@ -419,10 +408,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			positionLabels[i].setText(""+(planeData.getPositionValue(i)+1)+" / "+maxVal);
 			int pos = planeData.getDataSourceAxisNumber(i);
 			String axisLabel;
-			if (planeData.getDataSource().getAxisType(pos) == null)
-				axisLabel = "" + pos + " : ";
-			else
-				axisLabel = planeData.getDataSource().getAxisType(pos) + " : ";
+			axisLabel = planeData.getDataSource().getAxisType(pos) + " : ";
 			JLabel jax = new JLabel(axisLabel);
 			jax.setFont(font);
 			miniPanel.add(jax);
@@ -455,7 +441,6 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 					
 			@Override
 			public void mouseMoved(MouseEvent e) {
-				boolean troubleAxis;
 				long i0 = pz.pixelToModel(e.getX(), pz.getVirtualOriginX());
 				long i1 = pz.pixelToModel(e.getY(), pz.getVirtualOriginY());
 				if (i0 >= 0 && i0 < planeData.d0() && i1 >= 0 && i1 < planeData.d1()) {
@@ -465,8 +450,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 					int axisNumber0 = planeData.axisNumber0();
 					int axisNumber1 = planeData.axisNumber1();
 					StringBuilder sb = new StringBuilder();
-					troubleAxis = (axisNumber0 >= dataSource.numDimensions() || dataSource.getAxisType(axisNumber0) == null);
-					sb.append(troubleAxis ? "d0" : dataSource.getAxisType(axisNumber0));
+					sb.append(dataSource.getAxisType(axisNumber0));
 					sb.append(" = ");
 					sb.append(i0);
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
@@ -475,13 +459,12 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 							sb.append(" (");
 							sb.append(df.format(realWorldCoords[axisNumber0]));
 							sb.append(" ");
-							sb.append(dataSource.getAxisUnit(axisNumber0) == null ? "" : dataSource.getAxisUnit(axisNumber0));
+							sb.append(dataSource.getAxisUnit(axisNumber0));
 							sb.append(")");
 						}
 					}
 					sb.append(", ");
-					troubleAxis = (axisNumber1 >= dataSource.numDimensions() || dataSource.getAxisType(axisNumber1) == null);
-					sb.append( troubleAxis ? "d1" : dataSource.getAxisType(axisNumber1));
+					sb.append(dataSource.getAxisType(axisNumber1));
 					sb.append("= ");
 					sb.append(i1);
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
@@ -490,7 +473,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 							sb.append(" (");
 							sb.append(df.format(realWorldCoords[axisNumber1]));
 							sb.append(" ");
-							sb.append(dataSource.getAxisUnit(axisNumber1) == null ? "" : dataSource.getAxisUnit(axisNumber1));
+							sb.append(dataSource.getAxisUnit(axisNumber1));
 							sb.append(")");
 						}
 					}
@@ -518,7 +501,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 					else
 						throw new IllegalArgumentException("strange color type error");
 					sb.append(" ");
-					sb.append(dataSource.getValueUnit() == null ? "" : dataSource.getValueUnit());
+					sb.append(dataSource.getValueUnit());
 					readout.setText(sb.toString());
 				}
 			}
@@ -537,8 +520,6 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		miscPanel.add(d);
 		for (int i = 0; i < dataSource.numDimensions(); i++) {
 			String axisName = dataSource.getAxisType(i);
-			if (axisName == null)
-				axisName = "d" + i;
 			JLabel dimLabel = new JLabel(dataSource.dimension(i)+" : "+axisName);
 			dimLabel.setFont(font);
 			miscPanel.add(dimLabel);
@@ -1128,8 +1109,8 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			
 			DimensionedDataSource<U> origDs = planeData.getDataSource();
 
-			String d0Str = origDs.getAxisType(axisNumber0) == null ? ("dim "+axisNumber0) : origDs.getAxisType(axisNumber0);
-			String d1Str = origDs.getAxisType(axisNumber1) == null ? ("dim "+axisNumber1) : origDs.getAxisType(axisNumber1);
+			String d0Str = origDs.getAxisType(axisNumber0);
+			String d1Str = origDs.getAxisType(axisNumber1);
 			String axes = "["+d0Str+":"+d1Str+"]";
 			String miniTitle = axes + " slice";
 			String extendedDims = "";
@@ -1147,7 +1128,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			}
 			miniTitle = miniTitle + extendedDims;
 
-			newDs.setName(origDs.getName() == null ? miniTitle : (miniTitle + " of "+origDs.getName()));
+			newDs.setName(origDs.getName().length() == 0 ? miniTitle : (miniTitle + " of "+origDs.getName()));
 			newDs.setAxisType(0, origDs.getAxisType(axisNumber0));
 			newDs.setAxisType(1, origDs.getAxisType(axisNumber1));
 			newDs.setAxisUnit(0, origDs.getAxisUnit(axisNumber0));

@@ -354,9 +354,10 @@ public class Main<T extends Algebra<T,U>, U> {
 				chooser.showOpenDialog(frame);
 				
 				File[] files = chooser.getSelectedFiles();
+				
 
 				if (files != null && files.length != 0) {
-				
+					
 					DataBundle bundle = Nifti.open(files[0].getAbsolutePath());
 
 					List<Tuple2<T, DimensionedDataSource<U>>> datasources = bundle.bundle();
@@ -382,7 +383,7 @@ public class Main<T extends Algebra<T,U>, U> {
 
 							bundle = Nifti.open(files[i].getAbsolutePath());
 
-							data = (DimensionedDataSource<U>) bundle.bundle().get(i).b();
+							data = (DimensionedDataSource<U>) bundle.bundle().get(0).b();
 							
 							if (data.numElements() != nom.bdezonia.zorbage.misc.LongUtils.numElements(dims)) {
 								
@@ -402,7 +403,7 @@ public class Main<T extends Algebra<T,U>, U> {
 							
 							i++;
 							
-						} while (i < datasources.size());
+						} while (i < files.length);
 
 						if (sources.size() == 1) {
 							

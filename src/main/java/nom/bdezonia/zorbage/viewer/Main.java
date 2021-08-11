@@ -36,18 +36,25 @@ import java.awt.Panel;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.*;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
+import nom.bdezonia.zorbage.algebra.Allocatable;
+import nom.bdezonia.zorbage.algorithm.Copy;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
+import nom.bdezonia.zorbage.data.NdData;
+import nom.bdezonia.zorbage.datasource.ConcatenatedDataSource;
+import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.ecat.Ecat;
 import nom.bdezonia.zorbage.gdal.Gdal;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
 import nom.bdezonia.zorbage.nifti.Nifti;
 import nom.bdezonia.zorbage.scifio.Scifio;
+import nom.bdezonia.zorbage.storage.file.FileStorage;
 import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.character.CharMember;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
@@ -318,8 +325,110 @@ public class Main<T extends Algebra<T,U>, U> {
 				}
 			}
 		});
+		JButton loadVStack = new JButton("Test Nifti VSTACK");
+		loadVStack.addMouseListener(new MouseListener() {
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+			}
+			
+			public void mousePressed(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+			
+			@SuppressWarnings({ "unchecked", "rawtypes" })
+			@Override
+			public void mouseClicked(MouseEvent e) {
 
+				JFileChooser chooser = new JFileChooser();
+				
+				chooser.showOpenDialog(frame);
+				
+				File[] files = chooser.getSelectedFiles();
 
+				if (files != null && files.length != 0) {
+				
+					DataBundle bundle = Nifti.open(files[0].getAbsolutePath());
+
+					List<Tuple2<T, DimensionedDataSource<U>>> datasources = bundle.bundle();
+					
+					if (datasources.size() > 0) {
+						
+						List<IndexedDataSource<U>> sources = new LinkedList<>();
+
+						Tuple2<T, DimensionedDataSource<U>> dataInfo = datasources.get(0);
+
+						T algebra = dataInfo.a();
+						
+						DimensionedDataSource<U> data = dataInfo.b();
+						
+						long[] dims = new long[data.numDimensions()];
+						for (int d = 0; d < data.numDimensions(); d++) {
+							dims[d] = data.dimension(d);
+						}
+						
+						int i = 0;
+						
+						do {
+
+							bundle = Nifti.open(files[i].getAbsolutePath());
+
+							data = (DimensionedDataSource<U>) bundle.bundle().get(i).b();
+							
+							if (data.numElements() != nom.bdezonia.zorbage.misc.LongUtils.numElements(dims)) {
+								
+								System.out.println("Skipping file "+files[i].getName()+": it does not match dims of file "+files[0].getName());
+								i++;
+								continue;
+							}
+							
+							IndexedDataSource<U> fileData =
+								FileStorage.allocate((Allocatable) algebra.construct(), data.numElements());
+						
+							Copy.compute(algebra, data.rawData(), fileData);
+							
+							// TODO what about all that glorious metadata? Do I need a copy() algo of some kind?
+
+							sources.add(fileData);
+							
+							i++;
+							
+						} while (i < datasources.size());
+
+						if (sources.size() == 1) {
+							
+							// we got one data source
+							
+							displayData(new Tuple2<T,DimensionedDataSource<U>>(algebra, data));
+						}
+						else {
+							
+							long[] newDims = new long[dims.length+1];
+							
+							for (int d = 0; d < dims.length; d++) {
+								newDims[d] = dims[d];
+							}
+							
+							newDims[dims.length] = sources.size();
+							
+							DimensionedDataSource<U> concatenatedVirtualDataSource = concatIdeally(newDims, sources);
+							
+							// is this where we copy metadata from one of the files?
+							
+							displayData(new Tuple2<T,DimensionedDataSource<U>>(algebra, concatenatedVirtualDataSource));
+						}
+					}
+				}
+			}
+		});
+		
 		Panel bp = new Panel();
 		bp.setLayout(new BoxLayout(bp, BoxLayout.Y_AXIS));
 		
@@ -328,6 +437,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		bp.add(loadNetcdf);
 		bp.add(loadNifti);
 		bp.add(loadScifio);
+		bp.add(loadVStack);
 
 		Container pane = frame.getContentPane();
 		
@@ -339,6 +449,48 @@ public class Main<T extends Algebra<T,U>, U> {
 		frame.setVisible(true);
 	}
 
+	// makes a nice lg n hierachy of concatenated data sources from a list of sources
+	
+	private DimensionedDataSource<U> concatIdeally(long[] dimsOverall, List<IndexedDataSource<U>> sources) {
+
+		if (sources.size() == 0) { 
+			return null;
+		}
+		
+		IndexedDataSource<U> concat = concat(sources, 0, sources.size());
+		
+		return new NdData<U>(dimsOverall, concat);
+	}
+
+	private IndexedDataSource<U> concat(List<IndexedDataSource<U>> sources, int left, int rightPlusOne) {
+
+		if (left < 0)
+			throw new IllegalArgumentException("concat has error condition 1");
+			
+		if (rightPlusOne > sources.size())
+			throw new IllegalArgumentException("concat has error condition 2");
+
+		if (left >= rightPlusOne)
+			throw new IllegalArgumentException("concat has error condition 3");
+
+		if (rightPlusOne - left <= 0)
+			throw new IllegalArgumentException("concat has error condition 4");
+		
+		if (rightPlusOne - left == 1) {
+			return sources.get(left);
+		}
+
+		else if (rightPlusOne - left == 2) {
+			return new ConcatenatedDataSource<>(sources.get(left), sources.get(left+1));
+		}
+		else {
+			int midPt = left + ((rightPlusOne - left) / 2);
+			IndexedDataSource<U> leftSrc = concat(sources, left, midPt);
+			IndexedDataSource<U> rightSrc = concat(sources, midPt + 1, rightPlusOne);
+			return new ConcatenatedDataSource<>(leftSrc, rightSrc);
+		}
+	}
+	
 	private void displayAll(DataBundle bundle) {
 
 		List<Tuple2<T,DimensionedDataSource<U>>> list = bundle.bundle();

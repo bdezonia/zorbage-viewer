@@ -349,6 +349,8 @@ public class Main<T extends Algebra<T,U>, U> {
 
 				JFileChooser chooser = new JFileChooser();
 				
+				chooser.setMultiSelectionEnabled(true);
+				
 				chooser.showOpenDialog(frame);
 				
 				File[] files = chooser.getSelectedFiles();

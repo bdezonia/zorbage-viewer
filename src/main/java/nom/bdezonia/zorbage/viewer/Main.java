@@ -483,11 +483,14 @@ public class Main<T extends Algebra<T,U>, U> {
 							
 							newDims[dims.length] = sources.size();
 							
-							DimensionedDataSource<U> concatenatedVirtualDataSource = concatIdeally(newDims, sources);
+							IndexedDataSource<U> concatenatedVirtualDataSource =
+									ConcatenatedDataSource.optimalConcat(sources);
+							
+							NdData<U> ndData = new NdData<>(newDims, concatenatedVirtualDataSource); 
 							
 							// is this where we copy metadata from one of the files?
 							
-							displayData(new Tuple2<T,DimensionedDataSource<U>>(algebra, concatenatedVirtualDataSource));
+							displayData(new Tuple2<T,DimensionedDataSource<U>>(algebra, ndData));
 						}
 					}
 				}
@@ -514,48 +517,6 @@ public class Main<T extends Algebra<T,U>, U> {
 		frame.setVisible(true);
 	}
 
-	// makes a nice lg n hierachy of concatenated data sources from a list of sources
-	
-	private DimensionedDataSource<U> concatIdeally(long[] dimsOverall, List<IndexedDataSource<U>> sources) {
-
-		if (sources.size() == 0) { 
-			return null;
-		}
-		
-		IndexedDataSource<U> concat = concat(sources, 0, sources.size());
-		
-		return new NdData<U>(dimsOverall, concat);
-	}
-
-	private IndexedDataSource<U> concat(List<IndexedDataSource<U>> sources, int left, int rightPlusOne) {
-
-		if (left < 0)
-			throw new IllegalArgumentException("concat has error condition 1");
-			
-		if (rightPlusOne > sources.size())
-			throw new IllegalArgumentException("concat has error condition 2");
-
-		if (left >= rightPlusOne)
-			throw new IllegalArgumentException("concat has error condition 3");
-
-		if (rightPlusOne - left <= 0)
-			throw new IllegalArgumentException("concat has error condition 4");
-		
-		if (rightPlusOne - left == 1) {
-			return sources.get(left);
-		}
-
-		else if (rightPlusOne - left == 2) {
-			return new ConcatenatedDataSource<>(sources.get(left), sources.get(left+1));
-		}
-		else {
-			int midPt = left + ((rightPlusOne - left) / 2);
-			IndexedDataSource<U> leftSrc = concat(sources, left, midPt);
-			IndexedDataSource<U> rightSrc = concat(sources, midPt + 1, rightPlusOne);
-			return new ConcatenatedDataSource<>(leftSrc, rightSrc);
-		}
-	}
-	
 	private void displayAll(DataBundle bundle) {
 
 		List<Tuple2<T,DimensionedDataSource<U>>> list = bundle.bundle();

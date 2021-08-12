@@ -32,6 +32,7 @@ package nom.bdezonia.zorbage.viewer;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.Panel;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -498,20 +499,39 @@ public class Main<T extends Algebra<T,U>, U> {
 		});
 		
 		Panel bp = new Panel();
-		bp.setLayout(new BoxLayout(bp, BoxLayout.Y_AXIS));
 		
-		bp.add(loadEcat);
-		bp.add(loadGdal);
-		bp.add(loadNetcdf);
-		bp.add(loadNifti);
-		bp.add(loadScifio);
-		bp.add(loadVStack);
+		Box box = Box.createVerticalBox();
+		
+		Dimension buttonSize = new Dimension(180,40);
+		
+		loadEcat.setMinimumSize(buttonSize);
+		loadEcat.setMaximumSize(buttonSize);
+		loadGdal.setMinimumSize(buttonSize);
+		loadGdal.setMaximumSize(buttonSize);
+		loadNetcdf.setMinimumSize(buttonSize);
+		loadNetcdf.setMaximumSize(buttonSize);
+		loadNifti.setMinimumSize(buttonSize);
+		loadNifti.setMaximumSize(buttonSize);
+		loadScifio.setMinimumSize(buttonSize);
+		loadScifio.setMaximumSize(buttonSize);
+		loadVStack.setMinimumSize(buttonSize);
+		loadVStack.setMaximumSize(buttonSize);
+		
+		box.add(loadEcat);
+		box.add(loadGdal);
+		box.add(loadNetcdf);
+		box.add(loadNifti);
+		box.add(loadScifio);
+		box.add(loadVStack);
+		
+		bp.add(box);
 
 		Container pane = frame.getContentPane();
 		
 		pane.setLayout(new BorderLayout());
 		
 		pane.add(bp, BorderLayout.CENTER);
+		
 		frame.pack();
 
 		frame.setVisible(true);
@@ -531,7 +551,9 @@ public class Main<T extends Algebra<T,U>, U> {
 		//   (though no reader yet creates them). For instance:
 		//     An n-d data structure containing vectors or matrices or tensors at each point.
 		//     All of these can be made of reals, complexes, quaternions, or octonions. What
-		//     would be the best way to display this info?
+		//     would be the best way to display this info? Imagine you have no "instanceof"
+		//     testing in this render and types do not provide a renderer. Can you use
+		//     algebras to reason on how to display resulting data?
 		
 		U type = tuple.a().construct();
 	
@@ -696,6 +718,10 @@ public class Main<T extends Algebra<T,U>, U> {
 			// rationals
 			// all real floating types
 			
+			// NOTE: could avoid fall through and test all real types for this
+			// sectio and have a final else clause that says "Can't identify
+			// type: ignoring dataset".
+			
 			displayRealImage(tuple.a(), tuple.b());
 		}
 	}
@@ -704,11 +730,6 @@ public class Main<T extends Algebra<T,U>, U> {
 		System.out.println("MUST DISPLAY A CIE LAB COLOR IMAGE "+data.getName());
 	}
 
-	private void displayRgbColorImage(T alg, DimensionedDataSource<U> data) {
-		
-		new RgbColorImageViewer<T,U>(alg, data);
-	}
-	
 	// how would you display complex data? a channel for r and i? otherwise it's not
 	//   bounded and it's not ordered so you can't get a display range from it. Also
 	//   similar things for quat and oct images. Maybe one window per "channel" and
@@ -731,6 +752,11 @@ public class Main<T extends Algebra<T,U>, U> {
 		new TextViewer<T,U>(alg, data);
 	}
 
+	private void displayRgbColorImage(T alg, DimensionedDataSource<U> data) {
+		
+		new RgbColorImageViewer<T,U>(alg, data);
+	}
+	
 	private	void displayRealImage(T alg, DimensionedDataSource<U> data) {
 		
 		new RealImageViewer<T,U>(alg, data);

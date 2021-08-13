@@ -562,7 +562,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						dispMax = G.HP.construct(maxStr);
 					}
 					String dispMinStr = (dispMin == null ? minStr : dispMin.toString());
-					String dispMaxStr = (dispMin == null ? maxStr : dispMax.toString());
+					String dispMaxStr = (dispMax == null ? maxStr : dispMax.toString());
 					dispMinLabel.setToolTipText(dispMinStr);
 					dispMaxLabel.setToolTipText(dispMaxStr);
 					if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT) dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
@@ -902,7 +902,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				String minStr = min.toString();
 				String maxStr = max.toString();
 				String dispMinStr = (dispMin == null ? minStr : dispMin.toString());
-				String dispMaxStr = (dispMin == null ? maxStr : dispMax.toString());
+				String dispMaxStr = (dispMax == null ? maxStr : dispMax.toString());
 				minLabel.setToolTipText(minStr);
 				maxLabel.setToolTipText(maxStr);
 				dispMinLabel.setToolTipText(dispMinStr);
@@ -940,7 +940,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		String minStr = min.toString();
 		String maxStr = max.toString();
 		String dispMinStr = (dispMin == null ? minStr : dispMin.toString());
-		String dispMaxStr = (dispMin == null ? maxStr : dispMax.toString());
+		String dispMaxStr = (dispMax == null ? maxStr : dispMax.toString());
 		minLabel.setToolTipText(minStr);
 		maxLabel.setToolTipText(maxStr);
 		dispMinLabel.setToolTipText(dispMinStr);
@@ -1114,7 +1114,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		model.getCoordinateSpace().project(modelCoords, realWorldCoords);
 		
 		ctrXLabel.setText("Zoom Ctr d0: " + df.format(realWorldCoords[axisNumber0]));
-		ctrYLabel.setText("Zoom Ctr d1: " + df.format(realWorldCoords[axisNumber1]));
+		if (axisNumber1 >= model.numDimensions())
+			ctrYLabel.setText("Zoom Ctr d1: 0");
+		else
+			ctrYLabel.setText("Zoom Ctr d1: " + df.format(realWorldCoords[axisNumber1]));
 	}
 	
 	// calcs the pixel type's value bounds

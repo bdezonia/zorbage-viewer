@@ -719,7 +719,7 @@ public class Main<T extends Algebra<T,U>, U> {
 			// all real floating types
 			
 			// NOTE: could avoid fall through and test all real types for this
-			// sectio and have a final else clause that says "Can't identify
+			// section and have a final else clause that says "Can't identify
 			// type: ignoring dataset".
 			
 			displayRealImage(tuple.a(), tuple.b());

@@ -829,12 +829,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							sb.append(")");
 						}
 					}
-					sb.append(", ");
-					sb.append(dataSource.getAxisType(axisNumber1));
-					sb.append("= ");
-					sb.append(i1);
-					// only display calibrated values if they are not == 1.0 * uncalibrated values
 					if (axisNumber1 < dataSource.numDimensions()) {
+						sb.append(", ");
+						sb.append(dataSource.getAxisType(axisNumber1));
+						sb.append("= ");
+						sb.append(i1);
+					
+						// only display calibrated values if they are not == 1.0 * uncalibrated values
 						if (realWorldCoords[axisNumber1].subtract(BigDecimal.valueOf(modelCoords[axisNumber1])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
 							sb.append(" (");
 							sb.append(df.format(realWorldCoords[axisNumber1]));

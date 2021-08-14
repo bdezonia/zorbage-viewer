@@ -1730,8 +1730,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			DimensionedDataSource<U> origDs = planeData.getDataSource();
 
-			String d0Str = origDs.getAxisType(axisNumber0);
-			String d1Str = origDs.getAxisType(axisNumber1);
+			String d0Str = axisNumber0 < origDs.numDimensions() ? origDs.getAxisType(axisNumber0) : "d0";
+			String d1Str = axisNumber1 < origDs.numDimensions() ? origDs.getAxisType(axisNumber1) : "d1";
 			String axes = "["+d0Str+":"+d1Str+"]";
 			String miniTitle = axes + " slice";
 			String extendedDims = "";
@@ -1750,10 +1750,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			miniTitle = miniTitle + extendedDims;
 
 			newDs.setName(origDs.getName().length() == 0 ? miniTitle : (miniTitle + " of "+origDs.getName()));
-			newDs.setAxisType(0, origDs.getAxisType(axisNumber0));
-			newDs.setAxisType(1, origDs.getAxisType(axisNumber1));
-			newDs.setAxisUnit(0, origDs.getAxisUnit(axisNumber0));
-			newDs.setAxisUnit(1, origDs.getAxisUnit(axisNumber1));
+			if (axisNumber0 < origDs.numDimensions()) {
+				newDs.setAxisType(0, origDs.getAxisType(axisNumber0));
+				newDs.setAxisUnit(0, origDs.getAxisUnit(axisNumber0));
+			}
+			if (axisNumber1 < origDs.numDimensions()) {
+				newDs.setAxisType(1, origDs.getAxisType(axisNumber1));
+				newDs.setAxisUnit(1, origDs.getAxisUnit(axisNumber1));
+			}
 			newDs.setValueType(origDs.getValueType());
 			newDs.setValueUnit(origDs.getValueUnit());
 			
@@ -1765,18 +1769,22 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				BigDecimal[] scales = new BigDecimal[2];
 
 				scales[0] = origLinSpace.getScale(axisNumber0);
-				scales[1] = origLinSpace.getScale(axisNumber1);
+				if (axisNumber1 < origDs.numDimensions())
+					scales[1] = origLinSpace.getScale(axisNumber1);
+				else
+					scales[1] = BigDecimal.ONE;
+						
 				
 				BigDecimal[] offsets = new BigDecimal[2];
 				
 				offsets[0] = origLinSpace.getOffset(axisNumber0);
-				offsets[1] = origLinSpace.getOffset(axisNumber1);
+				if (axisNumber1 < origDs.numDimensions())
+					offsets[1] = origLinSpace.getOffset(axisNumber1);
+				else
+					offsets[1] = BigDecimal.ZERO;
 				
 				long[] coord = new long[origDs.numDimensions()];
 				
-				coord[axisNumber0] = 0;
-				coord[axisNumber1] = 0;
-
 				offsets[0] = origLinSpace.project(coord, axisNumber0);
 				offsets[1] = origLinSpace.project(coord, axisNumber1);
 

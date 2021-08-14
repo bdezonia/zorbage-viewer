@@ -95,12 +95,10 @@ public class TextViewer<T extends Algebra<T, U>,U> {
 		}
 		else if (type instanceof CharMember) {
 			CharMember value = new CharMember();
-			IndexedDataSource<CharMember> stringList = (IndexedDataSource<CharMember>) data.rawData();
-			for (long i = 0; i < stringList.size(); i++) {
-				stringList.get(i, value);
-				if (i != 0)
-					result.append('\n');
-				result.append(value.toString());
+			IndexedDataSource<CharMember> charList = (IndexedDataSource<CharMember>) data.rawData();
+			for (long i = 0; i < charList.size(); i++) {
+				charList.get(i, value);
+				result.append(value.v());
 			}
 		}
 		else

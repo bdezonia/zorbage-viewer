@@ -12,7 +12,9 @@
  * Redistributions in binary form must reproduce the above copyright notice, this
  * list of conditions and the following disclaimer in the documentation and/or other
  * materials provided with the distribution.
- * 
+ *   budget
+  burgers
+
  * Neither the name of the <copyright holder> nor the names of its contributors may
  * be used to endorse or promote products derived from this software without specific
  * prior written permission.
@@ -780,7 +782,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JLabel readout = new JLabel();
 		readout.setBackground(Color.WHITE);
 		readout.setOpaque(true);
-		readout.setText("<placeholder>");
+		readout.setText("");
 		readout.setFont(font);
 		scrollPane.addMouseMotionListener(new MouseMotionListener() {
 
@@ -834,8 +836,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						sb.append(dataSource.getAxisType(axisNumber1));
 						sb.append("= ");
 						sb.append(i1);
-					
-						// only display calibrated values if they are not == 1.0 * uncalibrated values
+					}
+					// only display calibrated values if they are not == 1.0 * uncalibrated values
+					if (axisNumber1 < dataSource.numDimensions()) {
 						if (realWorldCoords[axisNumber1].subtract(BigDecimal.valueOf(modelCoords[axisNumber1])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
 							sb.append(" (");
 							sb.append(df.format(realWorldCoords[axisNumber1]));
@@ -1227,8 +1230,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			this.originX = ctrX - ctrViewX;
 			this.originY = ctrY - ctrViewY;;
 		}
-
-		// TODO: use BigInts in calcs?		
 
 		private void calcPaneSize() {
 			if (scaleNumer == 1 && scaleDenom == 1) {

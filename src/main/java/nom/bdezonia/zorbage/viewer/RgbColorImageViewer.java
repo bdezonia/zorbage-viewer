@@ -234,13 +234,15 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 				dlg.add(new JLabel("Choose two dimensions that specify the planes of interest"));
 				for (int i = 0; i < dataSource.numDimensions(); i++) {
 					checked[i] = false;
-					JCheckBox bx = new JCheckBox("d" + i);
+					String label = "" + i + ": " + dataSource.getAxisType(i);
+					JCheckBox bx = new JCheckBox(label);
 					bx.addActionListener(new ActionListener() {
 						
 						@Override
 						public void actionPerformed(ActionEvent e) {
 							String label = bx.getText();
-							int dimNum = Integer.parseInt(label.substring(1));
+							int pos = label.indexOf(':');
+							int dimNum = Integer.parseInt(label.substring(0,pos));
 							checked[dimNum] = !checked[dimNum];
 						}
 					});
@@ -380,15 +382,15 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e)
 			{
 				DimensionedDataSource<U> dataSource = planeData.getDataSource();
-				String input = JOptionPane.showInputDialog("Choose axis number along which the data will be exploded (0 - "+(dataSource.numDimensions()-1)+")");
-				try {
-					int axis = Integer.parseInt(input);
-					if (axis >= 0 || axis < dataSource.numDimensions()) {
-						explode(dataSource, axis);
-					}
-				} catch (NumberFormatException exc) {
-					;
+				String[] axes = new String[dataSource.numDimensions()];
+				for (int i = 0; i < axes.length; i++) {
+					String label = dataSource.getAxisType(i);
+					axes[i] = label;
 				}
+				int axis = JOptionPane.showOptionDialog(frame, "Choose an axis to explode along", "Axis chooser",
+						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, axes, null);
+				if (axis >= 0 && axis < dataSource.numDimensions())
+					explode(dataSource, axis);
 			}
 		});
 		
@@ -407,8 +409,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			long maxVal = planeData.getDataSourceAxisSize(i);
 			positionLabels[i].setText(""+(planeData.getPositionValue(i)+1)+" / "+maxVal);
 			int pos = planeData.getDataSourceAxisNumber(i);
-			String axisLabel;
-			axisLabel = planeData.getDataSource().getAxisType(pos) + " : ";
+			String axisLabel = planeData.getDataSource().getAxisType(pos) + " : ";
 			JLabel jax = new JLabel(axisLabel);
 			jax.setFont(font);
 			miniPanel.add(jax);
@@ -429,7 +430,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		JLabel readout = new JLabel();
 		readout.setBackground(Color.WHITE);
 		readout.setOpaque(true);
-		readout.setText("<placeholder>");
+		readout.setText("");
 		readout.setFont(font);
 		scrollPane.addMouseMotionListener(new MouseMotionListener() {
 
@@ -693,7 +694,10 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		model.getCoordinateSpace().project(modelCoords, realWorldCoords);
 		
 		ctrXLabel.setText("Zoom Ctr d0: " + df.format(realWorldCoords[axisNumber0]));
-		ctrYLabel.setText("Zoom Ctr d1: " + df.format(realWorldCoords[axisNumber1]));
+		if (axisNumber1 >= model.numDimensions())
+			ctrYLabel.setText("Zoom Ctr d1: 0");
+		else
+			ctrYLabel.setText("Zoom Ctr d1: " + df.format(realWorldCoords[axisNumber1]));
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -1074,7 +1078,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		/**
 		 * Make a 2d image snapshot of the pan / zoom viewport.
 		 * Calibration and units are transferred to the snapshot
-		 * as much as is feasible. SNapshot is taken at 1x at origin
+		 * as much as is feasible. Snapshot is taken at 1x at origin
 		 * 0,0. No pan or zoom values are respected.
 		 * 
 		 * @return
@@ -1109,8 +1113,8 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			
 			DimensionedDataSource<U> origDs = planeData.getDataSource();
 
-			String d0Str = origDs.getAxisType(axisNumber0);
-			String d1Str = origDs.getAxisType(axisNumber1);
+			String d0Str = axisNumber0 < origDs.numDimensions() ? origDs.getAxisType(axisNumber0) : "d0";
+			String d1Str = axisNumber1 < origDs.numDimensions() ? origDs.getAxisType(axisNumber1) : "d1";
 			String axes = "["+d0Str+":"+d1Str+"]";
 			String miniTitle = axes + " slice";
 			String extendedDims = "";
@@ -1129,10 +1133,14 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			miniTitle = miniTitle + extendedDims;
 
 			newDs.setName(origDs.getName().length() == 0 ? miniTitle : (miniTitle + " of "+origDs.getName()));
-			newDs.setAxisType(0, origDs.getAxisType(axisNumber0));
-			newDs.setAxisType(1, origDs.getAxisType(axisNumber1));
-			newDs.setAxisUnit(0, origDs.getAxisUnit(axisNumber0));
-			newDs.setAxisUnit(1, origDs.getAxisUnit(axisNumber1));
+			if (axisNumber0 < origDs.numDimensions()) {
+				newDs.setAxisType(0, origDs.getAxisType(axisNumber0));
+				newDs.setAxisUnit(0, origDs.getAxisUnit(axisNumber0));
+			}
+			if (axisNumber1 < origDs.numDimensions()) {
+				newDs.setAxisType(1, origDs.getAxisType(axisNumber1));
+				newDs.setAxisUnit(1, origDs.getAxisUnit(axisNumber1));
+			}
 			newDs.setValueType(origDs.getValueType());
 			newDs.setValueUnit(origDs.getValueUnit());
 			
@@ -1144,18 +1152,21 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 				BigDecimal[] scales = new BigDecimal[2];
 
 				scales[0] = origLinSpace.getScale(axisNumber0);
-				scales[1] = origLinSpace.getScale(axisNumber1);
+				if (axisNumber1 < origDs.numDimensions())
+					scales[1] = origLinSpace.getScale(axisNumber1);
+				else
+					scales[1] = BigDecimal.ONE;
 				
 				BigDecimal[] offsets = new BigDecimal[2];
 				
 				offsets[0] = origLinSpace.getOffset(axisNumber0);
-				offsets[1] = origLinSpace.getOffset(axisNumber1);
+				if (axisNumber1 < origDs.numDimensions())
+					offsets[1] = origLinSpace.getOffset(axisNumber1);
+				else
+					offsets[1] = BigDecimal.ZERO;
 				
 				long[] coord = new long[origDs.numDimensions()];
 				
-				coord[axisNumber0] = 0;
-				coord[axisNumber1] = 0;
-
 				offsets[0] = origLinSpace.project(coord, axisNumber0);
 				offsets[1] = origLinSpace.project(coord, axisNumber1);
 

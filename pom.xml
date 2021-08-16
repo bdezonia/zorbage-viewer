@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.bdezonia</groupId>
   <artifactId>zorbage-viewer</artifactId>
-  <version>0.1.6-SNAPSHOT</version>
+  <version>0.1.6</version>
   <name>zorbage-viewer</name>
   <url>https://github.com/bdezonia/zorbage-viewer</url>
   <inceptionYear>2020</inceptionYear>
@@ -29,7 +29,7 @@
 
   <properties>
     <package-name>nom.bdezonia</package-name>
-    <license.licenseName>bsd_2</license.licenseName>
+    <license.licenseName>bsd_3</license.licenseName>
     <license.projectName>zorbage-viewer: utility app for loading and viewing various image data formats</license.projectName>
     <license.organizationName>zorbage-viewer authors</license.organizationName>
     <license.copyrightOwners>Barry DeZonia</license.copyrightOwners>
@@ -61,31 +61,31 @@
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-ecat</artifactId>
-      <version>0.0.2-SNAPSHOT</version>
+      <version>0.0.2</version>
     </dependency>
 
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-gdal</artifactId>
-      <version>0.1.4-SNAPSHOT</version>
+      <version>0.1.4</version>
     </dependency>
 
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-netcdf</artifactId>
-      <version>0.1.2-SNAPSHOT</version>
+      <version>0.1.2</version>
     </dependency>
   
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-nifti</artifactId>
-      <version>0.1.2-SNAPSHOT</version>
+      <version>0.1.2</version>
     </dependency>
   
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-scifio</artifactId>
-      <version>0.1.3-SNAPSHOT</version>
+      <version>0.1.3</version>
     </dependency>
   
   </dependencies>

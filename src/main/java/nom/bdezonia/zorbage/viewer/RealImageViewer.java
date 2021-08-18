@@ -139,6 +139,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private boolean preferDataRange = true;
 	private final U min;
 	private final U max;
+	private final U dataMin;
+	private final U dataMax;
+	private final U typeMin;
+	private final U typeMax;
 	private final JLabel[] positionLabels;
 	private final JFrame frame;
 	private NaN<U> nanTester = null;
@@ -173,11 +177,17 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	@SuppressWarnings("unchecked")
 	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource, int axisNumber0, int axisNumber1) {
 
+		long t0 = System.currentTimeMillis();
+
 		this.alg = alg;
 		this.planeData = new PlaneView<>(dataSource, axisNumber0, axisNumber1);
 		this.pz = new PanZoomView(512, 512);
 		this.min = alg.construct();
 		this.max = alg.construct();
+		this.dataMin = alg.construct();
+		this.dataMax = alg.construct();
+		this.typeMin = alg.construct();
+		this.typeMax = alg.construct();
 
 		if (alg instanceof NaN) {
 			this.nanTester = (NaN<U>) alg;
@@ -902,7 +912,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				preferDataRange = !preferDataRange;
-				calcMinMax();
+				setMinMax();
 				String minStr = min.toString();
 				String maxStr = max.toString();
 				String dispMinStr = (dispMin == null ? minStr : dispMin.toString());
@@ -939,7 +949,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		frame.setVisible(true);
 
-		calcMinMax();
+		long t1 = System.currentTimeMillis();
+
+		calcMinsAndMaxes();
+		
+		setMinMax();
+
+		long t2 = System.currentTimeMillis();
 		
 		String minStr = min.toString();
 		String maxStr = max.toString();
@@ -958,9 +974,18 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		dispMinLabel.setText("Disp Min: " + dispMinStr);
 		dispMaxLabel.setText("Disp Max: " + dispMaxStr);
 
+		long t3 = System.currentTimeMillis();
+
 		pz.draw();
 		
 		frame.repaint();
+
+		long t4 = System.currentTimeMillis();
+		
+		System.out.println("build UI frame etc "+(t1-t0));
+		System.out.println("calcMinMax "+(t2-t1));
+		System.out.println("build small UI items "+(t3-t2));
+		System.out.println("draw/repaint "+(t4-t3));
 	}
 	
 	/**
@@ -1159,18 +1184,24 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	
 	// calc the display range by either data bounds or type bounds
 	
-	private void calcMinMax() {
+	private void setMinMax() {
 
 		if (preferDataRange) {
-			pixelDataBounds(alg, planeData.getDataSource().rawData(), min, max);
-			if (alg.isEqual().call(min, max))
-				pixelTypeBounds(alg, min, max);
+			
+			alg.assign().call(dataMin, min);
+			alg.assign().call(dataMax, max);
 		}
 		else {
-			pixelTypeBounds(alg, min, max);
-			if (alg.isEqual().call(min, max))
-				pixelDataBounds(alg, planeData.getDataSource().rawData(), min, max);
+			
+			alg.assign().call(typeMin, min);
+			alg.assign().call(typeMax, max);
 		}
+	}
+	
+	private void calcMinsAndMaxes() {
+
+		pixelDataBounds(alg, planeData.getDataSource().rawData(), dataMin, dataMax);
+		pixelTypeBounds(alg, typeMin, typeMax);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -1570,13 +1601,22 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			if (dispMax != null && G.HP.isLess().call(dispMax, hpMax))
 				G.HP.assign().call(dispMax, hpMax);
 
+			BigDecimal numV;
+			if (numValues <= 0)
+				numV = BigDecimal.ONE;
+			else
+				numV = BigDecimal.valueOf(numValues);
+			
 			BigDecimal average =
-					valueSum.v().divide(BigDecimal.valueOf(numValues), HighPrecisionAlgebra.getContext());
+					valueSum.v().divide(numV, HighPrecisionAlgebra.getContext());
 			
 			BigDecimal numer = average.subtract(hpMin.v());
 			
 			BigDecimal denom = hpMax.v().subtract(hpMin.v());
 			
+			if (denom.compareTo(BigDecimal.ZERO) == 0) {
+				denom = BigDecimal.ONE;
+			}
 			BigDecimal ratio = numer.divide(denom, HighPrecisionAlgebra.getContext());
 
 			if (ratio.compareTo(BigDecimal.ZERO) < 0)

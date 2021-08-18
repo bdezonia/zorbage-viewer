@@ -383,9 +383,19 @@ public class Main<T extends Algebra<T,U>, U> {
 
 				if (f != null) {
 				
+					long t0 = System.currentTimeMillis();
+					
 					DataBundle bundle = Nifti.open(f.getAbsolutePath());
 				
+					long t1 = System.currentTimeMillis();
+					
 					displayAll(bundle);
+
+					long t2 = System.currentTimeMillis();
+					
+					System.out.println("LOAD TIME = "+(t1-t0));
+					
+					System.out.println("DRAW TIME = "+(t2-t1));
 				}
 			}
 		});

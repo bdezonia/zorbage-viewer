@@ -768,6 +768,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			JButton incrementButton = new JButton(">");
 			JButton endButton = new JButton(">>");
 			JButton animButton = new JButton("Animate");
+			JButton stopButton = new JButton("Stop");
+			JButton chooseButton = new JButton("Choose");
 			long maxVal = planeData.getDataSourceAxisSize(i);
 			positionLabels[i].setText(""+(planeData.getPositionValue(i)+1)+" / "+maxVal);
 			int pos = planeData.getDataSourceAxisNumber(i);
@@ -781,12 +783,35 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			miniPanel.add(incrementButton);
 			miniPanel.add(endButton);
 			miniPanel.add(animButton);
+			miniPanel.add(stopButton);
+			miniPanel.add(chooseButton);
 			positions.add(miniPanel);
 			decrementButton.addActionListener(new Decrementer(i));
 			incrementButton.addActionListener(new Incrementer(i));
 			homeButton.addActionListener(new Home(i));
 			endButton.addActionListener(new End(i));
 			animButton.addActionListener(new Animator(i));
+			stopButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+
+					JOptionPane.showMessageDialog(frame,
+						    "When written this command will stop any running animation in this view.",
+						    "WARNING",
+						    JOptionPane.WARNING_MESSAGE);
+				}
+			});
+			chooseButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+
+					JOptionPane.showMessageDialog(frame,
+						    "When written this command will allow user to specify a value at which " +
+					           "to jump to along this axis.",
+						    "WARNING",
+						    JOptionPane.WARNING_MESSAGE);
+				}
+			});
 		}
 
 		JLabel readout = new JLabel();

@@ -177,8 +177,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	@SuppressWarnings("unchecked")
 	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource, int axisNumber0, int axisNumber1) {
 
-		long t0 = System.currentTimeMillis();
-
 		this.alg = alg;
 		this.planeData = new PlaneView<>(dataSource, axisNumber0, axisNumber1);
 		this.pz = new PanZoomView(512, 512);
@@ -974,14 +972,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		frame.setVisible(true);
 
-		long t1 = System.currentTimeMillis();
-
 		calcMinsAndMaxes();
 		
 		setMinMax();
 
-		long t2 = System.currentTimeMillis();
-		
 		String minStr = min.toString();
 		String maxStr = max.toString();
 		String dispMinStr = (dispMin == null ? minStr : dispMin.toString());
@@ -999,18 +993,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		dispMinLabel.setText("Disp Min: " + dispMinStr);
 		dispMaxLabel.setText("Disp Max: " + dispMaxStr);
 
-		long t3 = System.currentTimeMillis();
-
 		pz.draw();
 		
 		frame.repaint();
-
-		long t4 = System.currentTimeMillis();
-		
-		System.out.println("build UI frame etc "+(t1-t0));
-		System.out.println("calcMinMax "+(t2-t1));
-		System.out.println("build small UI items "+(t3-t2));
-		System.out.println("draw/repaint "+(t4-t3));
 	}
 	
 	/**

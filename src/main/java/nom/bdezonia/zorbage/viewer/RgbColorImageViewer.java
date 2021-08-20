@@ -92,7 +92,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 	private final AtomicBoolean animatingRightNow = new AtomicBoolean();
 	private final JLabel ctrXLabel; 
 	private final JLabel ctrYLabel; 
-	DecimalFormat df = new DecimalFormat("0.000");
+	DecimalFormat df = new DecimalFormat("0.00000");
 
 	/**
 	 * Make an interactive graphical viewer for a real data source.

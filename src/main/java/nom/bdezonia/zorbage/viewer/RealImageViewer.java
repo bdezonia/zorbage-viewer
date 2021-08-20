@@ -154,7 +154,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private HighPrecisionMember dispMax = null;
 	private final JLabel ctrXLabel;
 	private final JLabel ctrYLabel;
-	private final DecimalFormat df = new DecimalFormat("0.000");
+	private final DecimalFormat df = new DecimalFormat("0.00000");
 	private static final int MIN_MAX_CHAR_COUNT = 15;
 	private static final int DISP_MIN_MAX_CHAR_COUNT = MIN_MAX_CHAR_COUNT - 5;
 

@@ -47,6 +47,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -110,6 +111,7 @@ import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
+import nom.bdezonia.zorbage.type.color.RgbMember;
 import nom.bdezonia.zorbage.type.color.RgbUtils;
 import nom.bdezonia.zorbage.type.integer.int8.UnsignedInt8Member;
 import nom.bdezonia.zorbage.type.real.float128.Float128Algebra;
@@ -132,6 +134,8 @@ import nom.bdezonia.zorbage.type.universal.PrimitiveConverter;
  */
 public class RealImageViewer<T extends Algebra<T,U>, U> {
 
+	private static final URL ICON_URL = Main.class.getClassLoader().getResource("construction.gif");
+	
 	private final T alg;
 	private final PlaneView<U> planeData;
 	private final PanZoomView pz;
@@ -285,7 +289,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton loadLut = new JButton("Load LUT ...");
 		JButton resetLut = new JButton("Reset LUT");
 		JButton swapAxes = new JButton("Swap Axes ...");
-		JButton snapshot = new JButton("1X Snapshot");
+		JButton snapshot = new JButton("Snapshot");
 		JButton incZoom = new JButton("Zoom In");
 		JButton decZoom = new JButton("Zoom Out");
 		JButton panLeft = new JButton("Pan Left");
@@ -437,9 +441,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 
-				DimensionedDataSource<U> snap = pz.takeSnapshot();
+				DimensionedDataSource<ArgbMember> snap = pz.takeSnapshot();
 
-				new RealImageViewer<>(alg, snap);
+				new RgbColorImageViewer<>(G.ARGB, snap);
 			}
 		});
 		incZoom.addActionListener(new ActionListener() {
@@ -1513,7 +1517,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			DataBufferInt buffer = (DataBufferInt) argbData.getRaster().getDataBuffer();
 
 			// Conveniently, the buffer already contains the data array
+			
 			int[] arrayInt = buffer.getData();
+			
+			// paint the pixels into the plane of data
 			
 			HighPrecisionMember sum = G.HP.construct();
 			HighPrecisionMember tmp = G.HP.construct();
@@ -1570,6 +1577,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					}
 				}
 			}
+			
+			// now paint a yellow outline around the image boundaries
+			
 			long maxX1 = planeData.d0()-1;
 			long maxY1 = planeData.d1()-1;
 			line(arrayInt, 0, 0, 0, maxY1);
@@ -1699,6 +1709,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		private void line(int[] arrayInt, long modelX0, long modelY0, long modelX1, long modelY1) {
 
 			// yellow
+			
 			int COLOR = RgbUtils.argb(180, 0xff, 0xff, 0);
 			
 			BigInteger pX0 = modelToPixel(modelX0, originX);
@@ -1759,105 +1770,40 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		/**
 		 * Make a 2d image snapshot of the pan / zoom viewport.
-		 * Calibration and units are transferred to the snapshot
-		 * as much as is feasible. Snapshot is taken at 1x at origin
-		 * 0,0. No pan or zoom values are respected.
-		 * 
-		 * @return
+		 * Current pan position, zoom level, and lut colors are
+		 * preserved.
 		 */
 		@SuppressWarnings("rawtypes")
-		public DimensionedDataSource<U> takeSnapshot()
+		public DimensionedDataSource<ArgbMember> takeSnapshot()
 		{
-			int axisNumber0 = planeData.axisNumber0();
-			int axisNumber1 = planeData.axisNumber1();
+			int dimX = paneWidth;
+			int dimY = paneHeight;
 			
-			long dimX = planeData.d0();
-			if (dimX > paneWidth)
-				dimX = paneWidth;
+			DimensionedDataSource<ArgbMember> newDs = (DimensionedDataSource<ArgbMember>)
+					DimensionedStorage.allocate((Allocatable) G.ARGB.construct(), new long[] {dimX, dimY});
 			
-			long dimY = planeData.d1();
-			if (dimY > paneHeight)
-				dimY = paneHeight;
+			TwoDView<ArgbMember> view = new TwoDView<>(newDs);
 			
-			DimensionedDataSource<U> newDs = (DimensionedDataSource<U>)
-					DimensionedStorage.allocate((Allocatable) alg.construct(), new long[] {dimX, dimY});
+			// Safe cast as img is of correct type 
 			
-			U tmp = alg.construct();
+			DataBufferInt buffer = (DataBufferInt) argbData.getRaster().getDataBuffer();
+
+			// Conveniently, the buffer already contains the data array
 			
-			TwoDView<U> view = new TwoDView<>(newDs);
+			int[] arrayInt = buffer.getData();
 			
+			ArgbMember tmp = G.ARGB.construct();
 			for (int y = 0; y < dimY; y++) {
 				for (int x = 0; x < dimX; x++) {
-					planeData.get(x, y , tmp);
+					int argb = arrayInt[y * dimX + x];
+					tmp.setA(RgbUtils.a(argb));
+					tmp.setR(RgbUtils.r(argb));
+					tmp.setG(RgbUtils.g(argb));
+					tmp.setB(RgbUtils.b(argb));
 					view.set(x, y, tmp);
 				}
 			}
 			
-			DimensionedDataSource<U> origDs = planeData.getDataSource();
-
-			String d0Str = axisNumber0 < origDs.numDimensions() ? origDs.getAxisType(axisNumber0) : "d0";
-			String d1Str = axisNumber1 < origDs.numDimensions() ? origDs.getAxisType(axisNumber1) : "d1";
-			String axes = "["+d0Str+":"+d1Str+"]";
-			String miniTitle = axes + " slice";
-			String extendedDims = "";
-			if (origDs.numDimensions() > 2) {
-				extendedDims = " at";
-				int count = 0;;
-				for (int i = 0; i < origDs.numDimensions(); i++) {
-					if (i == axisNumber0 || i == axisNumber1)
-						continue;
-					String axisLabel = origDs.getAxisType(i);
-					long pos = planeData.getPositionValue(count);
-					count++;
-					extendedDims = extendedDims + " " + axisLabel + "("+pos+")"; 
-				}
-			}
-			miniTitle = miniTitle + extendedDims;
-
-			newDs.setName(origDs.getName().length() == 0 ? miniTitle : (miniTitle + " of "+origDs.getName()));
-			if (axisNumber0 < origDs.numDimensions()) {
-				newDs.setAxisType(0, origDs.getAxisType(axisNumber0));
-				newDs.setAxisUnit(0, origDs.getAxisUnit(axisNumber0));
-			}
-			if (axisNumber1 < origDs.numDimensions()) {
-				newDs.setAxisType(1, origDs.getAxisType(axisNumber1));
-				newDs.setAxisUnit(1, origDs.getAxisUnit(axisNumber1));
-			}
-			newDs.setValueType(origDs.getValueType());
-			newDs.setValueUnit(origDs.getValueUnit());
-			
-			CoordinateSpace origSpace = planeData.getDataSource().getCoordinateSpace();
-			if (origSpace instanceof LinearNdCoordinateSpace) {
-
-				LinearNdCoordinateSpace origLinSpace = (LinearNdCoordinateSpace) origSpace;
-				
-				BigDecimal[] scales = new BigDecimal[2];
-
-				scales[0] = origLinSpace.getScale(axisNumber0);
-				if (axisNumber1 < origDs.numDimensions())
-					scales[1] = origLinSpace.getScale(axisNumber1);
-				else
-					scales[1] = BigDecimal.ONE;
-						
-				
-				BigDecimal[] offsets = new BigDecimal[2];
-				
-				offsets[0] = origLinSpace.getOffset(axisNumber0);
-				if (axisNumber1 < origDs.numDimensions())
-					offsets[1] = origLinSpace.getOffset(axisNumber1);
-				else
-					offsets[1] = BigDecimal.ZERO;
-				
-				long[] coord = new long[origDs.numDimensions()];
-				
-				offsets[0] = origLinSpace.project(coord, axisNumber0);
-				offsets[1] = origLinSpace.project(coord, axisNumber1);
-
-				LinearNdCoordinateSpace newLinSpace = new LinearNdCoordinateSpace(scales, offsets);
-				
-				newDs.setCoordinateSpace(newLinSpace);
-			}
-
 			return newDs;
 		}
 	}
@@ -2072,21 +2018,18 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			protected void done() {
 				
 				// here I am in a background thread but I will tell the event
-				//   thread to update it's control after (when?) I exit
+				//   thread to update it's control after  exit here (or is it
+				//   right when setIcon() is invoked?)
 				
 				theLabel.setIcon(null);
 				
-				theLabel.revalidate();
-
 				super.done();
 			}
 		};
 		
 		// here I am on the event thread hopefully it will update right away
 		
-		theLabel.setIcon(new ImageIcon(Main.class.getClassLoader().getResource("construction.gif")));
-		
-		theLabel.revalidate();
+		theLabel.setIcon(new ImageIcon(ICON_URL));
 		
 		// here I start a new background thread
 		

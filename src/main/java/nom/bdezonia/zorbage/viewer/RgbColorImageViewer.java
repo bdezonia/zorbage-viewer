@@ -188,6 +188,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		JButton panDown = new JButton("Pan Down");
 		JButton resetZoom = new JButton("Reset Pan/Zoom");
 		JButton explode = new JButton("Explode ...");
+		JButton saveAs = new JButton("Save As ...");
 		Dimension size = new Dimension(150, 40);
 		incZoom.setMinimumSize(size);
 		decZoom.setMinimumSize(size);
@@ -199,6 +200,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		snapshot.setMinimumSize(size);
 		swapAxes.setMinimumSize(size);
 		explode.setMinimumSize(size);
+		saveAs.setMinimumSize(size);
 		incZoom.setMaximumSize(size);
 		decZoom.setMaximumSize(size);
 		panLeft.setMaximumSize(size);
@@ -209,6 +211,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		snapshot.setMaximumSize(size);
 		swapAxes.setMaximumSize(size);
 		explode.setMaximumSize(size);
+		saveAs.setMaximumSize(size);
 		Box vertBox = Box.createVerticalBox();
 		vertBox.add(incZoom);
 		vertBox.add(decZoom);
@@ -220,6 +223,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		vertBox.add(snapshot);
 		vertBox.add(swapAxes);
 		vertBox.add(explode);
+		vertBox.add(saveAs);
 		buttonPanel.add(vertBox);
 		swapAxes.addActionListener(new ActionListener() {
 			
@@ -391,6 +395,13 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, axes, null);
 				if (axis >= 0 && axis < dataSource.numDimensions())
 					explode(dataSource, axis);
+			}
+		});
+		saveAs.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				new ImageSaver(frame, argbData).save();
 			}
 		});
 		

@@ -67,6 +67,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
+import javax.swing.SwingWorker;
 
 import nom.bdezonia.zorbage.algebra.Addition;
 import nom.bdezonia.zorbage.algebra.Algebra;
@@ -154,6 +155,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private HighPrecisionMember dispMax = null;
 	private final JLabel ctrXLabel;
 	private final JLabel ctrYLabel;
+	private final JLabel constructionLabel;
 	private final DecimalFormat df = new DecimalFormat("0.00000");
 	private static final int MIN_MAX_CHAR_COUNT = 15;
 	private static final int DISP_MIN_MAX_CHAR_COUNT = MIN_MAX_CHAR_COUNT - 5;
@@ -249,19 +251,31 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		sourceLabel.setFont(font);
 		sourceLabel.setOpaque(true);
 
-		JPanel headerPanel = new JPanel();
-		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
-		headerPanel.add(sourceLabel);
+		JPanel headerPanelLeft = new JPanel();
+		Box box = Box.createVerticalBox();
+		box.add(sourceLabel);
 		JLabel a = new JLabel("Data type: " + alg.typeDescription());
 		JLabel b = new JLabel("Data family: " + valueType);
 		JLabel c = new JLabel("Data unit: " + valueUnit);
 		a.setFont(font);
 		b.setFont(font);
 		c.setFont(font);
-		headerPanel.add(a);
-		headerPanel.add(b);
-		headerPanel.add(c);
+		box.add(a);
+		box.add(b);
+		box.add(c);
+		headerPanelLeft.add(box);
 		
+		JPanel headerPanelRight = new JPanel();
+		// place holder for "construction" image ...
+		constructionLabel = new JLabel();
+		constructionLabel.setIcon(new ImageIcon());
+		headerPanelRight.add(constructionLabel);
+		
+		JPanel headerPanel = new JPanel();
+		headerPanel.setLayout(new BorderLayout());
+		headerPanel.add(headerPanelLeft, BorderLayout.WEST);
+		headerPanel.add(headerPanelRight, BorderLayout.EAST);
+
 		JPanel graphicsPanel = new JPanel();
 		JLabel image = new JLabel(new ImageIcon(argbData));
 		JScrollPane scrollPane = new JScrollPane(image);
@@ -732,19 +746,19 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				DimensionedDataSource<U> data = planeData.getDataSource();
 				
 				if (min instanceof Float16Member) {
-					doFFT(G.CHLF, G.HLF, data);
+					doFFT(G.CHLF, G.HLF, data, constructionLabel);
 				}
 				else if (min instanceof Float32Member) {
-					doFFT(G.CFLT, G.FLT, data);
+					doFFT(G.CFLT, G.FLT, data, constructionLabel);
 				}
 				else if (min instanceof Float64Member) {
-					doFFT(G.CDBL, G.DBL, data);
+					doFFT(G.CDBL, G.DBL, data, constructionLabel);
 				}
 				else if (min instanceof Float128Member) {
-					doFFT(G.CQUAD, G.QUAD, data);
+					doFFT(G.CQUAD, G.QUAD, data, constructionLabel);
 				}
 				else if (min instanceof HighPrecisionMember) {
-					doFFT(G.CHP, G.HP, data);
+					doFFT(G.CHP, G.HP, data, constructionLabel);
 				}
 				else
 					JOptionPane.showMessageDialog(frame,
@@ -1854,197 +1868,229 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				Multiplication<O> & Addition<O> & Invertible<O> & Unity<O> &
 				NaN<O> & InverseTrigonometric<O> & Roots<O> & Ordered<O>,
 			O extends Allocatable<O>>
-		void doFFT(Algebra<?,?> complexAlgebra, Algebra<?,?> realAlgebra, DimensionedDataSource<?> input)
+		void doFFT(Algebra<?,?> complexAlgebra, Algebra<?,?> realAlgebra, DimensionedDataSource<?> input, JLabel theLabel)
 	{
-		String error = null;
+		SwingWorker<Object, Object> worker = new SwingWorker<Object, Object>() {
+	
+			@Override
+			protected Object doInBackground() throws Exception {
 		
-		if (!(complexAlgebra instanceof Addition))
-			error = "Complex algebra does not implement Addition";
+				String error = null;
+				
+				if (!(complexAlgebra instanceof Addition))
+					error = "Complex algebra does not implement Addition";
+				
+				else if (!(complexAlgebra instanceof Multiplication))
+					error = "Complex algebra does not implement Multiplication";
+				
+				@SuppressWarnings("unchecked")
+				L cmplxAlg = (L) complexAlgebra;
+				
+				M tmpM = cmplxAlg.construct();
+				
+				if (!(tmpM instanceof SetComplex))
+					error = "Complex number does not implement SetComplex";
+				
+				else if (!(tmpM instanceof GetComplex))
+					error = "Complex number does not implement GetComplex";
+				
+				else if (!(tmpM instanceof Allocatable))
+					error = "Complex number does not implement Allocatable";
+				
+				else if (!(realAlgebra instanceof Trigonometric))
+					error = "Real algebra does not implement Trigonometric";
+				
+				else if (!(realAlgebra instanceof RealConstants))
+					error = "Real algebra does not implement RealConstants";
+				
+				else if (!(realAlgebra instanceof Multiplication))
+					error = "Real algebra does not implement Multiplication";
+				
+				else if (!(realAlgebra instanceof Addition))
+					error = "Real algebra does not implement Addition";
+				
+				else if (!(realAlgebra instanceof Invertible))
+					error = "Real algebra does not implement Invertible";
+				
+				else if (!(realAlgebra instanceof Unity))
+					error = "Real algebra does not implement Unity";
 		
-		else if (!(complexAlgebra instanceof Multiplication))
-			error = "Complex algebra does not implement Multiplication";
+				else if (!(realAlgebra instanceof NaN))
+					error = "Real algebra does not implement NaN";
+				
+				else if (!(realAlgebra instanceof InverseTrigonometric))
+					error = "Real algebra does not implement InverseTrigonometric";
+				
+				else if (!(realAlgebra instanceof Roots))
+					error = "Real algebra does not implement Roots";
+				
+				else if (!(realAlgebra instanceof Ordered))
+					error = "Real algebra does not implement Ordered";
+				
+				@SuppressWarnings("unchecked")
+				N realAlg = (N) realAlgebra;
+				
+				O tmpO = realAlg.construct();
+				
+				try {
+					
+					tmpM.setR(tmpO);
+					tmpM.setI(tmpO);
+					
+				} catch (ClassCastException e) {
+					
+					error = "Complex algebra and real algebra are not compatible";
+				}
+				
+				try {
+					
+					tmpM.getR(tmpO);
+					tmpM.getI(tmpO);
+					
+				} catch (ClassCastException e) {
+					
+					error = "Complex algebra and real algebra are not compatible";
+				}
+				
+				if (error != null) {
+					JOptionPane.showMessageDialog(frame,
+						    "FFT error: ."+error,
+						    "WARNING",
+						    JOptionPane.WARNING_MESSAGE);
+					return false;
+				}
 		
-		@SuppressWarnings("unchecked")
-		L cmplxAlg = (L) complexAlgebra;
+				long successfulSize = -1;
+				long edgeSize = -1;
+				for (long i = 0; i < 63; i++) {
+					
+					edgeSize = 1 << i;
+					
+					long sqSz = edgeSize * edgeSize;
+					
+					if (sqSz >= input.rawData().size()) {
+						successfulSize = sqSz;
+						break;
+					}
+				}
 		
-		M tmpM = cmplxAlg.construct();
+				if ((successfulSize < 0)) {
+					throw new IllegalArgumentException("can't find an enclosing image size for FFT");
+				}
+				
+				// zero pad the real input
+				@SuppressWarnings("unchecked")
+				IndexedDataSource<O> padded =
+						new ProcedurePaddedDataSource<N,O>(
+								realAlg,
+								(IndexedDataSource<O>) input.rawData(),
+								new Procedure2<Long, O>()
+								{
+									public void call(Long a, O b) {
+										realAlg.zero().call(b);
+									}
+								}
+							);
+				
+				// and make sure its size is a power of 2
+				
+				IndexedDataSource<O> correctSizeInput = new FixedSizeDataSource<>(successfulSize, padded);
+				
+				// now make a complex data source with real values set to input
+				
+				IndexedDataSource<M> complexInput = Storage.allocate(cmplxAlg.construct(), successfulSize);
+				
+				// And define where we will put the result
+				
+				IndexedDataSource<M> complexOutput = Storage.allocate(cmplxAlg.construct(), successfulSize);
 		
-		if (!(tmpM instanceof SetComplex))
-			error = "Complex number does not implement SetComplex";
+				// copy the real data to the r values of a complex data set
+				
+				O realValue = realAlg.construct();
+				O imagValue = realAlg.construct();
+				O zero = realAlg.construct();
+				M complexValue = cmplxAlg.construct();
+				for (long i = 0; i < successfulSize; i++) {
+					correctSizeInput.get(i, realValue);
+					complexValue.setR(realValue);
+					complexValue.setI(zero);
+					complexInput.set(i, complexValue);
+				}
+				
+				// run the FFT on that data
+				
+				FFT.compute(cmplxAlg, realAlg, complexInput, complexOutput);
+				
+				long sz = complexOutput.size();
+				
+				IndexedDataSource<O> m = Storage.allocate(realValue, sz);
+				IndexedDataSource<O> p = Storage.allocate(realValue, sz);
+				
+				GetRValues.compute(cmplxAlg, realAlg, complexOutput, m);
+				GetIValues.compute(cmplxAlg, realAlg, complexOutput, p);
+				
+				O mag = realAlg.construct();
+				O phas = realAlg.construct();
+				for (long i = 0; i < sz; i++) {
+					m.get(i, realValue);
+					p.get(i, imagValue);
+					PolarCoords.magnitude(realAlg, realValue, imagValue, mag);
+					PolarCoords.phase(realAlg, realValue, imagValue, phas);
+					m.set(i, mag);
+					p.set(i, phas);
+				}
 		
-		else if (!(tmpM instanceof GetComplex))
-			error = "Complex number does not implement GetComplex";
+				DimensionedDataSource<O> magDs =
+						new NdData<O>(new long[] {edgeSize, edgeSize}, m);
 		
-		else if (!(tmpM instanceof Allocatable))
-			error = "Complex number does not implement Allocatable";
+				DimensionedDataSource<O> phasDs =
+						new NdData<O>(new long[] {edgeSize, edgeSize}, p);
 		
-		else if (!(realAlgebra instanceof Trigonometric))
-			error = "Real algebra does not implement Trigonometric";
+				magDs.setName("Magnitudes of FFT of "+input.getName());
+				
+				phasDs.setName("Phases of FFT of "+input.getName());
 		
-		else if (!(realAlgebra instanceof RealConstants))
-			error = "Real algebra does not implement RealConstants";
+				new RealImageViewer<>(realAlg, magDs);
 		
-		else if (!(realAlgebra instanceof Multiplication))
-			error = "Real algebra does not implement Multiplication";
+				new RealImageViewer<>(realAlg, phasDs);
 		
-		else if (!(realAlgebra instanceof Addition))
-			error = "Real algebra does not implement Addition";
+				return true;
+				
+				/*
+				DimensionedDataSource<M> complexDs =
+						new NdData<M>(new long[] {edgeSize, edgeSize}, complexOutput);
 		
-		else if (!(realAlgebra instanceof Invertible))
-			error = "Real algebra does not implement Invertible";
-		
-		else if (!(realAlgebra instanceof Unity))
-			error = "Real algebra does not implement Unity";
-
-		else if (!(realAlgebra instanceof NaN))
-			error = "Real algebra does not implement NaN";
-		
-		else if (!(realAlgebra instanceof InverseTrigonometric))
-			error = "Real algebra does not implement InverseTrigonometric";
-		
-		else if (!(realAlgebra instanceof Roots))
-			error = "Real algebra does not implement Roots";
-		
-		else if (!(realAlgebra instanceof Ordered))
-			error = "Real algebra does not implement Ordered";
-		
-		@SuppressWarnings("unchecked")
-		N realAlg = (N) realAlgebra;
-		
-		O tmpO = realAlg.construct();
-		
-		try {
-			
-			tmpM.setR(tmpO);
-			tmpM.setI(tmpO);
-			
-		} catch (ClassCastException e) {
-			
-			error = "Complex algebra and real algebra are not compatible";
-		}
-		
-		try {
-			
-			tmpM.getR(tmpO);
-			tmpM.getI(tmpO);
-			
-		} catch (ClassCastException e) {
-			
-			error = "Complex algebra and real algebra are not compatible";
-		}
-		
-		if (error != null) {
-			JOptionPane.showMessageDialog(frame,
-				    "FFT error: ."+error,
-				    "WARNING",
-				    JOptionPane.WARNING_MESSAGE);
-			return;
-		}
-
-		long successfulSize = -1;
-		long edgeSize = -1;
-		for (long i = 0; i < 63; i++) {
-			
-			edgeSize = 1 << i;
-			
-			long sqSz = edgeSize * edgeSize;
-			
-			if (sqSz >= input.rawData().size()) {
-				successfulSize = sqSz;
-				break;
+				complexDs.setName("FFT of "+input.getName());
+				
+				complexDs.setSource(input.getSource());
+				
+				new ComplexImageViewer<L,M,N,O>(cmplxAlg, realAlg, complexDs);
+				*/
 			}
-		}
+			
+			@Override
+			protected void done() {
+				
+				// here I am in a background thread but I will tell the event
+				//   thread to update it's control after (when?) I exit
+				
+				theLabel.setIcon(null);
+				
+				theLabel.revalidate();
 
-		if ((successfulSize < 0)) {
-			throw new IllegalArgumentException("can't find an enclosing image size for FFT");
-		}
+				super.done();
+			}
+		};
 		
-		// zero pad the real input
-		@SuppressWarnings("unchecked")
-		IndexedDataSource<O> padded =
-				new ProcedurePaddedDataSource<N,O>(
-						realAlg,
-						(IndexedDataSource<O>) input.rawData(),
-						new Procedure2<Long, O>()
-						{
-							public void call(Long a, O b) {
-								realAlg.zero().call(b);
-							}
-						}
-					);
+		// here I am on the event thread hopefully it will update right away
 		
-		// and make sure its size is a power of 2
+		theLabel.setIcon(new ImageIcon(Main.class.getClassLoader().getResource("construction.gif")));
 		
-		IndexedDataSource<O> correctSizeInput = new FixedSizeDataSource<>(successfulSize, padded);
+		theLabel.revalidate();
 		
-		// now make a complex data source with real values set to input
+		// here I start a new background thread
 		
-		IndexedDataSource<M> complexInput = Storage.allocate(cmplxAlg.construct(), successfulSize);
-		
-		// And define where we will put the result
-		
-		IndexedDataSource<M> complexOutput = Storage.allocate(cmplxAlg.construct(), successfulSize);
-
-		// copy the real data to the r values of a complex data set
-		
-		O realValue = realAlg.construct();
-		O imagValue = realAlg.construct();
-		O zero = realAlg.construct();
-		M complexValue = cmplxAlg.construct();
-		for (long i = 0; i < successfulSize; i++) {
-			correctSizeInput.get(i, realValue);
-			complexValue.setR(realValue);
-			complexValue.setI(zero);
-			complexInput.set(i, complexValue);
-		}
-		
-		// run the FFT on that data
-		
-		FFT.compute(cmplxAlg, realAlg, complexInput, complexOutput);
-		
-		long sz = complexOutput.size();
-		
-		IndexedDataSource<O> m = Storage.allocate(realValue, sz);
-		IndexedDataSource<O> p = Storage.allocate(realValue, sz);
-		
-		GetRValues.compute(cmplxAlg, realAlg, complexOutput, m);
-		GetIValues.compute(cmplxAlg, realAlg, complexOutput, p);
-		
-		O mag = realAlg.construct();
-		O phas = realAlg.construct();
-		for (long i = 0; i < sz; i++) {
-			m.get(i, realValue);
-			p.get(i, imagValue);
-			PolarCoords.magnitude(realAlg, realValue, imagValue, mag);
-			PolarCoords.phase(realAlg, realValue, imagValue, phas);
-			m.set(i, mag);
-			p.set(i, phas);
-		}
-
-		DimensionedDataSource<O> magDs =
-				new NdData<O>(new long[] {edgeSize, edgeSize}, m);
-
-		DimensionedDataSource<O> phasDs =
-				new NdData<O>(new long[] {edgeSize, edgeSize}, p);
-
-		magDs.setName("Magnitudes of FFT of "+input.getName());
-		
-		phasDs.setName("Phases of FFT of "+input.getName());
-
-		new RealImageViewer<>(realAlg, magDs);
-
-		new RealImageViewer<>(realAlg, phasDs);
-		
-		/*
-		DimensionedDataSource<M> complexDs =
-				new NdData<M>(new long[] {edgeSize, edgeSize}, complexOutput);
-
-		complexDs.setName("FFT of "+input.getName());
-		
-		complexDs.setSource(input.getSource());
-		
-		new ComplexImageViewer<L,M,N,O>(cmplxAlg, realAlg, complexDs);
-		*/
+		worker.execute();
 	}
 	
 	<L extends Algebra<L,M>, M extends PrimitiveConversion & Allocatable<M>, N extends Algebra<N,O>, O>

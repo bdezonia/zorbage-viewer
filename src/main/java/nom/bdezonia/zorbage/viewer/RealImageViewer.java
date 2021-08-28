@@ -38,6 +38,7 @@ import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -2026,7 +2027,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		// here I am on the event thread hopefully it will update right away
 		
-		theLabel.setIcon(new ImageIcon(ICON_URL));
+		ImageIcon tmp = new ImageIcon(ICON_URL);
+		Image image = tmp.getImage();
+		Image scaledImage = image.getScaledInstance(80, 80, java.awt.Image.SCALE_DEFAULT);
+		theLabel.setIcon(new ImageIcon(scaledImage));
 		
 		// here I start a new background thread
 		

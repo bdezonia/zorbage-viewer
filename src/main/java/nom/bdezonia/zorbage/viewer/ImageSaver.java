@@ -63,37 +63,39 @@ public class ImageSaver {
 	 * 
 	 * @return
 	 */
-    public String[] getFormats() {
+	public String[] getFormats() {
 		String[] formats = ImageIO.getWriterFormatNames();
 		TreeSet<String> formatSet = new TreeSet<String>();
 		for (String s : formats) {
-		    formatSet.add(s.toLowerCase());
+			formatSet.add(s.toLowerCase());
 		}
 		return formatSet.toArray(new String[0]);
-    }
+	}
 
-    /**
-     * 
-     * @param format
-     */
-    public void save() {
-    	Object format = JOptionPane.showInputDialog(frame,
-    			"Choose file output type", "Image saver",
-    			JOptionPane.QUESTION_MESSAGE, null, getFormats(),
-    			"");
-    	if (format == null || format.equals(""))
-    		return;
-    	File saveFile = new File("savedimage."+format);
+	/**
+	 * 
+	 * @param format
+	 */
+	public void save() {
+		Object format = JOptionPane.showInputDialog(frame,
+				"Choose file output type", "Image saver",
+				JOptionPane.QUESTION_MESSAGE, null, getFormats(),
+				"");
+		if (format == null || format.equals(""))
+			return;
+		File file = new File("untitled."+format);
 		JFileChooser chooser = new JFileChooser();
-		chooser.setSelectedFile(saveFile);
+		chooser.setSelectedFile(file);
 		int rval = chooser.showSaveDialog(frame);
 		if (rval == JFileChooser.APPROVE_OPTION) {
-			saveFile = chooser.getSelectedFile();
+			file = chooser.getSelectedFile();
 			try {
-				ImageIO.write(image, (String) format, saveFile);
+				if (!ImageIO.write(image, (String) format, file)) {
+					System.out.println("Could not find suitable writer for image type: "+format);
+				}
 			} catch (IOException ex) {
 				System.out.println("Could not write image: "+ex.getMessage());
 			}
 		}
-    };
+	};
 }

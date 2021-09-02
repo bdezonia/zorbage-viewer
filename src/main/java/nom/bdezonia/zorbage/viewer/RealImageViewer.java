@@ -2016,7 +2016,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			protected void done() {
 				
 				// here I am in a background thread but I will tell the event
-				//   thread to update it's control after  exit here (or is it
+				//   thread to update it's control after exit here (or is it
 				//   right when setIcon() is invoked?)
 				
 				theLabel.setIcon(null);

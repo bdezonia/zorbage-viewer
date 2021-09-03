@@ -180,6 +180,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		JPanel buttonPanel = new JPanel();
 		JButton swapAxes = new JButton("Swap Axes");
 		JButton snapshot = new JButton("1X Snapshot");
+		JButton grabPlane = new JButton("Grab Plane");
 		JButton incZoom = new JButton("Zoom In");
 		JButton decZoom = new JButton("Zoom Out");
 		JButton panLeft = new JButton("Pan Left");
@@ -198,6 +199,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		panDown.setMinimumSize(size);
 		resetZoom.setMinimumSize(size);
 		snapshot.setMinimumSize(size);
+		grabPlane.setMinimumSize(size);
 		swapAxes.setMinimumSize(size);
 		explode.setMinimumSize(size);
 		saveAs.setMinimumSize(size);
@@ -209,6 +211,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		panDown.setMaximumSize(size);
 		resetZoom.setMaximumSize(size);
 		snapshot.setMaximumSize(size);
+		grabPlane.setMaximumSize(size);
 		swapAxes.setMaximumSize(size);
 		explode.setMaximumSize(size);
 		saveAs.setMaximumSize(size);
@@ -221,6 +224,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		vertBox.add(panDown);
 		vertBox.add(resetZoom);
 		vertBox.add(snapshot);
+		vertBox.add(grabPlane);
 		vertBox.add(swapAxes);
 		vertBox.add(explode);
 		vertBox.add(saveAs);
@@ -299,6 +303,16 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 				DimensionedDataSource<U> snap = pz.takeSnapshot();
 
 				new RgbColorImageViewer<>(alg, snap);
+			}
+		});
+		grabPlane.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+
+				DimensionedDataSource<U> plane = grabCurrentPlane();
+
+				new RgbColorImageViewer<>(alg, plane);
 			}
 		});
 		incZoom.addActionListener(new ActionListener() {
@@ -587,6 +601,96 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		frame.repaint();
 	}
 	
+	@SuppressWarnings({"rawtypes","unchecked"})
+	public DimensionedDataSource<U> grabCurrentPlane() {
+		int axisNumber0 = planeData.axisNumber0();
+		int axisNumber1 = planeData.axisNumber1();
+		
+		long dimX = planeData.d0();
+		long dimY = planeData.d1();
+		
+		DimensionedDataSource<U> newDs = (DimensionedDataSource<U>)
+				DimensionedStorage.allocate((Allocatable) alg.construct(), new long[] {dimX, dimY});
+		
+		U tmp = alg.construct();
+		
+		TwoDView<U> view = new TwoDView<>(newDs);
+		
+		for (int y = 0; y < dimY; y++) {
+			for (int x = 0; x < dimX; x++) {
+				planeData.get(x, y , tmp);
+				view.set(x, y, tmp);
+			}
+		}
+		
+		DimensionedDataSource<U> origDs = planeData.getDataSource();
+
+		String d0Str = axisNumber0 < origDs.numDimensions() ? origDs.getAxisType(axisNumber0) : "d0";
+		String d1Str = axisNumber1 < origDs.numDimensions() ? origDs.getAxisType(axisNumber1) : "d1";
+		String axes = "["+d0Str+":"+d1Str+"]";
+		String miniTitle = axes + " slice";
+		String extendedDims = "";
+		if (origDs.numDimensions() > 2) {
+			extendedDims = " at";
+			int count = 0;;
+			for (int i = 0; i < origDs.numDimensions(); i++) {
+				if (i == axisNumber0 || i == axisNumber1)
+					continue;
+				String axisLabel = origDs.getAxisType(i);
+				long pos = planeData.getPositionValue(count);
+				count++;
+				extendedDims = extendedDims + " " + axisLabel + "("+pos+")"; 
+			}
+		}
+		miniTitle = miniTitle + extendedDims;
+
+		newDs.setName(origDs.getName().length() == 0 ? miniTitle : (miniTitle + " of "+origDs.getName()));
+		if (axisNumber0 < origDs.numDimensions()) {
+			newDs.setAxisType(0, origDs.getAxisType(axisNumber0));
+			newDs.setAxisUnit(0, origDs.getAxisUnit(axisNumber0));
+		}
+		if (axisNumber1 < origDs.numDimensions()) {
+			newDs.setAxisType(1, origDs.getAxisType(axisNumber1));
+			newDs.setAxisUnit(1, origDs.getAxisUnit(axisNumber1));
+		}
+		newDs.setValueType(origDs.getValueType());
+		newDs.setValueUnit(origDs.getValueUnit());
+	
+		CoordinateSpace origSpace = planeData.getDataSource().getCoordinateSpace();
+		if (origSpace instanceof LinearNdCoordinateSpace) {
+
+			LinearNdCoordinateSpace origLinSpace = (LinearNdCoordinateSpace) origSpace;
+		
+			BigDecimal[] scales = new BigDecimal[2];
+
+			scales[0] = origLinSpace.getScale(axisNumber0);
+			if (axisNumber1 < origDs.numDimensions())
+				scales[1] = origLinSpace.getScale(axisNumber1);
+			else
+				scales[1] = BigDecimal.ONE;
+				
+		
+			BigDecimal[] offsets = new BigDecimal[2];
+		
+			offsets[0] = origLinSpace.getOffset(axisNumber0);
+			if (axisNumber1 < origDs.numDimensions())
+				offsets[1] = origLinSpace.getOffset(axisNumber1);
+			else
+				offsets[1] = BigDecimal.ZERO;
+		
+			long[] coord = new long[origDs.numDimensions()];
+		
+			offsets[0] = origLinSpace.project(coord, axisNumber0);
+			offsets[1] = origLinSpace.project(coord, axisNumber1);
+
+			LinearNdCoordinateSpace newLinSpace = new LinearNdCoordinateSpace(scales, offsets);
+		
+			newDs.setCoordinateSpace(newLinSpace);
+		}
+
+		return newDs;
+	}
+
 	// code to increment a slider and react
 	
 	private class Incrementer implements ActionListener {

@@ -799,7 +799,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			JButton endButton = new JButton(">>");
 			JButton animButton = new JButton("Animate");
 			JButton stopButton = new JButton("Stop");
-			JButton chooseButton = new JButton("Choose");
+			JButton chooseButton = new JButton("Choose ...");
+			int axisPos = i;
 			long maxVal = planeData.getDataSourceAxisSize(i);
 			positionLabels[i].setText(""+(planeData.getPositionValue(i)+1)+" / "+maxVal);
 			int pos = planeData.getDataSourceAxisNumber(i);
@@ -832,14 +833,55 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				}
 			});
 			chooseButton.addActionListener(new ActionListener() {
+
+				boolean cancelled = false;
+				
 				@Override
 				public void actionPerformed(ActionEvent e) {
-
-					JOptionPane.showMessageDialog(frame,
-						    "When written this command will allow user to specify a value at which " +
-					           "to jump to along this axis.",
-						    "WARNING",
-						    JOptionPane.WARNING_MESSAGE);
+					JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+					dlg.setLocationByPlatform(true);
+					dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
+					dlg.add(new JLabel("Choose value along axis to jump to"));
+					JTextField valueField = new JTextField(20);
+					valueField.setText("");
+					dlg.add(valueField);
+					JButton ok = new JButton("Ok");
+					ok.addActionListener(new ActionListener() {
+						@Override
+						public void actionPerformed(ActionEvent e) {
+							cancelled = false;
+							dlg.setVisible(false);
+						}
+					});
+					JButton cancel = new JButton("Cancel");
+					cancel.addActionListener(new ActionListener() {
+						@Override
+						public void actionPerformed(ActionEvent e) {
+							cancelled = true;
+							dlg.setVisible(false);
+						}
+					});
+					dlg.add(ok);
+					dlg.add(cancel);
+					dlg.pack();
+					dlg.setVisible(true);
+					if (!cancelled) {
+						String indexStr = valueField.getText();
+						if (indexStr != null && indexStr.length() > 0) {
+							long idx;
+							try { 
+								idx = Long.parseLong(indexStr);
+							} catch (NumberFormatException exc) {
+								return;
+							}
+							if (idx < 1) idx = 1;
+							if (idx > maxVal) idx = maxVal;
+							planeData.setPositionValue(axisPos, idx-1);
+							positionLabels[axisPos].setText(""+(idx)+" / "+maxVal);
+							pz.draw();
+							frame.repaint();
+						}
+					}
 				}
 			});
 		}

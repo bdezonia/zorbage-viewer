@@ -155,6 +155,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	private Ordered<U> signumTester = null;
 	private final Font font = new Font("Verdana", Font.PLAIN, 18);
 	private AtomicBoolean animatingRightNow = new AtomicBoolean();
+	private AtomicBoolean pleaseQuitAnimating = new AtomicBoolean();
 	private HighPrecisionMember dispMin = null;
 	private HighPrecisionMember dispMax = null;
 	private final JLabel ctrXLabel;
@@ -825,11 +826,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			stopButton.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-
-					JOptionPane.showMessageDialog(frame,
-						    "When written this command will stop any running animation in this view.",
-						    "WARNING",
-						    JOptionPane.WARNING_MESSAGE);
+					if (animatingRightNow.get())
+						pleaseQuitAnimating.set(true);
 				}
 			});
 			chooseButton.addActionListener(new ActionListener() {
@@ -1274,25 +1272,44 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			
 			boolean wasAlreadyAnimating = animatingRightNow.getAndSet(true);
+			
 			if (wasAlreadyAnimating) return;
-			long maxVal = planeData.getDataSourceAxisSize(extraPos);
-			for (long i = 0; i < maxVal; i++) {
-				planeData.setPositionValue(extraPos, i);
-				positionLabels[extraPos].setText(""+(i+1)+" / "+maxVal);
-				pz.draw();
-				// paint needed instead of repaint to show immediate animation
-				// But this method has a LOT of flicker. ImageJ1 uses double
-				// buffered drawing to avoid flicker. See ImageCanvas paint()
-				// I think.
-				frame.paint(frame.getGraphics());
-				try {
-					Thread.sleep(100);
-				} catch(InterruptedException excep) {
-					;
+
+			SwingWorker<Object, Object> worker = new SwingWorker<Object, Object>() {
+
+				@Override
+				protected Object doInBackground() throws Exception {
+					long maxVal = planeData.getDataSourceAxisSize(extraPos);
+					for (long i = 0; i < maxVal; i++) {
+						if (pleaseQuitAnimating.get()) {
+							pleaseQuitAnimating.getAndSet(false);
+							animatingRightNow.set(false);
+							return true;
+						}
+						planeData.setPositionValue(extraPos, i);
+						positionLabels[extraPos].setText(""+(i+1)+" / "+maxVal);
+						pz.draw();
+						// paint needed instead of repaint to show immediate animation
+						// But this method has a LOT of flicker. ImageJ1 uses double
+						// buffered drawing to avoid flicker. See ImageCanvas paint()
+						// I think.
+						frame.paint(frame.getGraphics());
+						try {
+							Thread.sleep(100);
+						} catch(InterruptedException excep) {
+							;
+						}
+					}
+					pleaseQuitAnimating.getAndSet(false);
+					animatingRightNow.set(false);
+					return true;
 				}
-			}
-			animatingRightNow.set(false);
+				
+			};
+			
+			worker.execute();
 		}
 	}
 	

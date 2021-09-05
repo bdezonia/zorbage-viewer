@@ -42,12 +42,15 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.List;
@@ -66,6 +69,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
@@ -542,79 +546,185 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		});
 		dispRange.addActionListener(new ActionListener() {
 			
-			boolean cancelled = false;
-			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
-				dlg.setLocationByPlatform(true);
-				dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
-				dlg.add(new JLabel("Choose two values that specify the range of values to display"));
-				JButton clrButton = new JButton("Clear");
-				dlg.add(clrButton);
-				dlg.add(new JLabel("Min displayable value"));
-				JTextField minField = new JTextField(20);
-				minField.setText(dispMin == null ? "" : dispMin.toString());
-				dlg.add(minField);
-				dlg.add(new JLabel("Max displayable value"));
-				JTextField maxField = new JTextField(20);
-				maxField.setText(dispMax == null ? "" : dispMax.toString());
-				dlg.add(maxField);
-				clrButton.addActionListener(new ActionListener() {
+				SwingWorker<Object,Object> worker = new SwingWorker<Object, Object>() {
+					
+					boolean cancelled = false;
+					String origMinStrVal = effectiveMinToStr(); 
+					String origMaxStrVal = effectiveMaxToStr(); 
+					MathContext context = new MathContext(7);
+					
+
 					@Override
-					public void actionPerformed(ActionEvent e) {
-						dispMin = null;
-						dispMax = null;
-						minField.setText("");
-						maxField.setText("");
+					protected Object doInBackground() throws Exception {
+						JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+						dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
+						dlg.add(new JLabel("Choose two values that specify the range of values to display"));
+						JButton resetButton = new JButton("Reset");
+						dlg.add(resetButton);
+						dlg.add(new JLabel("Min displayable value"));
+						JTextField minField = new JTextField(20);
+						minField.setText(effectiveMinToStr());
+						dlg.add(minField);
+						JScrollBar minScroll = new JScrollBar(JScrollBar.HORIZONTAL);
+						minScroll.setMinimum(0);
+						minScroll.setMaximum(1000);
+						BigDecimal effMin = effectiveMin();
+						BigDecimal fraction = effMin.subtract(actualMin());
+						BigDecimal range = actualMax().subtract(actualMin());
+						int sliderPos = BigDecimal.valueOf(1000).multiply(fraction).divide(range, context).intValue();
+						minScroll.setValue(sliderPos);
+						minScroll.addAdjustmentListener(
+						
+							new AdjustmentListener() {
+
+								@Override
+								public void adjustmentValueChanged(AdjustmentEvent e) {
+									HighPrecisionMember minHP = G.HP.construct();
+									HighPrecisionMember maxHP = G.HP.construct();
+									((HighPrecRepresentation) min).toHighPrec(minHP);
+									((HighPrecRepresentation) max).toHighPrec(maxHP);
+									int sliderMin = minScroll.getMinimum();
+									int sliderMax = minScroll.getMaximum();
+									int sliderValue = minScroll.getValue();
+									BigDecimal percent = BigDecimal.valueOf(sliderValue - sliderMin).divide(BigDecimal.valueOf(sliderMax - sliderMin), context);
+									BigDecimal dataRange = (maxHP.v().subtract(minHP.v()));
+									BigDecimal subrange = percent.multiply(dataRange, context);
+									BigDecimal newValue = minHP.v().add(subrange);
+									minHP.setV(newValue);
+									minField.setText(newValue.toString());
+									if (dispMin == null)
+										dispMin = G.HP.construct();
+									dispMin.fromHighPrec(minHP);
+									String dispMaxStr = effectiveMaxToStr();
+									String dispMinStr = effectiveMinToStr();
+									if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
+										dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+									if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
+										dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+									dispMinLabel.setText("Disp Min: " + dispMinStr);
+									dispMaxLabel.setText("Disp Max: " + dispMaxStr);
+									pz.draw();
+									frame.repaint();
+								}
+							}
+						);
+						dlg.add(minScroll);
+						dlg.add(new JLabel("Max displayable value"));
+						JTextField maxField = new JTextField(20);
+						maxField.setText(effectiveMaxToStr());
+						dlg.add(maxField);
+						JScrollBar maxScroll = new JScrollBar(JScrollBar.HORIZONTAL);
+						maxScroll.setMinimum(0);
+						maxScroll.setMaximum(1000);
+						BigDecimal effMax = effectiveMax();
+						fraction = effMax.subtract(actualMin());
+						sliderPos = BigDecimal.valueOf(1000).multiply(fraction).divide(range, context).intValue();
+						maxScroll.setValue(sliderPos);
+						maxScroll.addAdjustmentListener(
+							
+							new AdjustmentListener() {
+								
+								@Override
+								public void adjustmentValueChanged(AdjustmentEvent e) {
+									HighPrecisionMember minHP = G.HP.construct();
+									HighPrecisionMember maxHP = G.HP.construct();
+									((HighPrecRepresentation) min).toHighPrec(minHP);
+									((HighPrecRepresentation) max).toHighPrec(maxHP);
+									int sliderMin = maxScroll.getMinimum();
+									int sliderMax = maxScroll.getMaximum();
+									int sliderValue = maxScroll.getValue();
+									BigDecimal percent = BigDecimal.valueOf(sliderValue - sliderMin).divide(BigDecimal.valueOf(sliderMax - sliderMin), context);
+									BigDecimal dataRange = (maxHP.v().subtract(minHP.v()));
+									BigDecimal subrange = percent.multiply(dataRange, context);
+									BigDecimal newValue = minHP.v().add(subrange);
+									maxHP.setV(newValue);
+									maxField.setText(newValue.toString());
+									if (dispMax == null)
+										dispMax = G.HP.construct();
+									dispMax.fromHighPrec(maxHP);
+									String dispMinStr = effectiveMinToStr();
+									String dispMaxStr = effectiveMaxToStr();
+									if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
+										dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+									if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
+										dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+									dispMinLabel.setText("Disp Min: " + dispMinStr);
+									dispMaxLabel.setText("Disp Max: " + dispMaxStr);
+									pz.draw();
+									frame.repaint();
+								}
+							}
+						);
+						dlg.add(maxScroll);
+						resetButton.addActionListener(new ActionListener() {
+							@Override
+							public void actionPerformed(ActionEvent e) {
+								dispMin = null;
+								dispMax = null;
+								minField.setText(min.toString());
+								maxField.setText(max.toString());
+								minScroll.setValue(minScroll.getMinimum());
+								maxScroll.setValue(maxScroll.getMaximum());
+							}
+						});
+						JButton ok = new JButton("Ok");
+						ok.addActionListener(new ActionListener() {
+							@Override
+							public void actionPerformed(ActionEvent e) {
+								cancelled = false;
+								dlg.setVisible(false);
+							}
+						});
+						JButton cancel = new JButton("Cancel");
+						cancel.addActionListener(new ActionListener() {
+							@Override
+							public void actionPerformed(ActionEvent e) {
+								cancelled = true;
+								dlg.setVisible(false);
+							}
+						});
+						dlg.add(ok);
+						dlg.add(cancel);
+						dlg.pack();
+						dlg.setVisible(true);
+						String minStr = minField.getText();
+						String maxStr = maxField.getText();
+						if (cancelled) {
+							minStr = origMinStrVal;
+							maxStr = origMaxStrVal;
+						}
+						else {
+							minStr = minField.getText();
+							maxStr = maxField.getText();
+						}
+						if (minStr == null || minStr.length() == 0 || minStr.equals(min.toString())) {
+							dispMin = null;
+						}
+						else {
+							dispMin = G.HP.construct(minStr);
+						}
+						if (maxStr == null || maxStr.length() == 0 || maxStr.equals(max.toString())) {
+							dispMax = null;
+						}
+						else {
+							dispMax = G.HP.construct(maxStr);
+						}
+						String dispMinStr = effectiveMinToStr();
+						String dispMaxStr = effectiveMaxToStr();
+						if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
+							dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+						if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
+							dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+						dispMinLabel.setText("Disp Min: " + dispMinStr);
+						dispMaxLabel.setText("Disp Max: " + dispMaxStr);
+						pz.draw();
+						frame.repaint();
+						return true;
 					}
-				});
-				JButton ok = new JButton("Ok");
-				ok.addActionListener(new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						cancelled = false;
-						dlg.setVisible(false);
-					}
-				});
-				JButton cancel = new JButton("Cancel");
-				cancel.addActionListener(new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						cancelled = true;
-						dlg.setVisible(false);
-					}
-				});
-				dlg.add(ok);
-				dlg.add(cancel);
-				dlg.pack();
-				dlg.setVisible(true);
-				if (!cancelled) {
-					String minStr = minField.getText();
-					String maxStr = maxField.getText();
-					if (minStr == null || minStr.length() == 0) {
-						dispMin = null;
-					}
-					else {
-						dispMin = G.HP.construct(minStr);
-					}
-					if (maxStr == null || maxStr.length() == 0) {
-						dispMax = null;
-					}
-					else {
-						dispMax = G.HP.construct(maxStr);
-					}
-					String dispMinStr = (dispMin == null ? minStr : dispMin.toString());
-					String dispMaxStr = (dispMax == null ? maxStr : dispMax.toString());
-					dispMinLabel.setToolTipText(dispMinStr);
-					dispMaxLabel.setToolTipText(dispMaxStr);
-					if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT) dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
-					if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT) dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
-					dispMinLabel.setText("Disp Min: " + dispMinStr);
-					dispMaxLabel.setText("Disp Max: " + dispMaxStr);
-					pz.draw();
-					frame.repaint();
-				}
+				};
+				worker.execute();
 			}
 		});
 		toColor.addActionListener(new ActionListener() {
@@ -1010,16 +1120,16 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				setMinMax();
 				String minStr = min.toString();
 				String maxStr = max.toString();
-				String dispMinStr = (dispMin == null ? minStr : dispMin.toString());
-				String dispMaxStr = (dispMax == null ? maxStr : dispMax.toString());
-				minLabel.setToolTipText(minStr);
-				maxLabel.setToolTipText(maxStr);
-				dispMinLabel.setToolTipText(dispMinStr);
-				dispMaxLabel.setToolTipText(dispMaxStr);
-				if (minStr.length() > MIN_MAX_CHAR_COUNT) minStr = minStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
-				if (maxStr.length() > MIN_MAX_CHAR_COUNT) maxStr = maxStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
-				if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT) dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
-				if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT) dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+				String dispMinStr = effectiveMinToStr();
+				String dispMaxStr = effectiveMaxToStr();
+				if (minStr.length() > MIN_MAX_CHAR_COUNT)
+					minStr = minStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
+				if (maxStr.length() > MIN_MAX_CHAR_COUNT)
+					maxStr = maxStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
+				if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
+					dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+				if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
+					dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
 				minLabel.setText("Min: " + minStr);
 				maxLabel.setText("Max: " + maxStr);
 				dispMinLabel.setText("Disp Min: " + dispMinStr);
@@ -1050,16 +1160,16 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		String minStr = min.toString();
 		String maxStr = max.toString();
-		String dispMinStr = (dispMin == null ? minStr : dispMin.toString());
-		String dispMaxStr = (dispMax == null ? maxStr : dispMax.toString());
-		minLabel.setToolTipText(minStr);
-		maxLabel.setToolTipText(maxStr);
-		dispMinLabel.setToolTipText(dispMinStr);
-		dispMaxLabel.setToolTipText(dispMaxStr);
-		if (minStr.length() > MIN_MAX_CHAR_COUNT) minStr = minStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
-		if (maxStr.length() > MIN_MAX_CHAR_COUNT) maxStr = maxStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
-		if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT) dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
-		if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT) dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+		String dispMinStr = effectiveMinToStr();
+		String dispMaxStr = effectiveMaxToStr();
+		if (minStr.length() > MIN_MAX_CHAR_COUNT)
+			minStr = minStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
+		if (maxStr.length() > MIN_MAX_CHAR_COUNT)
+			maxStr = maxStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
+		if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
+			dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+		if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
+			dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
 		minLabel.setText("Min: " + minStr);
 		maxLabel.setText("Max: " + maxStr);
 		dispMinLabel.setText("Disp Min: " + dispMinStr);
@@ -1069,7 +1179,39 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		frame.repaint();
 	}
+
+	private BigDecimal actualMin() {
+		HighPrecisionMember tmp = G.HP.construct();
+		((HighPrecRepresentation)min).toHighPrec(tmp);
+		return tmp.v();
+	}
 	
+	private BigDecimal actualMax() {
+		HighPrecisionMember tmp = G.HP.construct();
+		((HighPrecRepresentation)max).toHighPrec(tmp);
+		return tmp.v();
+	}
+	
+	private BigDecimal effectiveMin() {
+		if (dispMin == null)
+			return actualMin();
+		return dispMin.v();
+	}
+
+	private BigDecimal effectiveMax() {
+		if (dispMax == null)
+			return actualMax();
+		return dispMax.v();
+	}
+	
+	private String effectiveMinToStr() {
+		return effectiveMin().toString();
+	}
+	
+	private String effectiveMaxToStr() {
+		return effectiveMax().toString();
+	}
+
 	/**
 	 * Assigns a new color table through which the viewer displays plane data.
 	 * 
@@ -1539,7 +1681,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			return changed;
 		}
-		
 		
 		public boolean decreaseZoom() {
 			

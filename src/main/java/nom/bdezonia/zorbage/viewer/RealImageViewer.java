@@ -175,7 +175,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	 * @param dataSource The data to display
 	 */
 	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource) {
-		this(alg, dataSource, 0, 1);
+		this(alg, dataSource, 0, 1, null, null);
 	}
 
 	/**
@@ -184,9 +184,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	 * @param dataSource The data to display
 	 * @param axisNumber0 The first axis number defining the planes to view (x, y, z, c, t, etc.)
 	 * @param axisNumber1 The second axis number defining the planes to view (x, y, z, c, t, etc.)
+	 * @param dataMn A (possibly null) hint at the actual min data value present in data source
+	 * @param dataMx A (possibly null) hint at the actual max data value present in data source
 	 */
 	@SuppressWarnings("unchecked")
-	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource, int axisNumber0, int axisNumber1) {
+	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource, int axisNumber0, int axisNumber1, U dataMn, U dataMx) {
 
 		this.alg = alg;
 		this.planeData = new PlaneView<>(dataSource, axisNumber0, axisNumber1);
@@ -439,7 +441,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					}
 					// make sure only two dims were chosen
 					if (i0 != -1 && i1 != -1 && iOthers == -1)
-						new RealImageViewer<>(alg, dataSource, i0, i1);
+						new RealImageViewer<>(alg, dataSource, i0, i1, dataMin, dataMax);
 					//else
 					//	System.out.println("" + i0 + " " + i1 + " " + iOthers);
 				}
@@ -1154,7 +1156,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		frame.setVisible(true);
 
-		calcMinsAndMaxes();
+		findMinsAndMaxes(alg, dataMn, dataMx);
 		
 		setMinMax();
 
@@ -1531,9 +1533,16 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
-	private void calcMinsAndMaxes() {
+	private void findMinsAndMaxes(T alg, U dataMn, U dataMx) {
 
-		pixelDataBounds(alg, planeData.getDataSource().rawData(), dataMin, dataMax);
+		if (dataMn == null || dataMx == null)
+			pixelDataBounds(alg, planeData.getDataSource().rawData(), dataMin, dataMax);
+		else {
+			// Avoid rescanning the WHOLE dataset to find values we already know. On a
+			// very large dataset this can save minutes.
+			alg.assign().call(dataMn, dataMin);
+			alg.assign().call(dataMx, dataMax);
+		}
 		pixelTypeBounds(alg, typeMin, typeMax);
 	}
 	

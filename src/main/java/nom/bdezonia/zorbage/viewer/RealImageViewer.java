@@ -569,13 +569,16 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						JTextField minField = new JTextField(20);
 						minField.setText(effectiveMinToStr());
 						dlg.add(minField);
+						BigDecimal dataRange = actualMax().subtract(actualMin());
 						JScrollBar minScroll = new JScrollBar(JScrollBar.HORIZONTAL);
 						minScroll.setMinimum(0);
-						minScroll.setMaximum(1000);
+						minScroll.setMaximum(999);
+						minScroll.setUnitIncrement(1);
+						minScroll.getModel().setExtent(10);
 						BigDecimal effMin = effectiveMin();
 						BigDecimal fraction = effMin.subtract(actualMin());
-						BigDecimal range = actualMax().subtract(actualMin());
-						int sliderPos = BigDecimal.valueOf(1000).multiply(fraction).divide(range, context).intValue();
+						// maybe one unit too high sometimes?
+						int sliderPos = BigDecimal.valueOf(minScroll.getMaximum()-minScroll.getUnitIncrement()).multiply(fraction).divide(dataRange, context).intValue();
 						minScroll.setValue(sliderPos);
 						minScroll.addAdjustmentListener(
 						
@@ -590,6 +593,43 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 									int sliderMin = minScroll.getMinimum();
 									int sliderMax = minScroll.getMaximum();
 									int sliderValue = minScroll.getValue();
+									if (500 <= sliderValue && sliderValue < 510) {
+										switch (sliderValue) {
+										case 500:
+											sliderValue = 500;
+											break;
+										case 501:
+											sliderValue = 503;
+											break;
+										case 502:
+											sliderValue = 505;
+											break;
+										case 503:
+											sliderValue = 507;
+											break;
+										case 504:
+											sliderValue = 509;
+											break;
+										case 505:
+											sliderValue = 511;
+											break;
+										case 506:
+											sliderValue = 513;
+											break;
+										case 507:
+											sliderValue = 515;
+											break;
+										case 508:
+											sliderValue = 517;
+											break;
+										case 509:
+											sliderValue = 519;
+											break;
+										}
+									}
+									else if (sliderValue >= 510) {
+										sliderValue += minScroll.getModel().getExtent();
+									}
 									BigDecimal percent = BigDecimal.valueOf(sliderValue - sliderMin).divide(BigDecimal.valueOf(sliderMax - sliderMin), context);
 									BigDecimal dataRange = (maxHP.v().subtract(minHP.v()));
 									BigDecimal subrange = percent.multiply(dataRange, context);
@@ -619,10 +659,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						dlg.add(maxField);
 						JScrollBar maxScroll = new JScrollBar(JScrollBar.HORIZONTAL);
 						maxScroll.setMinimum(0);
-						maxScroll.setMaximum(1000);
+						maxScroll.setMaximum(999);
+						maxScroll.setUnitIncrement(1);
+						maxScroll.getModel().setExtent(10);
 						BigDecimal effMax = effectiveMax();
 						fraction = effMax.subtract(actualMin());
-						sliderPos = BigDecimal.valueOf(1000).multiply(fraction).divide(range, context).intValue();
+						// maybe one unit too high sometimes?
+						sliderPos = BigDecimal.valueOf(maxScroll.getMaximum()-maxScroll.getUnitIncrement()).multiply(fraction).divide(dataRange, context).intValue();
 						maxScroll.setValue(sliderPos);
 						maxScroll.addAdjustmentListener(
 							
@@ -637,6 +680,43 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 									int sliderMin = maxScroll.getMinimum();
 									int sliderMax = maxScroll.getMaximum();
 									int sliderValue = maxScroll.getValue();
+									if (500 <= sliderValue && sliderValue < 510) {
+										switch (sliderValue) {
+										case 500:
+											sliderValue = 500;
+											break;
+										case 501:
+											sliderValue = 503;
+											break;
+										case 502:
+											sliderValue = 505;
+											break;
+										case 503:
+											sliderValue = 507;
+											break;
+										case 504:
+											sliderValue = 509;
+											break;
+										case 505:
+											sliderValue = 511;
+											break;
+										case 506:
+											sliderValue = 513;
+											break;
+										case 507:
+											sliderValue = 515;
+											break;
+										case 508:
+											sliderValue = 517;
+											break;
+										case 509:
+											sliderValue = 519;
+											break;
+										}
+									}
+									else if (sliderValue >= 510) {
+										sliderValue += maxScroll.getModel().getExtent();
+									}
 									BigDecimal percent = BigDecimal.valueOf(sliderValue - sliderMin).divide(BigDecimal.valueOf(sliderMax - sliderMin), context);
 									BigDecimal dataRange = (maxHP.v().subtract(minHP.v()));
 									BigDecimal subrange = percent.multiply(dataRange, context);

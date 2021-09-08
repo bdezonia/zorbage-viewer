@@ -577,8 +577,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						minScroll.getModel().setExtent(10);
 						BigDecimal effMin = effectiveMin();
 						BigDecimal fraction = effMin.subtract(actualMin());
-						// maybe one unit too high sometimes?
-						int sliderPos = BigDecimal.valueOf(minScroll.getMaximum()-minScroll.getUnitIncrement()).multiply(fraction).divide(dataRange, context).intValue();
+						int sliderPos = BigDecimal.valueOf(minScroll.getMaximum()).multiply(fraction).divide(dataRange, context).intValue();
 						minScroll.setValue(sliderPos);
 						minScroll.addAdjustmentListener(
 						
@@ -664,8 +663,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						maxScroll.getModel().setExtent(10);
 						BigDecimal effMax = effectiveMax();
 						fraction = effMax.subtract(actualMin());
-						// maybe one unit too high sometimes?
-						sliderPos = BigDecimal.valueOf(maxScroll.getMaximum()-maxScroll.getUnitIncrement()).multiply(fraction).divide(dataRange, context).intValue();
+						sliderPos = BigDecimal.valueOf(maxScroll.getMaximum()).multiply(fraction).divide(dataRange, context).intValue();
 						maxScroll.setValue(sliderPos);
 						maxScroll.addAdjustmentListener(
 							

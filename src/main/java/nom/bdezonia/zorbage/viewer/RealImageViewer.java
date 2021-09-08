@@ -44,6 +44,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
@@ -652,6 +654,36 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							}
 						);
 						dlg.add(minScroll);
+						minField.addFocusListener(new FocusListener() {
+							
+							@Override
+							public void focusLost(FocusEvent arg0) {
+								String numStr = minField.getText();
+								if (numStr != null && numStr.length() > 0) {
+									BigDecimal num;
+									try { 
+										num = new BigDecimal(numStr);
+									} catch (NumberFormatException exc) {
+										return;
+									}
+									BigDecimal numer = num.subtract(actualMin());
+									BigDecimal denom = actualMax().subtract(actualMin());
+									if (denom.compareTo(BigDecimal.ZERO) == 0)
+										denom = BigDecimal.ONE;
+									BigDecimal percent = numer.divide(denom, context);
+									if (percent.compareTo(BigDecimal.ZERO) < 0)
+										percent = BigDecimal.ZERO;
+									if (percent.compareTo(BigDecimal.ONE) > 0)
+										percent = BigDecimal.ONE;
+									int pos = percent.multiply(BigDecimal.valueOf(minScroll.getMaximum())).intValue();
+									minScroll.setValue(pos);
+								}
+							}
+							
+							@Override
+							public void focusGained(FocusEvent arg0) {
+							}
+						});
 						dlg.add(new JLabel("Max displayable value"));
 						JTextField maxField = new JTextField(20);
 						maxField.setText(effectiveMaxToStr());
@@ -738,6 +770,36 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							}
 						);
 						dlg.add(maxScroll);
+						maxField.addFocusListener(new FocusListener() {
+							
+							@Override
+							public void focusLost(FocusEvent arg0) {
+								String numStr = maxField.getText();
+								if (numStr != null && numStr.length() > 0) {
+									BigDecimal num;
+									try { 
+										num = new BigDecimal(numStr);
+									} catch (NumberFormatException exc) {
+										return;
+									}
+									BigDecimal numer = num.subtract(actualMin());
+									BigDecimal denom = actualMax().subtract(actualMin());
+									if (denom.compareTo(BigDecimal.ZERO) == 0)
+										denom = BigDecimal.ONE;
+									BigDecimal percent = numer.divide(denom, context);
+									if (percent.compareTo(BigDecimal.ZERO) < 0)
+										percent = BigDecimal.ZERO;
+									if (percent.compareTo(BigDecimal.ONE) > 0)
+										percent = BigDecimal.ONE;
+									int pos = percent.multiply(BigDecimal.valueOf(maxScroll.getMaximum())).intValue();
+									maxScroll.setValue(pos);
+								}
+							}
+							
+							@Override
+							public void focusGained(FocusEvent arg0) {
+							}
+						});
 						resetButton.addActionListener(new ActionListener() {
 							@Override
 							public void actionPerformed(ActionEvent e) {

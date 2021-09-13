@@ -166,6 +166,9 @@ public class Main<T extends Algebra<T,U>, U> {
 	private JFrame frame = null;
 	
 	public static int GDAL_STATUS = 0;
+	
+	private static int viewportWidth = 512;
+	private static int viewportHeight = 512;
 
 	@SuppressWarnings("rawtypes")
 	public static void main(String[] args) {

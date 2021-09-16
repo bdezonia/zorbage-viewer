@@ -2333,8 +2333,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			ArgbMember tmp = G.ARGB.construct();
 			for (int y = 0; y < dimY; y++) {
+				final int rowPos = y * dimX;
 				for (int x = 0; x < dimX; x++) {
-					int argb = arrayInt[y * dimX + x];
+					int argb = arrayInt[rowPos + x];
 					tmp.setA(RgbUtils.a(argb));
 					tmp.setR(RgbUtils.r(argb));
 					tmp.setG(RgbUtils.g(argb));

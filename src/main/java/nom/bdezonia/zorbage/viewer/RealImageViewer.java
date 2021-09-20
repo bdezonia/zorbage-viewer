@@ -1100,7 +1100,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				
-				DimensionedDataSource<U> data = planeData.getDataSource();
+				DimensionedDataSource<U> data = grabCurrentPlane();
 				
 				if (min instanceof Float16Member) {
 					doFFT(G.CHLF, G.HLF, data, constructionLabel);

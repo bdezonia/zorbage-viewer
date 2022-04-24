@@ -95,7 +95,7 @@ import nom.bdezonia.zorbage.algebra.Roots;
 import nom.bdezonia.zorbage.algebra.SetComplex;
 import nom.bdezonia.zorbage.algebra.Trigonometric;
 import nom.bdezonia.zorbage.algebra.Unity;
-import nom.bdezonia.zorbage.algorithm.FFT;
+import nom.bdezonia.zorbage.algorithm.FFT2D;
 import nom.bdezonia.zorbage.algorithm.GetIValues;
 import nom.bdezonia.zorbage.algorithm.GetRValues;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
@@ -2445,75 +2445,19 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						    JOptionPane.WARNING_MESSAGE);
 					return false;
 				}
-		
-				long successfulSize = -1;
-				long edgeSize = -1;
-				for (long i = 0; i < 63; i++) {
-					
-					edgeSize = 1 << i;
-					
-					long sqSz = edgeSize * edgeSize;
-					
-					if (sqSz >= input.rawData().size()) {
-						successfulSize = sqSz;
-						break;
-					}
-				}
-		
-				if ((successfulSize < 0)) {
-					throw new IllegalArgumentException("can't find an enclosing image size for FFT");
-				}
+
+				DimensionedDataSource<?> result = FFT2D.compute((L) complexAlgebra, (N) realAlgebra, (DimensionedDataSource<O>) input, 0, 1, new IntegerIndex(0));
 				
-				// zero pad the real input
-				@SuppressWarnings("unchecked")
-				IndexedDataSource<O> padded =
-						new ProcedurePaddedDataSource<N,O>(
-								realAlg,
-								(IndexedDataSource<O>) input.rawData(),
-								new Procedure2<Long, O>()
-								{
-									public void call(Long a, O b) {
-										realAlg.zero().call(b);
-									}
-								}
-							);
-				
-				// and make sure its size is a power of 2
-				
-				IndexedDataSource<O> correctSizeInput = new FixedSizeDataSource<>(successfulSize, padded);
-				
-				// now make a complex data source with real values set to input
-				
-				IndexedDataSource<M> complexInput = Storage.allocate(cmplxAlg.construct(), successfulSize);
-				
-				// And define where we will put the result
-				
-				IndexedDataSource<M> complexOutput = Storage.allocate(cmplxAlg.construct(), successfulSize);
-		
-				// copy the real data to the r values of a complex data set
+				long sz = result.dimension(0);
 				
 				O realValue = realAlg.construct();
 				O imagValue = realAlg.construct();
-				O zero = realAlg.construct();
-				M complexValue = cmplxAlg.construct();
-				for (long i = 0; i < successfulSize; i++) {
-					correctSizeInput.get(i, realValue);
-					complexValue.setR(realValue);
-					complexValue.setI(zero);
-					complexInput.set(i, complexValue);
-				}
 				
-				// run the FFT on that data
+				IndexedDataSource<O> m = Storage.allocate(realValue, sz*sz);
+				IndexedDataSource<O> p = Storage.allocate(realValue, sz*sz);
 				
-				FFT.compute(cmplxAlg, realAlg, complexInput, complexOutput);
-				
-				long sz = complexOutput.size();
-				
-				IndexedDataSource<O> m = Storage.allocate(realValue, sz);
-				IndexedDataSource<O> p = Storage.allocate(realValue, sz);
-				
-				GetRValues.compute(cmplxAlg, realAlg, complexOutput, m);
-				GetIValues.compute(cmplxAlg, realAlg, complexOutput, p);
+				GetRValues.compute(cmplxAlg, realAlg, (IndexedDataSource<M>) result.rawData(), m);
+				GetIValues.compute(cmplxAlg, realAlg, (IndexedDataSource<M>) result.rawData(), p);
 				
 				O mag = realAlg.construct();
 				O phas = realAlg.construct();
@@ -2527,10 +2471,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				}
 		
 				DimensionedDataSource<O> magDs =
-						new NdData<O>(new long[] {edgeSize, edgeSize}, m);
+						new NdData<O>(new long[] {sz, sz}, m);
 		
 				DimensionedDataSource<O> phasDs =
-						new NdData<O>(new long[] {edgeSize, edgeSize}, p);
+						new NdData<O>(new long[] {sz, sz}, p);
 		
 				magDs.setName("Magnitudes of FFT of "+input.getName());
 				

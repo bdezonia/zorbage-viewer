@@ -81,6 +81,7 @@ import nom.bdezonia.zorbage.algebra.Addition;
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.Bounded;
+import nom.bdezonia.zorbage.algebra.Conjugate;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algebra.GetComplex;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
@@ -98,6 +99,7 @@ import nom.bdezonia.zorbage.algebra.Unity;
 import nom.bdezonia.zorbage.algorithm.FFT2D;
 import nom.bdezonia.zorbage.algorithm.GetIValues;
 import nom.bdezonia.zorbage.algorithm.GetRValues;
+import nom.bdezonia.zorbage.algorithm.InvFFT2D;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.algorithm.NdSplit;
@@ -107,13 +109,10 @@ import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.data.NdData;
-import nom.bdezonia.zorbage.datasource.FixedSizeDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
-import nom.bdezonia.zorbage.datasource.ProcedurePaddedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
-import nom.bdezonia.zorbage.procedure.Procedure2;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
@@ -2348,7 +2347,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
-	public <L extends Algebra<L,M> & Addition<M> & Multiplication<M>,
+	public <L extends Algebra<L,M> & Addition<M> & Multiplication<M> & Conjugate<M>,
 			M extends SetComplex<O> & GetComplex<O> & Allocatable<M>,
 			N extends Algebra<N,O> & Trigonometric<O> & RealConstants<O> &
 				Multiplication<O> & Addition<O> & Invertible<O> & Unity<O> &
@@ -2446,18 +2445,40 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					return false;
 				}
 
-				DimensionedDataSource<?> result = FFT2D.compute((L) complexAlgebra, (N) realAlgebra, (DimensionedDataSource<O>) input, 0, 1, new IntegerIndex(0));
+				@SuppressWarnings("unchecked")
+				DimensionedDataSource<O> realData = (DimensionedDataSource<O>) input;
 				
-				long sz = result.dimension(0);
+				long[] dims = new long[2];
+				for (int i = 0; i < dims.length; i++) {
+					dims[i] = realData.dimension(i);
+				}
+				
+				DimensionedDataSource<M> complexData = DimensionedStorage.allocate(cmplxAlg.construct(), dims);
 				
 				O realValue = realAlg.construct();
 				O imagValue = realAlg.construct();
+				M complexValue = cmplxAlg.construct();
+				
+				TwoDView<O> realVw = new TwoDView<>(realData);
+				TwoDView<M> complexVw = new TwoDView<>(complexData);
+				
+				for (long y = 0; y < dims[1]; y++) {
+					for (long x = 0; x < dims[0]; x++) {
+						realVw.get(x, y, realValue);
+						complexValue.setR(realValue);
+						complexVw.set(x, y, complexValue);
+					}
+				}
+				
+				DimensionedDataSource<M> result = FFT2D.compute(cmplxAlg, realAlg, complexData, 0, 1, new IntegerIndex(0));
+				
+				long sz = result.dimension(0);
 				
 				IndexedDataSource<O> m = Storage.allocate(realValue, sz*sz);
 				IndexedDataSource<O> p = Storage.allocate(realValue, sz*sz);
 				
-				GetRValues.compute(cmplxAlg, realAlg, (IndexedDataSource<M>) result.rawData(), m);
-				GetIValues.compute(cmplxAlg, realAlg, (IndexedDataSource<M>) result.rawData(), p);
+				GetRValues.compute(cmplxAlg, realAlg, result.rawData(), m);
+				GetIValues.compute(cmplxAlg, realAlg, result.rawData(), p);
 				
 				O mag = realAlg.construct();
 				O phas = realAlg.construct();
@@ -2483,7 +2504,29 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				new RealImageViewer<>(realAlg, magDs);
 		
 				new RealImageViewer<>(realAlg, phasDs);
+
+				DimensionedDataSource<M> result2 = InvFFT2D.compute(cmplxAlg, realAlg, result, 0, 1, new IntegerIndex(0));
+
+				IndexedDataSource<O> re = Storage.allocate(realValue, sz*sz);
+				IndexedDataSource<O> im = Storage.allocate(realValue, sz*sz);
+				
+				GetRValues.compute(cmplxAlg, realAlg, result2.rawData(), re);
+				GetIValues.compute(cmplxAlg, realAlg, result2.rawData(), im);
+				
+				DimensionedDataSource<O> reals =
+						new NdData<O>(new long[] {sz, sz}, re);
 		
+				DimensionedDataSource<O> imags =
+						new NdData<O>(new long[] {sz, sz}, im);
+		
+				reals.setName("Real values of FFT2 of xformed data");
+				
+				imags.setName("Imag values of FFT2 of xformed data");
+
+				new RealImageViewer<>(realAlg, reals);
+				
+				new RealImageViewer<>(realAlg, imags);
+
 				return true;
 				
 				/*
@@ -2560,10 +2603,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		DimensionedDataSource<M> output = DimensionedStorage.allocate(outAlg.construct(), dims);
 
-		IndexedDataSource<O> inList =  input.rawData();  
-		IndexedDataSource<M> outList =  output.rawData();
+		IndexedDataSource<O> inList = input.rawData();  
+		IndexedDataSource<M> outList = output.rawData();
 
-		O in =  inAlg.construct();
+		O in  = inAlg.construct();
 		M out = outAlg.construct();
 
 		long size = inList.size();
@@ -2584,7 +2627,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	{
 		V enhancedAlg = (V) alg;
 		DimensionedDataSource<W> ds = (DimensionedDataSource<W>) dataSource;
-		List<DimensionedDataSource<W>>  results = NdSplit.compute(enhancedAlg, axis, 1L, ds);
+		List<DimensionedDataSource<W>> results = NdSplit.compute(enhancedAlg, axis, 1L, ds);
 		for (DimensionedDataSource<W> dataset : results) {
 			new RealImageViewer<V,W>(enhancedAlg, dataset);
 		}

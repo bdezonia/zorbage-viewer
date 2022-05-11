@@ -2345,12 +2345,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
-	public <L extends Algebra<L,M> & Addition<M> & Multiplication<M>,
-			M extends SetComplex<O> & GetComplex<O> & Allocatable<M>,
-			N extends Algebra<N,O> & Trigonometric<O> & RealConstants<O> &
-				Multiplication<O> & Addition<O> & Invertible<O> & Unity<O> &
-				NaN<O> & InverseTrigonometric<O> & Roots<O> & Ordered<O>,
-			O extends Allocatable<O>>
+	public <CA extends Algebra<CA,C> & Addition<C> & Multiplication<C>,
+			C extends SetComplex<R> & GetComplex<R> & Allocatable<C>,
+			RA extends Algebra<RA,R> & Trigonometric<R> & RealConstants<R> &
+				Multiplication<R> & Addition<R> & Invertible<R> & Unity<R> &
+				NaN<R> & InverseTrigonometric<R> & Roots<R> & Ordered<R>,
+			R extends Allocatable<R>>
 		void doFFT(Algebra<?,?> complexAlgebra, Algebra<?,?> realAlgebra, DimensionedDataSource<?> input, JLabel theLabel)
 	{
 		SwingWorker<Object, Object> worker = new SwingWorker<Object, Object>() {
@@ -2367,17 +2367,17 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					error = "Complex algebra does not implement Multiplication";
 				
 				@SuppressWarnings("unchecked")
-				L cmplxAlg = (L) complexAlgebra;
+				CA cmplxAlg = (CA) complexAlgebra;
 				
-				M tmpM = cmplxAlg.construct();
+				C tmpC = cmplxAlg.construct();
 				
-				if (!(tmpM instanceof SetComplex))
+				if (!(tmpC instanceof SetComplex))
 					error = "Complex number does not implement SetComplex";
 				
-				else if (!(tmpM instanceof GetComplex))
+				else if (!(tmpC instanceof GetComplex))
 					error = "Complex number does not implement GetComplex";
 				
-				else if (!(tmpM instanceof Allocatable))
+				else if (!(tmpC instanceof Allocatable))
 					error = "Complex number does not implement Allocatable";
 				
 				else if (!(realAlgebra instanceof Trigonometric))
@@ -2411,14 +2411,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					error = "Real algebra does not implement Ordered";
 				
 				@SuppressWarnings("unchecked")
-				N realAlg = (N) realAlgebra;
+				RA realAlg = (RA) realAlgebra;
 				
-				O tmpO = realAlg.construct();
+				R tmpR = realAlg.construct();
 				
 				try {
 					
-					tmpM.setR(tmpO);
-					tmpM.setI(tmpO);
+					tmpC.setR(tmpR);
+					tmpC.setI(tmpR);
 					
 				} catch (ClassCastException e) {
 					
@@ -2427,8 +2427,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 				try {
 					
-					tmpM.getR(tmpO);
-					tmpM.getI(tmpO);
+					tmpC.getR(tmpR);
+					tmpC.getI(tmpR);
 					
 				} catch (ClassCastException e) {
 					
@@ -2444,21 +2444,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				}
 
 				@SuppressWarnings("unchecked")
-				DimensionedDataSource<O> realData = (DimensionedDataSource<O>) input;
+				DimensionedDataSource<R> realData = (DimensionedDataSource<R>) input;
 				
 				long[] dims = new long[2];
 				for (int i = 0; i < dims.length; i++) {
 					dims[i] = realData.dimension(i);
 				}
 				
-				DimensionedDataSource<M> complexData = DimensionedStorage.allocate(cmplxAlg.construct(), dims);
+				DimensionedDataSource<C> complexData = DimensionedStorage.allocate(cmplxAlg.construct(), dims);
 				
-				O realValue = realAlg.construct();
-				O imagValue = realAlg.construct();
-				M complexValue = cmplxAlg.construct();
+				R realValue = realAlg.construct();
+				R imagValue = realAlg.construct();
+				C complexValue = cmplxAlg.construct();
 				
-				TwoDView<O> realVw = new TwoDView<>(realData);
-				TwoDView<M> complexVw = new TwoDView<>(complexData);
+				TwoDView<R> realVw = new TwoDView<>(realData);
+				TwoDView<C> complexVw = new TwoDView<>(complexData);
 				
 				for (long y = 0; y < dims[1]; y++) {
 					for (long x = 0; x < dims[0]; x++) {
@@ -2468,18 +2468,18 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					}
 				}
 				
-				DimensionedDataSource<M> result = FFT2D.compute(cmplxAlg, realAlg, complexData);
+				DimensionedDataSource<C> result = FFT2D.compute(cmplxAlg, realAlg, complexData);
 				
 				long sz = result.dimension(0);
 				
-				IndexedDataSource<O> m = Storage.allocate(realValue, sz*sz);
-				IndexedDataSource<O> p = Storage.allocate(realValue, sz*sz);
+				IndexedDataSource<R> m = Storage.allocate(realValue, sz*sz);
+				IndexedDataSource<R> p = Storage.allocate(realValue, sz*sz);
 				
 				GetRValues.compute(cmplxAlg, realAlg, result.rawData(), m);
 				GetIValues.compute(cmplxAlg, realAlg, result.rawData(), p);
 				
-				O mag = realAlg.construct();
-				O phas = realAlg.construct();
+				R mag = realAlg.construct();
+				R phas = realAlg.construct();
 				for (long i = 0; i < sz; i++) {
 					m.get(i, realValue);
 					p.get(i, imagValue);
@@ -2489,11 +2489,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					p.set(i, phas);
 				}
 		
-				DimensionedDataSource<O> magDs =
-						new NdData<O>(new long[] {sz, sz}, m);
+				DimensionedDataSource<R> magDs =
+						new NdData<R>(new long[] {sz, sz}, m);
 		
-				DimensionedDataSource<O> phasDs =
-						new NdData<O>(new long[] {sz, sz}, p);
+				DimensionedDataSource<R> phasDs =
+						new NdData<R>(new long[] {sz, sz}, p);
 		
 				magDs.setName("Magnitudes of FFT of "+input.getName());
 				
@@ -2505,29 +2505,29 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 				return true;
 			}
-				
-/* Nice FFT/InvFFT debugging code				
+
+/* Nice FFT/InvFFT debugging code
 
 				DimensionedDataSource<M> result2 = InvFFT2D.compute(cmplxAlg, realAlg, result);
 
 				IndexedDataSource<O> re = Storage.allocate(realValue, sz*sz);
 				IndexedDataSource<O> im = Storage.allocate(realValue, sz*sz);
-				
+
 				GetRValues.compute(cmplxAlg, realAlg, result2.rawData(), re);
 				GetIValues.compute(cmplxAlg, realAlg, result2.rawData(), im);
-				
+
 				DimensionedDataSource<O> reals =
 						new NdData<O>(new long[] {sz, sz}, re);
 		
 				DimensionedDataSource<O> imags =
 						new NdData<O>(new long[] {sz, sz}, im);
-		
-				reals.setName("Real values of FFT2 of xformed data");
-				
-				imags.setName("Imag values of FFT2 of xformed data");
+
+				reals.setName("Real values of InvFFT of FFT xformed data");
+
+				imags.setName("Imag values of InvFFT of FFT xformed data");
 
 				new RealImageViewer<>(realAlg, reals);
-				
+
 				new RealImageViewer<>(realAlg, imags);
 */
 				
@@ -2535,27 +2535,27 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 				DimensionedDataSource<M> complexDs =
 						new NdData<M>(new long[] {edgeSize, edgeSize}, complexOutput);
-		
+
 				complexDs.setName("FFT of "+input.getName());
-				
+
 				complexDs.setSource(input.getSource());
-				
+
 				new ComplexImageViewer<L,M,N,O>(cmplxAlg, realAlg, complexDs);
 */
 			
 			@Override
 			protected void done() {
-				
+
 				// here I am in a background thread but I will tell the event
 				//   thread to update it's control after exit here (or is it
 				//   right when setIcon() is invoked?)
-				
+
 				theLabel.setIcon(null);
-				
+
 				super.done();
 			}
 		};
-		
+
 		// here I am on the event thread hopefully it will update right away
 		
 		ImageIcon tmp = new ImageIcon(ICON_URL);

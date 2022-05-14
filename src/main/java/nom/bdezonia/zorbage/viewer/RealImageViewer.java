@@ -81,6 +81,7 @@ import nom.bdezonia.zorbage.algebra.Addition;
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.Bounded;
+import nom.bdezonia.zorbage.algebra.Conjugate;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algebra.GetComplex;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
@@ -98,6 +99,7 @@ import nom.bdezonia.zorbage.algebra.Unity;
 import nom.bdezonia.zorbage.algorithm.FFT2D;
 import nom.bdezonia.zorbage.algorithm.GetIValues;
 import nom.bdezonia.zorbage.algorithm.GetRValues;
+import nom.bdezonia.zorbage.algorithm.InvFFT2D;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.algorithm.NdSplit;
@@ -2345,7 +2347,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
-	public <CA extends Algebra<CA,C> & Addition<C> & Multiplication<C>,
+	public <CA extends Algebra<CA,C> & Addition<C> & Multiplication<C> & Conjugate<C>,
 			C extends SetComplex<R> & GetComplex<R> & Allocatable<C>,
 			RA extends Algebra<RA,R> & Trigonometric<R> & RealConstants<R> &
 				Multiplication<R> & Addition<R> & Invertible<R> & Unity<R> &
@@ -2472,6 +2474,18 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 				long sz = result.dimension(0);
 				
+//				DimensionedDataSource<R> magDs = DimensionedStorage.allocate(realValue, new long[] {sz,sz});
+
+//				R mag = realAlg.construct();
+//				for (long i = 0; i < sz*sz; i++) {
+//					result.rawData().get(i, tmpC);
+//					tmpC.getR(realValue);
+//					tmpC.getI(imagValue);
+//					PolarCoords.magnitude(realAlg, realValue, imagValue, mag);
+//					magDs.rawData().set(i, mag);
+//				}
+//				magDs.setCoordinateSpace(new Polar2dCoordinateSpace(BigDecimal.valueOf(1), BigDecimal.valueOf(Math.PI / 512.0)));
+
 				IndexedDataSource<R> m = Storage.allocate(realValue, sz*sz);
 				IndexedDataSource<R> p = Storage.allocate(realValue, sz*sz);
 				
@@ -2489,11 +2503,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					p.set(i, phas);
 				}
 		
-				DimensionedDataSource<R> magDs =
-						new NdData<R>(new long[] {sz, sz}, m);
+				DimensionedDataSource<R> magDs = new NdData<R>(new long[] {sz, sz}, m);
 		
-				DimensionedDataSource<R> phasDs =
-						new NdData<R>(new long[] {sz, sz}, p);
+				DimensionedDataSource<R> phasDs = new NdData<R>(new long[] {sz, sz}, p);
 		
 				magDs.setName("Magnitudes of FFT of "+input.getName());
 				
@@ -2503,24 +2515,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 				new RealImageViewer<>(realAlg, phasDs);
 
-				return true;
-			}
+				/* Nice FFT/InvFFT debugging code */
+				
+				DimensionedDataSource<C> result2 = InvFFT2D.compute(cmplxAlg, realAlg, result);
 
-/* Nice FFT/InvFFT debugging code
-
-				DimensionedDataSource<M> result2 = InvFFT2D.compute(cmplxAlg, realAlg, result);
-
-				IndexedDataSource<O> re = Storage.allocate(realValue, sz*sz);
-				IndexedDataSource<O> im = Storage.allocate(realValue, sz*sz);
+				IndexedDataSource<R> re = Storage.allocate(realValue, sz*sz);
+				IndexedDataSource<R> im = Storage.allocate(realValue, sz*sz);
 
 				GetRValues.compute(cmplxAlg, realAlg, result2.rawData(), re);
 				GetIValues.compute(cmplxAlg, realAlg, result2.rawData(), im);
 
-				DimensionedDataSource<O> reals =
-						new NdData<O>(new long[] {sz, sz}, re);
+				DimensionedDataSource<R> reals =
+						new NdData<R>(new long[] {sz, sz}, re);
 		
-				DimensionedDataSource<O> imags =
-						new NdData<O>(new long[] {sz, sz}, im);
+				DimensionedDataSource<R> imags =
+						new NdData<R>(new long[] {sz, sz}, im);
 
 				reals.setName("Real values of InvFFT of FFT xformed data");
 
@@ -2529,8 +2538,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				new RealImageViewer<>(realAlg, reals);
 
 				new RealImageViewer<>(realAlg, imags);
-*/
-				
+
+				return true;
+			}
+
 /* Support this instead of real viewers someday
 
 				DimensionedDataSource<M> complexDs =

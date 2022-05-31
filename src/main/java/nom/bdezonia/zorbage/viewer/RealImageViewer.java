@@ -82,15 +82,18 @@ import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.Bounded;
 import nom.bdezonia.zorbage.algebra.Conjugate;
+import nom.bdezonia.zorbage.algebra.Exponential;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algebra.GetComplex;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
+import nom.bdezonia.zorbage.algebra.Hyperbolic;
 import nom.bdezonia.zorbage.algebra.Infinite;
 import nom.bdezonia.zorbage.algebra.InverseTrigonometric;
 import nom.bdezonia.zorbage.algebra.Invertible;
 import nom.bdezonia.zorbage.algebra.Multiplication;
 import nom.bdezonia.zorbage.algebra.NaN;
 import nom.bdezonia.zorbage.algebra.Ordered;
+import nom.bdezonia.zorbage.algebra.Power;
 import nom.bdezonia.zorbage.algebra.RealConstants;
 import nom.bdezonia.zorbage.algebra.Roots;
 import nom.bdezonia.zorbage.algebra.SetComplex;
@@ -104,6 +107,7 @@ import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.algorithm.NdSplit;
 import nom.bdezonia.zorbage.algorithm.PolarCoords;
+import nom.bdezonia.zorbage.algorithm.Transform2;
 import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
 import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
@@ -113,6 +117,7 @@ import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
+import nom.bdezonia.zorbage.procedure.Procedure2;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
@@ -315,6 +320,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton toFloat = new JButton("To Float ...");
 		JButton explode = new JButton("Explode ...");
 		JButton fft = new JButton("FFT");
+		JButton transform = new JButton("Transform");
 		Dimension size = new Dimension(150, 40);
 		loadLut.setMinimumSize(size);
 		resetLut.setMinimumSize(size);
@@ -334,6 +340,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		swapAxes.setMinimumSize(size);
 		explode.setMinimumSize(size);
 		fft.setMinimumSize(size);
+		transform.setMinimumSize(size);
 		loadLut.setMaximumSize(size);
 		resetLut.setMaximumSize(size);
 		incZoom.setMaximumSize(size);
@@ -352,6 +359,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		swapAxes.setMaximumSize(size);
 		explode.setMaximumSize(size);
 		fft.setMaximumSize(size);
+		transform.setMaximumSize(size);
 		Box vertBox = Box.createVerticalBox();
 		vertBox.add(loadLut);
 		vertBox.add(resetLut);
@@ -371,6 +379,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		vertBox.add(swapAxes);
 		vertBox.add(explode);
 		vertBox.add(fft);
+		vertBox.add(transform);
 		buttonPanel.add(vertBox);
 		loadLut.addActionListener(new ActionListener() {
 			
@@ -998,7 +1007,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e) {
 				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
 				dlg.setLocationByPlatform(true);
-				dlg.setLayout(new FlowLayout());
+				dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
 				dlg.add(new JLabel("Choose floating point type of output"));
 				ButtonGroup bg = new ButtonGroup();
 				JRadioButton f16 = new JRadioButton("16 bit float");
@@ -1121,6 +1130,368 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						    "Image is not in a recognizable floating point format.",
 						    "WARNING",
 						    JOptionPane.WARNING_MESSAGE);
+			}
+		});
+		
+		transform.addActionListener(new ActionListener() {
+			
+			private JTextField constant = new JTextField("<Enter constant here>");
+			private Procedure2<U,U> xform = null;
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+				dlg.setLocationByPlatform(true);
+				dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
+				dlg.add(constant);
+				dlg.add(new JLabel("Choose operation"));
+				ButtonGroup bg = new ButtonGroup();
+				JRadioButton add = new JRadioButton("Add");
+				JRadioButton sub = new JRadioButton("Subtract");
+				JRadioButton mul = new JRadioButton("Multiply");
+				JRadioButton div = new JRadioButton("Divide");
+				JRadioButton pow = new JRadioButton("Power");
+				JRadioButton fill = new JRadioButton("Fill");
+				JRadioButton invert = new JRadioButton("Invert");
+				JRadioButton sqrt = new JRadioButton("Sqrt");
+				JRadioButton sqr = new JRadioButton("Square");
+				JRadioButton log = new JRadioButton("Log");
+				JRadioButton exp = new JRadioButton("Exp");
+				JRadioButton sin = new JRadioButton("Sin");
+				JRadioButton cos = new JRadioButton("Cos");
+				JRadioButton tan = new JRadioButton("Tan");
+				JRadioButton sinh = new JRadioButton("Sinh");
+				JRadioButton cosh = new JRadioButton("Cosh");
+				JRadioButton tanh = new JRadioButton("Tanh");
+				bg.add(add);
+				bg.add(sub);
+				bg.add(mul);
+				bg.add(div);
+				bg.add(pow);
+				bg.add(fill);
+				bg.add(invert);
+				bg.add(sqrt);
+				bg.add(sqr);
+				bg.add(log);
+				bg.add(exp);
+				bg.add(sin);
+				bg.add(cos);
+				bg.add(tan);
+				bg.add(sinh);
+				bg.add(cosh);
+				bg.add(tanh);
+				dlg.add(add);
+				dlg.add(sub);
+				dlg.add(mul);
+				dlg.add(div);
+				dlg.add(pow);
+				dlg.add(fill);
+				dlg.add(invert);
+				dlg.add(sqrt);
+				dlg.add(sqr);
+				dlg.add(log);
+				dlg.add(exp);
+				dlg.add(sin);
+				dlg.add(cos);
+				dlg.add(tan);
+				dlg.add(sinh);
+				dlg.add(cosh);
+				dlg.add(tanh);
+				
+				class ADD<A extends Algebra<A,U> & Addition<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								U cons = a.construct(constant.getText());
+								a.add().call(in, cons, out);
+							}
+						};
+					}
+				};
+				add.addActionListener(new ADD());
+
+				class SUB<A extends Algebra<A,U> & Addition<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								U cons = a.construct(constant.getText());
+								a.subtract().call(in, cons, out);
+							}
+						};
+					}
+				};
+				sub.addActionListener(new SUB());
+
+				class MUL<A extends Algebra<A,U> & Multiplication<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								U cons = a.construct(constant.getText());
+								a.multiply().call(in, cons, out);
+							}
+						};
+					}
+				};
+				mul.addActionListener(new MUL());
+
+				class DIV<A extends Algebra<A,U> & Invertible<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								U cons = a.construct(constant.getText());
+								a.divide().call(in, cons, out);
+							}
+						};
+					}
+				};
+				div.addActionListener(new DIV());
+
+				class POW<A extends Algebra<A,U> & Power<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								U cons = a.construct(constant.getText());
+								a.pow().call(in, cons, out);
+							}
+						};
+					}
+				};
+				pow.addActionListener(new POW());
+
+				class FILL<A extends Algebra<A,U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								U cons = a.construct(constant.getText());
+								a.assign().call(cons, out);
+							}
+						};
+					}
+				};
+				fill.addActionListener(new FILL());
+				
+				class INV<A extends Algebra<A,U> & Power<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						//xform = new Procedure2<U,U>() {
+						//	
+						//	@Override
+						//	public void call(U in, U out) {
+						//		U cons = a.construct(constant.getText());
+						//		a.pow().call(in, cons, out);
+						//	}
+						//};
+					}
+				};
+				invert.addActionListener(new INV());
+				
+				class SQRT<A extends Algebra<A,U> & Roots<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								a.sqrt().call(in, out);
+							}
+						};
+					}
+				};
+				sqrt.addActionListener(new SQRT());
+				
+				class SQR<A extends Algebra<A,U> & Multiplication<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								a.multiply().call(in, in, out);
+							}
+						};
+					}
+				};
+				sqr.addActionListener(new SQR());
+				
+				class LOG<A extends Algebra<A,U> & Exponential<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								a.log().call(in, out);
+							}
+						};
+					}
+				};
+				log.addActionListener(new LOG());
+				
+				class EXP<A extends Algebra<A,U> & Exponential<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								a.exp().call(in, out);
+							}
+						};
+					}
+				};
+				exp.addActionListener(new EXP());
+				
+				class SIN<A extends Algebra<A,U> & Trigonometric<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								a.sin().call(in, out);
+							}
+						};
+					}
+				};
+				sin.addActionListener(new SIN());
+
+				class COS<A extends Algebra<A,U> & Trigonometric<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								a.cos().call(in, out);
+							}
+						};
+					}
+				};
+				cos.addActionListener(new COS());
+				
+				class TAN<A extends Algebra<A,U> & Trigonometric<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								a.tan().call(in, out);
+							}
+						};
+					}
+				};
+				tan.addActionListener(new TAN());
+				
+				class SINH<A extends Algebra<A,U> & Hyperbolic<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								a.sinh().call(in, out);
+							}
+						};
+					}
+				};
+				sinh.addActionListener(new SINH());
+
+				class COSH<A extends Algebra<A,U> & Hyperbolic<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								a.cosh().call(in, out);
+							}
+						};
+					}
+				};
+				cosh.addActionListener(new COSH());
+				
+				class TANH<A extends Algebra<A,U> & Hyperbolic<U>> implements ActionListener {
+
+					A a = (A) alg;
+					public void actionPerformed(ActionEvent e) {
+					
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								a.tanh().call(in, out);
+							}
+						};
+					}
+				};
+				tanh.addActionListener(new TANH());
+				
+				
+				
+				JButton ok = new JButton("Ok");
+				ok.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						dlg.setVisible(false);
+					}
+				});
+				dlg.add(ok);
+				dlg.pack();
+				dlg.setVisible(true);
+				if (xform != null) {
+					Transform2.compute(alg, xform, planeData.getDataSource().rawData(), planeData.getDataSource().rawData());
+				}
 			}
 		});
 		
@@ -2473,6 +2844,36 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				DimensionedDataSource<C> result = FFT2D.compute(cmplxAlg, realAlg, complexData);
 				
 				long sz = result.dimension(0);
+
+				// swap quadrants: this should be optional and maybe part of FFT code
+				
+				C tmp1 = cmplxAlg.construct();
+				C tmp2 = cmplxAlg.construct();
+				
+				TwoDView<C> vw = new TwoDView<C>(result);
+				
+				long quadSize = sz/2;
+				
+				// swap ul and lr
+				for (long y = 0; y < quadSize; y++) {
+					for (long x = 0; x < quadSize; x++) {
+						vw.get(x, y, tmp1);
+						vw.get(x+quadSize, y+quadSize, tmp2);
+						vw.set(x+quadSize, y+quadSize, tmp1);
+						vw.set(x, y, tmp2);
+					}
+				}
+				
+				// swap ur and ll
+
+				for (long y = 0; y < quadSize; y++) {
+					for (long x = quadSize; x < sz; x++) {
+						vw.get(x, y, tmp1);
+						vw.get(x-quadSize, y+quadSize, tmp2);
+						vw.set(x-quadSize, y+quadSize, tmp1);
+						vw.set(x, y, tmp2);
+					}
+				}
 				
 //				DimensionedDataSource<R> magDs = DimensionedStorage.allocate(realValue, new long[] {sz,sz});
 
@@ -2515,7 +2916,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 				new RealImageViewer<>(realAlg, phasDs);
 
-				/* Nice FFT/InvFFT debugging code */
+				/* Nice FFT/InvFFT debugging code
 				
 				DimensionedDataSource<C> result2 = InvFFT2D.compute(cmplxAlg, realAlg, result);
 
@@ -2538,7 +2939,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				new RealImageViewer<>(realAlg, reals);
 
 				new RealImageViewer<>(realAlg, imags);
-
+				
+				*/
 				return true;
 			}
 

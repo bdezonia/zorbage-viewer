@@ -1205,11 +1205,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 					public void actionPerformed(ActionEvent e) {
 					
+						U cons = a.construct(constant.getText());
+
 						xform = new Procedure2<U,U>() {
 							
 							@Override
 							public void call(U in, U out) {
-								U cons = a.construct(constant.getText());
 								a.add().call(in, cons, out);
 							}
 						};
@@ -1223,11 +1224,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 					public void actionPerformed(ActionEvent e) {
 					
+						U cons = a.construct(constant.getText());
+
 						xform = new Procedure2<U,U>() {
 							
 							@Override
 							public void call(U in, U out) {
-								U cons = a.construct(constant.getText());
 								a.subtract().call(in, cons, out);
 							}
 						};
@@ -1241,11 +1243,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 					public void actionPerformed(ActionEvent e) {
 					
+						U cons = a.construct(constant.getText());
+
 						xform = new Procedure2<U,U>() {
 							
 							@Override
 							public void call(U in, U out) {
-								U cons = a.construct(constant.getText());
 								a.multiply().call(in, cons, out);
 							}
 						};
@@ -1261,11 +1264,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 					public void actionPerformed(ActionEvent e) {
 					
+						U cons = a.construct(constant.getText());
+
 						xform = new Procedure2<U,U>() {
 							
 							@Override
 							public void call(U in, U out) {
-								U cons = a.construct(constant.getText());
 								if (floatDiv)
 									a.divide().call(in, cons, out);
 								else
@@ -1282,11 +1286,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 					public void actionPerformed(ActionEvent e) {
 					
+						U cons = a.construct(constant.getText());
+
 						xform = new Procedure2<U,U>() {
 							
 							@Override
 							public void call(U in, U out) {
-								U cons = a.construct(constant.getText());
 								a.pow().call(in, cons, out);
 							}
 						};
@@ -1300,11 +1305,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 					public void actionPerformed(ActionEvent e) {
 					
+						U cons = a.construct(constant.getText());
+
 						xform = new Procedure2<U,U>() {
 							
 							@Override
 							public void call(U in, U out) {
-								U cons = a.construct(constant.getText());
 								a.assign().call(cons, out);
 							}
 						};

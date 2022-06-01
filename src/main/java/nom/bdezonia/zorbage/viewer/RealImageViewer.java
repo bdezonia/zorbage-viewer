@@ -103,7 +103,6 @@ import nom.bdezonia.zorbage.algebra.Unity;
 import nom.bdezonia.zorbage.algorithm.FFT2D;
 import nom.bdezonia.zorbage.algorithm.GetIValues;
 import nom.bdezonia.zorbage.algorithm.GetRValues;
-import nom.bdezonia.zorbage.algorithm.InvFFT2D;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.algorithm.NdSplit;
@@ -1140,6 +1139,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			private Procedure2<U,U> xform = null;
 			
 			@Override
+			@SuppressWarnings("rawtypes")
 			public void actionPerformed(ActionEvent e) {
 				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
 				dlg.setLocationByPlatform(true);
@@ -1202,6 +1202,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class ADD<A extends Algebra<A,U> & Addition<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1219,6 +1220,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class SUB<A extends Algebra<A,U> & Addition<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1236,6 +1238,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class MUL<A extends Algebra<A,U> & Multiplication<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1255,6 +1258,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					boolean floatDiv = alg instanceof Invertible;
 					
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1275,6 +1279,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class POW<A extends Algebra<A,U> & Power<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1292,6 +1297,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class FILL<A extends Algebra<A,U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1306,19 +1312,28 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				};
 				fill.addActionListener(new FILL());
 				
-				class INV<A extends Algebra<A,U> & Power<U>> implements ActionListener {
+				class INV<A extends Algebra<A,U> & Addition<U> & Ordered<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
-						//xform = new Procedure2<U,U>() {
-						//	
-						//	@Override
-						//	public void call(U in, U out) {
-						//		U cons = a.construct(constant.getText());
-						//		a.pow().call(in, cons, out);
-						//	}
-						//};
+						U tmp = a.construct();
+
+						U min = a.construct();
+
+						U max = a.construct();
+						
+						MinMaxElement.compute(a, planeData.getDataSource().rawData(), min, max);
+
+						xform = new Procedure2<U,U>() {
+							
+							@Override
+							public void call(U in, U out) {
+								a.subtract().call(max, in, tmp);
+								a.add().call(tmp, min, out);
+							}
+						};
 					}
 				};
 				invert.addActionListener(new INV());
@@ -1326,6 +1341,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class SQRT<A extends Algebra<A,U> & Roots<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1342,6 +1358,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class SQR<A extends Algebra<A,U> & Multiplication<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1358,6 +1375,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class LOG<A extends Algebra<A,U> & Exponential<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1374,6 +1392,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class EXP<A extends Algebra<A,U> & Exponential<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1390,6 +1409,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class SIN<A extends Algebra<A,U> & Trigonometric<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1406,6 +1426,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class COS<A extends Algebra<A,U> & Trigonometric<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1422,6 +1443,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class TAN<A extends Algebra<A,U> & Trigonometric<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1438,6 +1460,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class SINH<A extends Algebra<A,U> & Hyperbolic<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1454,6 +1477,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class COSH<A extends Algebra<A,U> & Hyperbolic<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1470,6 +1494,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				class TANH<A extends Algebra<A,U> & Hyperbolic<U>> implements ActionListener {
 
 					A a = (A) alg;
+					
 					public void actionPerformed(ActionEvent e) {
 					
 						xform = new Procedure2<U,U>() {
@@ -1483,8 +1508,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				};
 				tanh.addActionListener(new TANH());
 				
-				
-				
 				JButton ok = new JButton("Ok");
 				ok.addActionListener(new ActionListener() {
 					@Override
@@ -1492,11 +1515,17 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						dlg.setVisible(false);
 					}
 				});
+				
 				dlg.add(ok);
+				
 				dlg.pack();
+				
 				dlg.setVisible(true);
+				
 				if (xform != null) {
+					
 					Transform2.compute(alg, xform, planeData.getDataSource().rawData(), planeData.getDataSource().rawData());
+					
 					pz.draw();
 				}
 			}

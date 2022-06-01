@@ -88,6 +88,7 @@ import nom.bdezonia.zorbage.algebra.GetComplex;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
 import nom.bdezonia.zorbage.algebra.Hyperbolic;
 import nom.bdezonia.zorbage.algebra.Infinite;
+import nom.bdezonia.zorbage.algebra.IntegralDivision;
 import nom.bdezonia.zorbage.algebra.InverseTrigonometric;
 import nom.bdezonia.zorbage.algebra.Invertible;
 import nom.bdezonia.zorbage.algebra.Multiplication;
@@ -1249,8 +1250,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				};
 				mul.addActionListener(new MUL());
 
-				class DIV<A extends Algebra<A,U> & Invertible<U>> implements ActionListener {
+				class DIV<A extends Algebra<A,U> & Invertible<U> & IntegralDivision<U>> implements ActionListener {
 
+					boolean floatDiv = alg instanceof Invertible;
+					
 					A a = (A) alg;
 					public void actionPerformed(ActionEvent e) {
 					
@@ -1259,7 +1262,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							@Override
 							public void call(U in, U out) {
 								U cons = a.construct(constant.getText());
-								a.divide().call(in, cons, out);
+								if (floatDiv)
+									a.divide().call(in, cons, out);
+								else
+									a.div().call(in, cons, out);
 							}
 						};
 					}
@@ -1491,6 +1497,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				dlg.setVisible(true);
 				if (xform != null) {
 					Transform2.compute(alg, xform, planeData.getDataSource().rawData(), planeData.getDataSource().rawData());
+					pz.draw();
 				}
 			}
 		});

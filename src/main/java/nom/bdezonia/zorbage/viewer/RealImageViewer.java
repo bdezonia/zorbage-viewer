@@ -103,6 +103,7 @@ import nom.bdezonia.zorbage.algebra.Unity;
 import nom.bdezonia.zorbage.algorithm.FFT2D;
 import nom.bdezonia.zorbage.algorithm.GetIValues;
 import nom.bdezonia.zorbage.algorithm.GetRValues;
+import nom.bdezonia.zorbage.algorithm.InvFFT2D;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.algorithm.NdSplit;
@@ -2895,7 +2896,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				TwoDView<C> vw = new TwoDView<C>(result);
 				
 				long quadSize = sz/2;
-				
+/*				
 				// swap ul and lr
 				for (long y = 0; y < quadSize; y++) {
 					for (long x = 0; x < quadSize; x++) {
@@ -2916,6 +2917,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						vw.set(x, y, tmp2);
 					}
 				}
+*/
 				
 //				DimensionedDataSource<R> magDs = DimensionedStorage.allocate(realValue, new long[] {sz,sz});
 
@@ -2958,7 +2960,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 				new RealImageViewer<>(realAlg, phasDs);
 
-				/* Nice FFT/InvFFT debugging code
+				// /* Nice FFT/InvFFT debugging code
 				
 				DimensionedDataSource<C> result2 = InvFFT2D.compute(cmplxAlg, realAlg, result);
 
@@ -2982,7 +2984,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 				new RealImageViewer<>(realAlg, imags);
 				
-				*/
+				// */
+				
 				return true;
 			}
 

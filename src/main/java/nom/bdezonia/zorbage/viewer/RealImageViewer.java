@@ -321,7 +321,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton toFloat = new JButton("To Float ...");
 		JButton explode = new JButton("Explode ...");
 		JButton fft = new JButton("FFT");
-		JButton transform = new JButton("Transform");
+		JButton transform = new JButton("Transform ...");
 		Dimension size = new Dimension(150, 40);
 		loadLut.setMinimumSize(size);
 		resetLut.setMinimumSize(size);
@@ -2888,48 +2888,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 				long sz = result.dimension(0);
 
-				// swap quadrants: this should be optional and maybe part of FFT code
+				// swap quadrants: this should be a runtime option
 				
 				C tmp1 = cmplxAlg.construct();
 				C tmp2 = cmplxAlg.construct();
 				
 				TwoDView<C> vw = new TwoDView<C>(result);
 				
-				long quadSize = sz/2;
-/*				
-				// swap ul and lr
-				for (long y = 0; y < quadSize; y++) {
-					for (long x = 0; x < quadSize; x++) {
-						vw.get(x, y, tmp1);
-						vw.get(x+quadSize, y+quadSize, tmp2);
-						vw.set(x+quadSize, y+quadSize, tmp1);
-						vw.set(x, y, tmp2);
-					}
-				}
-				
-				// swap ur and ll
-
-				for (long y = 0; y < quadSize; y++) {
-					for (long x = quadSize; x < sz; x++) {
-						vw.get(x, y, tmp1);
-						vw.get(x-quadSize, y+quadSize, tmp2);
-						vw.set(x-quadSize, y+quadSize, tmp1);
-						vw.set(x, y, tmp2);
-					}
-				}
-*/
-				
-//				DimensionedDataSource<R> magDs = DimensionedStorage.allocate(realValue, new long[] {sz,sz});
-
-//				R mag = realAlg.construct();
-//				for (long i = 0; i < sz*sz; i++) {
-//					result.rawData().get(i, tmpC);
-//					tmpC.getR(realValue);
-//					tmpC.getI(imagValue);
-//					PolarCoords.magnitude(realAlg, realValue, imagValue, mag);
-//					magDs.rawData().set(i, mag);
-//				}
-//				magDs.setCoordinateSpace(new Polar2dCoordinateSpace(BigDecimal.valueOf(1), BigDecimal.valueOf(Math.PI / 512.0)));
+				swapQuadrants(vw, tmp1, tmp2);
 
 				IndexedDataSource<R> m = Storage.allocate(realValue, sz*sz);
 				IndexedDataSource<R> p = Storage.allocate(realValue, sz*sz);
@@ -2961,6 +2927,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				new RealImageViewer<>(realAlg, phasDs);
 
 				// /* Nice FFT/InvFFT debugging code
+
+				// swap quadrants again to undo prev swap
+				
+				swapQuadrants(vw, tmp1, tmp2);
 				
 				DimensionedDataSource<C> result2 = InvFFT2D.compute(cmplxAlg, realAlg, result);
 
@@ -2984,8 +2954,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 				new RealImageViewer<>(realAlg, imags);
 				
-				// */
-				
 				return true;
 			}
 
@@ -3000,6 +2968,32 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 				new ComplexImageViewer<L,M,N,O>(cmplxAlg, realAlg, complexDs);
 */
+			
+			private void swapQuadrants(TwoDView<C> vw, C tmp1, C tmp2) {
+
+				long quadSize = vw.d0() / 2;
+				
+				// swap ul and lr
+				for (long y = 0; y < quadSize; y++) {
+					for (long x = 0; x < quadSize; x++) {
+						vw.get(x, y, tmp1);
+						vw.get(x+quadSize, y+quadSize, tmp2);
+						vw.set(x+quadSize, y+quadSize, tmp1);
+						vw.set(x, y, tmp2);
+					}
+				}
+			
+				// swap ur and ll
+
+				for (long y = 0; y < quadSize; y++) {
+					for (long x = quadSize; x < vw.d0(); x++) {
+						vw.get(x, y, tmp1);
+						vw.get(x-quadSize, y+quadSize, tmp2);
+						vw.set(x-quadSize, y+quadSize, tmp1);
+						vw.set(x, y, tmp2);
+					}
+				}
+			}
 			
 			@Override
 			protected void done() {

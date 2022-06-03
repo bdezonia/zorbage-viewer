@@ -2890,12 +2890,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 				// swap quadrants: this should be a runtime option
 				
-				C tmp1 = cmplxAlg.construct();
-				C tmp2 = cmplxAlg.construct();
-				
-				TwoDView<C> vw = new TwoDView<C>(result);
-				
-				swapQuadrants(vw, tmp1, tmp2);
+				swapQuadrants(cmplxAlg, result);
 
 				IndexedDataSource<R> m = Storage.allocate(realValue, sz*sz);
 				IndexedDataSource<R> p = Storage.allocate(realValue, sz*sz);
@@ -2930,7 +2925,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 				// swap quadrants again to undo prev swap
 				
-				swapQuadrants(vw, tmp1, tmp2);
+				swapQuadrants(cmplxAlg, result);
 				
 				DimensionedDataSource<C> result2 = InvFFT2D.compute(cmplxAlg, realAlg, result);
 
@@ -2969,7 +2964,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				new ComplexImageViewer<L,M,N,O>(cmplxAlg, realAlg, complexDs);
 */
 			
-			private void swapQuadrants(TwoDView<C> vw, C tmp1, C tmp2) {
+			private void swapQuadrants(CA alg, DimensionedDataSource<C> data) {
+				
+				C tmp1 = alg.construct();
+				C tmp2 = alg.construct();
+				
+				TwoDView<C> vw = new TwoDView<C>(data);
 
 				long quadSize = vw.d0() / 2;
 				

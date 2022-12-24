@@ -185,6 +185,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	 * @param dataSource The data to display
 	 */
 	public RealImageViewer(T alg, DimensionedDataSource<U> dataSource) {
+		
 		this(alg, dataSource, 0, 1, null, null);
 	}
 
@@ -386,9 +387,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+		
 				JFileChooser jfc = new JFileChooser();
+				
 				int retVal = jfc.showOpenDialog(frame);
+				
 				if (retVal == 0) {
+				
 					setColorTable(LutUtils.loadLUT(jfc.getSelectedFile()));
 				}
 			}
@@ -397,6 +402,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+			
 				setColorTable(LutUtils.DEFAULT_COLOR_TABLE);
 			}
 		});
@@ -407,20 +413,33 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				
 				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+				
 				dlg.setLocationByPlatform(true);
+				
 				dlg.setLayout(new FlowLayout());
+				
 				dlg.add(new JLabel("Choose two dimensions that specify the planes of interest"));
+				
 				for (int i = 0; i < dataSource.numDimensions(); i++) {
+				
 					checked[i] = false;
+					
 					String label = "" + i + ": " + dataSource.getAxisType(i);
+					
 					JCheckBox bx = new JCheckBox(label);
 					bx.addActionListener(new ActionListener() {
+					
 						@Override
 						public void actionPerformed(ActionEvent e) {
+						
 							String label = bx.getText();
+							
 							int pos = label.indexOf(':');
+							
 							int dimNum = Integer.parseInt(label.substring(0,pos));
+							
 							checked[dimNum] = !checked[dimNum];
 						}
 					});
@@ -428,17 +447,23 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				}
 				JButton ok = new JButton("Ok");
 				ok.addActionListener(new ActionListener() {
+					
 					@Override
 					public void actionPerformed(ActionEvent e) {
+					
 						cancelled = false;
+						
 						dlg.setVisible(false);
 					}
 				});
 				JButton cancel = new JButton("Cancel");
 				cancel.addActionListener(new ActionListener() {
+					
 					@Override
 					public void actionPerformed(ActionEvent e) {
+					
 						cancelled = true;
+						
 						dlg.setVisible(false);
 					}
 				});
@@ -489,10 +514,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+
 				if (pz.increaseZoom()) {
+				
 					scaleLabel.setText("Scale: " + pz.effectiveScale());
+					
 					setZoomCenterLabels();
+					
 					pz.draw();
+					
 					frame.repaint();
 				}
 			}
@@ -501,10 +531,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+
 				if (pz.decreaseZoom()) {
+				
 					scaleLabel.setText("Scale: " + pz.effectiveScale());
+					
 					setZoomCenterLabels();
+					
 					pz.draw();
+					
 					frame.repaint();
 				}
 			}
@@ -513,9 +548,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+
 				if (pz.panLeft(75)) {
+				
 					setZoomCenterLabels();
+					
 					pz.draw();
+					
 					frame.repaint();
 				}
 			}
@@ -524,9 +563,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				
 				if (pz.panRight(75)) {
+				
 					setZoomCenterLabels();
+					
 					pz.draw();
+					
 					frame.repaint();
 				}
 			}
@@ -535,9 +578,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				
 				if (pz.panUp(75)) {
+				
 					setZoomCenterLabels();
+					
 					pz.draw();
+					
 					frame.repaint();
 				}
 			}
@@ -546,9 +593,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				
 				if (pz.panDown(75)) {
+				
 					setZoomCenterLabels();
+					
 					pz.draw();
+					
 					frame.repaint();
 				}
 			}
@@ -557,10 +608,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				
 				pz.reset();
+				
 				scaleLabel.setText("Scale: " + pz.effectiveScale());
+				
 				setZoomCenterLabels();
+				
 				pz.draw();
+				
 				frame.repaint();
 			}
 		});
@@ -568,6 +624,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				
 				SwingWorker<Object,Object> worker = new SwingWorker<Object, Object>() {
 					
 					boolean cancelled = false;
@@ -575,96 +632,151 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					String origMaxStrVal = effectiveMaxToStr(); 
 					MathContext context = new MathContext(7);
 					
-
 					@Override
 					protected Object doInBackground() throws Exception {
+
 						JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+						
 						dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
+						
 						dlg.add(new JLabel("Choose two values that specify the range of values to display"));
+						
 						JButton resetButton = new JButton("Reset");
+						
 						dlg.add(resetButton);
+						
 						dlg.add(new JLabel("Min displayable value"));
+						
 						JTextField minField = new JTextField(20);
+						
 						minField.setText(effectiveMinToStr());
+						
 						dlg.add(minField);
+						
 						BigDecimal dataRange = actualMax().subtract(actualMin());
+						
 						JScrollBar minScroll = new JScrollBar(JScrollBar.HORIZONTAL);
+						
 						minScroll.setMinimum(0);
+						
 						minScroll.setMaximum(999);
+						
 						minScroll.setUnitIncrement(1);
+						
 						minScroll.getModel().setExtent(10);
+						
 						BigDecimal effMin = effectiveMin();
+						
 						BigDecimal fraction = effMin.subtract(actualMin());
+						
 						int sliderPos = BigDecimal.valueOf(minScroll.getMaximum()).multiply(fraction).divide(dataRange, context).intValue();
+						
 						minScroll.setValue(sliderPos);
+						
 						minScroll.addAdjustmentListener(
 						
 							new AdjustmentListener() {
 
 								@Override
 								public void adjustmentValueChanged(AdjustmentEvent e) {
+						
 									HighPrecisionMember minHP = G.HP.construct();
+									
 									HighPrecisionMember maxHP = G.HP.construct();
+									
 									((HighPrecRepresentation) min).toHighPrec(minHP);
+									
 									((HighPrecRepresentation) max).toHighPrec(maxHP);
+									
 									int sliderMin = minScroll.getMinimum();
+									
 									int sliderMax = minScroll.getMaximum();
+									
 									int sliderValue = minScroll.getValue();
+									
 									if (500 <= sliderValue && sliderValue < 510) {
+									
 										switch (sliderValue) {
+										
 										case 500:
 											sliderValue = 500;
 											break;
+										
 										case 501:
 											sliderValue = 503;
 											break;
+										
 										case 502:
 											sliderValue = 505;
 											break;
+										
 										case 503:
 											sliderValue = 507;
 											break;
+										
 										case 504:
 											sliderValue = 509;
 											break;
+										
 										case 505:
 											sliderValue = 511;
 											break;
+										
 										case 506:
 											sliderValue = 513;
 											break;
+										
 										case 507:
 											sliderValue = 515;
 											break;
+										
 										case 508:
 											sliderValue = 517;
 											break;
+										
 										case 509:
 											sliderValue = 519;
 											break;
 										}
 									}
 									else if (sliderValue >= 510) {
+										
 										sliderValue += minScroll.getModel().getExtent();
 									}
+									
 									BigDecimal percent = BigDecimal.valueOf(sliderValue - sliderMin).divide(BigDecimal.valueOf(sliderMax - sliderMin), context);
+									
 									BigDecimal dataRange = (maxHP.v().subtract(minHP.v()));
+									
 									BigDecimal subrange = percent.multiply(dataRange, context);
+									
 									BigDecimal newValue = minHP.v().add(subrange);
+									
 									minHP.setV(newValue);
+									
 									minField.setText(newValue.toString());
+									
 									if (dispMin == null)
 										dispMin = G.HP.construct();
+									
 									dispMin.fromHighPrec(minHP);
+
 //									String dispMaxStr = effectiveMaxToStr();
+
 									String dispMinStr = effectiveMinToStr();
+									
 									if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
 										dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+
 //									if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
 //										dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+
 									dispMinLabel.setText("Disp Min: " + dispMinStr);
+									
 //									dispMaxLabel.setText("Disp Max: " + dispMaxStr);
+									
 									pz.draw();
+									
 									frame.repaint();
 								}
 							}
@@ -674,33 +786,55 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void focusLost(FocusEvent arg0) {
+
 								String numStr = minField.getText();
+								
 								if (numStr != null && numStr.length() > 0) {
+								
 									BigDecimal num;
+									
 									try { 
+									
 										num = new BigDecimal(numStr);
+									
 									} catch (NumberFormatException exc) {
+										
 										return;
 									}
+
 									BigDecimal numer = num.subtract(actualMin());
+									
 									BigDecimal denom = actualMax().subtract(actualMin());
+									
 									if (denom.compareTo(BigDecimal.ZERO) == 0)
 										denom = BigDecimal.ONE;
+									
 									BigDecimal percent = numer.divide(denom, context);
+									
 									if (percent.compareTo(BigDecimal.ZERO) < 0)
 										percent = BigDecimal.ZERO;
+									
 									if (percent.compareTo(BigDecimal.ONE) > 0)
 										percent = BigDecimal.ONE;
+									
 									int pos = percent.multiply(BigDecimal.valueOf(minScroll.getMaximum())).intValue();
+									
 									minScroll.setValue(pos);
+									
 									if (dispMin == null)
 										dispMin = G.HP.construct();
+									
 									dispMin.setV(percent.multiply(denom));
+									
 									String dispMinStr = effectiveMinToStr();
+									
 									if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
 										dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+									
 									dispMaxLabel.setText("Disp Min: " + dispMinStr);
+									
 									pz.draw();
+									
 									frame.repaint();
 								}
 							}
@@ -728,68 +862,104 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 								
 								@Override
 								public void adjustmentValueChanged(AdjustmentEvent e) {
+									
 									HighPrecisionMember minHP = G.HP.construct();
+									
 									HighPrecisionMember maxHP = G.HP.construct();
+									
 									((HighPrecRepresentation) min).toHighPrec(minHP);
+									
 									((HighPrecRepresentation) max).toHighPrec(maxHP);
+									
 									int sliderMin = maxScroll.getMinimum();
+									
 									int sliderMax = maxScroll.getMaximum();
+									
 									int sliderValue = maxScroll.getValue();
+									
 									if (500 <= sliderValue && sliderValue < 510) {
+									
 										switch (sliderValue) {
+										
 										case 500:
 											sliderValue = 500;
 											break;
+										
 										case 501:
 											sliderValue = 503;
 											break;
+										
 										case 502:
 											sliderValue = 505;
 											break;
+										
 										case 503:
 											sliderValue = 507;
 											break;
+										
 										case 504:
 											sliderValue = 509;
 											break;
+										
 										case 505:
 											sliderValue = 511;
 											break;
+										
 										case 506:
 											sliderValue = 513;
 											break;
+										
 										case 507:
 											sliderValue = 515;
 											break;
+										
 										case 508:
 											sliderValue = 517;
 											break;
+										
 										case 509:
 											sliderValue = 519;
 											break;
 										}
 									}
 									else if (sliderValue >= 510) {
+										
 										sliderValue += maxScroll.getModel().getExtent();
 									}
+
 									BigDecimal percent = BigDecimal.valueOf(sliderValue - sliderMin).divide(BigDecimal.valueOf(sliderMax - sliderMin), context);
+									
 									BigDecimal dataRange = (maxHP.v().subtract(minHP.v()));
+									
 									BigDecimal subrange = percent.multiply(dataRange, context);
+									
 									BigDecimal newValue = minHP.v().add(subrange);
+									
 									maxHP.setV(newValue);
+									
 									maxField.setText(newValue.toString());
+									
 									if (dispMax == null)
 										dispMax = G.HP.construct();
+									
 									dispMax.fromHighPrec(maxHP);
+									
 //									String dispMinStr = effectiveMinToStr();
+									
 									String dispMaxStr = effectiveMaxToStr();
+									
 //									if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
 //										dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+									
 									if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
 										dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+
 //									dispMinLabel.setText("Disp Min: " + dispMinStr);
+									
 									dispMaxLabel.setText("Disp Max: " + dispMaxStr);
+									
 									pz.draw();
+									
 									frame.repaint();
 								}
 							}
@@ -799,33 +969,55 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void focusLost(FocusEvent arg0) {
+								
 								String numStr = maxField.getText();
+								
 								if (numStr != null && numStr.length() > 0) {
+								
 									BigDecimal num;
+									
 									try { 
+									
 										num = new BigDecimal(numStr);
+									
 									} catch (NumberFormatException exc) {
+									
 										return;
 									}
+									
 									BigDecimal numer = num.subtract(actualMin());
+									
 									BigDecimal denom = actualMax().subtract(actualMin());
+									
 									if (denom.compareTo(BigDecimal.ZERO) == 0)
 										denom = BigDecimal.ONE;
+									
 									BigDecimal percent = numer.divide(denom, context);
+									
 									if (percent.compareTo(BigDecimal.ZERO) < 0)
 										percent = BigDecimal.ZERO;
+									
 									if (percent.compareTo(BigDecimal.ONE) > 0)
 										percent = BigDecimal.ONE;
+									
 									int pos = percent.multiply(BigDecimal.valueOf(maxScroll.getMaximum())).intValue();
+									
 									maxScroll.setValue(pos);
+									
 									if (dispMax == null)
 										dispMax = G.HP.construct();
+									
 									dispMax.setV(percent.multiply(denom));
+									
 									String dispMaxStr = effectiveMaxToStr();
+									
 									if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
 										dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+									
 									dispMaxLabel.setText("Disp Max: " + dispMaxStr);
+									
 									pz.draw();
+									
 									frame.repaint();
 								}
 							}
@@ -835,29 +1027,42 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							}
 						});
 						resetButton.addActionListener(new ActionListener() {
+
 							@Override
 							public void actionPerformed(ActionEvent e) {
+							
 								dispMin = null;
+								
 								dispMax = null;
+								
 								minField.setText(min.toString());
+								
 								maxField.setText(max.toString());
+								
 								minScroll.setValue(minScroll.getMinimum());
+								
 								maxScroll.setValue(maxScroll.getMaximum());
 							}
 						});
 						JButton ok = new JButton("Ok");
 						ok.addActionListener(new ActionListener() {
+							
 							@Override
 							public void actionPerformed(ActionEvent e) {
+							
 								cancelled = false;
+								
 								dlg.setVisible(false);
 							}
 						});
 						JButton cancel = new JButton("Cancel");
 						cancel.addActionListener(new ActionListener() {
+							
 							@Override
 							public void actionPerformed(ActionEvent e) {
+								
 								cancelled = true;
+								
 								dlg.setVisible(false);
 							}
 						});
@@ -865,47 +1070,68 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						dlg.add(cancel);
 						dlg.pack();
 						dlg.setVisible(true);
+						
 						String minStr = minField.getText();
+						
 						String maxStr = maxField.getText();
+						
 						if (cancelled) {
+						
 							minStr = origMinStrVal;
 							maxStr = origMaxStrVal;
 						}
 						else {
+							
 							minStr = minField.getText();
 							maxStr = maxField.getText();
 						}
 						if (minStr == null || minStr.length() == 0 || minStr.equals(min.toString())) {
+							
 							dispMin = null;
 						}
 						else {
+							
 							dispMin = G.HP.construct(minStr);
 						}
 						if (maxStr == null || maxStr.length() == 0 || maxStr.equals(max.toString())) {
+							
 							dispMax = null;
 						}
 						else {
+							
 							dispMax = G.HP.construct(maxStr);
 						}
+
 						String dispMinStr = effectiveMinToStr();
+						
 						String dispMaxStr = effectiveMaxToStr();
+						
 						if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
 							dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+						
 						if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
 							dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+						
 						dispMinLabel.setText("Disp Min: " + dispMinStr);
+						
 						dispMaxLabel.setText("Disp Max: " + dispMaxStr);
+						
 						pz.draw();
+						
 						frame.repaint();
+						
 						return true;
 					}
 				};
+				
 				worker.execute();
 			}
 		});
 		winSize.addActionListener(new ActionListener() {
+			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+			
 				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
 				dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
 				dlg.add(new JLabel("Choose width and height of new data windows"));
@@ -925,32 +1151,50 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 					@Override
 					public void actionPerformed(ActionEvent e) {
+
 						dlg.setVisible(false);
+						
 						int width;
+						
 						int height;
+						
 						String widthStr = widthField.getText();
+						
 						if (widthStr != null && widthStr.length() > 0) {
+						
 							try { 
+							
 								width = Integer.parseInt(widthStr);
+							
 							} catch (NumberFormatException exc) {
+							
 								return;
 							}
+							
 							if (width < 1 || width > 1024) return;
 						}
 						else
 							return;
+						
 						String heightStr = heightField.getText();
+						
 						if (heightStr != null && heightStr.length() > 0) {
+						
 							try { 
+							
 								height = Integer.parseInt(heightStr);
+							
 							} catch (NumberFormatException exc) {
+							
 								return;
 							}
 							if (height < 1 || height > 1024) return;
 						}
 						else
 							return;
+						
 						desiredWidth = width;
+						
 						desiredHeight = height;
 					}					
 				});
@@ -968,16 +1212,25 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				
 				U value = alg.construct();
+				
 				DimensionedDataSource<ArgbMember> dataSource = null;
+				
 				if (value instanceof UnsignedInt8Member) {
+				
 					DimensionedDataSource<UnsignedInt8Member> casted = 
 							(DimensionedDataSource<UnsignedInt8Member>) planeData.getDataSource();
+					
 					// search for channel dim: start at far end of dimensions
 					int channelDim = -1;
+					
 					for (int i = casted.numDimensions()-1; i >= 0; i--) {
+					
 						long theVal = casted.dimension(i);
+						
 						if (theVal == 3 || theVal == 4) {
+						
 							channelDim = i;
 							break;
 						}
@@ -1066,7 +1319,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				ok.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent e) {
+					
 						cancelled = false;
+						
 						dlg.setVisible(false);
 					}
 				});
@@ -1074,7 +1329,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				cancel.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent e) {
+						
 						cancelled = true;
+						
 						dlg.setVisible(false);
 					}
 				});
@@ -1083,6 +1340,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				dlg.pack();
 				dlg.setVisible(true);
 				if (!cancelled && fltAlg != null) {
+					
 					convertToFloat(fltAlg, alg, planeData.getDataSource());
 				}
 			}
@@ -1093,13 +1351,19 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			public void actionPerformed(ActionEvent e)
 			{
 				DimensionedDataSource<U> dataSource = planeData.getDataSource();
+				
 				String[] axes = new String[dataSource.numDimensions()];
+				
 				for (int i = 0; i < axes.length; i++) {
+				
 					String label = dataSource.getAxisType(i);
+					
 					axes[i] = label;
 				}
+				
 				int axis = JOptionPane.showOptionDialog(frame, "Choose an axis to explode along", "Axis chooser",
 						JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, axes, null);
+				
 				if (axis >= 0 && axis < dataSource.numDimensions())
 					explode(dataSource, axis);
 			}
@@ -1112,18 +1376,23 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				DimensionedDataSource<U> data = grabCurrentPlane();
 				
 				if (min instanceof Float16Member) {
+				
 					doFFT(G.CHLF, G.HLF, data, constructionLabel);
 				}
 				else if (min instanceof Float32Member) {
+					
 					doFFT(G.CFLT, G.FLT, data, constructionLabel);
 				}
 				else if (min instanceof Float64Member) {
+					
 					doFFT(G.CDBL, G.DBL, data, constructionLabel);
 				}
 				else if (min instanceof Float128Member) {
+					
 					doFFT(G.CQUAD, G.QUAD, data, constructionLabel);
 				}
 				else if (min instanceof HighPrecisionMember) {
+					
 					doFFT(G.CHP, G.HP, data, constructionLabel);
 				}
 				else
@@ -1212,6 +1481,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+					
 								a.add().call(in, cons, out);
 							}
 						};
@@ -1231,6 +1501,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.subtract().call(in, cons, out);
 							}
 						};
@@ -1250,6 +1521,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.multiply().call(in, cons, out);
 							}
 						};
@@ -1271,6 +1543,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								if (floatDiv)
 									a.divide().call(in, cons, out);
 								else
@@ -1293,6 +1566,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.pow().call(in, cons, out);
 							}
 						};
@@ -1312,6 +1586,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.assign().call(cons, out);
 							}
 						};
@@ -1337,7 +1612,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.subtract().call(max, in, tmp);
+								
 								a.add().call(tmp, min, out);
 							}
 						};
@@ -1355,6 +1632,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.sqrt().call(in, out);
 							}
 						};
@@ -1372,6 +1650,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.multiply().call(in, in, out);
 							}
 						};
@@ -1389,6 +1668,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.log().call(in, out);
 							}
 						};
@@ -1406,6 +1686,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.exp().call(in, out);
 							}
 						};
@@ -1423,6 +1704,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.sin().call(in, out);
 							}
 						};
@@ -1440,6 +1722,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.cos().call(in, out);
 							}
 						};
@@ -1457,6 +1740,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.tan().call(in, out);
 							}
 						};
@@ -1474,6 +1758,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.sinh().call(in, out);
 							}
 						};
@@ -1491,6 +1776,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.cosh().call(in, out);
 							}
 						};
@@ -1508,6 +1794,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							@Override
 							public void call(U in, U out) {
+								
 								a.tanh().call(in, out);
 							}
 						};
@@ -1517,8 +1804,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 				JButton ok = new JButton("Ok");
 				ok.addActionListener(new ActionListener() {
+					
 					@Override
 					public void actionPerformed(ActionEvent e) {
+					
 						dlg.setVisible(false);
 					}
 				});
@@ -1575,8 +1864,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			endButton.addActionListener(new End(i));
 			animButton.addActionListener(new Animator(i));
 			stopButton.addActionListener(new ActionListener() {
+				
 				@Override
 				public void actionPerformed(ActionEvent e) {
+				
 					if (animatingRightNow.get())
 						pleaseQuitAnimating.set(true);
 				}
@@ -1596,16 +1887,20 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					dlg.add(valueField);
 					JButton ok = new JButton("Ok");
 					ok.addActionListener(new ActionListener() {
+					
 						@Override
 						public void actionPerformed(ActionEvent e) {
+						
 							cancelled = false;
 							dlg.setVisible(false);
 						}
 					});
 					JButton cancel = new JButton("Cancel");
 					cancel.addActionListener(new ActionListener() {
+						
 						@Override
 						public void actionPerformed(ActionEvent e) {
+						
 							cancelled = true;
 							dlg.setVisible(false);
 						}
@@ -1614,20 +1909,34 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					dlg.add(cancel);
 					dlg.pack();
 					dlg.setVisible(true);
+
 					if (!cancelled) {
+					
 						String indexStr = valueField.getText();
+						
 						if (indexStr != null && indexStr.length() > 0) {
+							
 							long idx;
+						
 							try { 
+							
 								idx = Long.parseLong(indexStr);
+							
 							} catch (NumberFormatException exc) {
+							
 								return;
 							}
+							
 							if (idx < 1) idx = 1;
+							
 							if (idx > maxVal) idx = maxVal;
+							
 							planeData.setPositionValue(axisPos, idx-1);
+							
 							positionLabels[axisPos].setText(""+(idx)+" / "+maxVal);
+							
 							pz.draw();
+							
 							frame.repaint();
 						}
 					}
@@ -1649,14 +1958,23 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 			@Override
 			public void mouseMoved(MouseEvent e) {
+				
 				String alternateValue = null;
+				
 				long i0 = pz.pixelToModel(e.getX(), pz.getVirtualOriginX());
+				
 				long i1 = pz.pixelToModel(e.getY(), pz.getVirtualOriginY());
+				
 				if (i0 >= 0 && i0 < planeData.d0() && i1 >= 0 && i1 < planeData.d1()) {
+				
 					planeData.getModelCoords(i0, i1, modelCoords);
+					
 					dataSource.getCoordinateSpace().project(modelCoords, realWorldCoords);
+					
 					planeData.get(i0, i1, value);
+					
 					if ((nanTester != null) && nanTester.isNaN().call(value)) {
+					
 						alternateValue = "nan";
 					}
 					else if ((infTester != null) && infTester.isInfinite().call(value)) {
@@ -1667,19 +1985,29 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							alternateValue = "+Inf";
 					}
 					else {
+						
 						alternateValue = null;
+						
 						HighPrecRepresentation rep = (HighPrecRepresentation) value;
+						
 						rep.toHighPrec(hpVal);
 					}
+
 					int axisNumber0 = planeData.axisNumber0();
+					
 					int axisNumber1 = planeData.axisNumber1();
+					
 					StringBuilder sb = new StringBuilder();
 					sb.append(dataSource.getAxisType(axisNumber0));
 					sb.append(" = ");
 					sb.append(i0);
+
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
+					
 					if (axisNumber0 < dataSource.numDimensions()) {
+						
 						if (realWorldCoords[axisNumber0].subtract(BigDecimal.valueOf(modelCoords[axisNumber0])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
+						
 							sb.append(" (");
 							sb.append(df.format(realWorldCoords[axisNumber0]));
 							sb.append(" ");
@@ -1687,15 +2015,20 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							sb.append(")");
 						}
 					}
+					
 					if (axisNumber1 < dataSource.numDimensions()) {
+						
 						sb.append(", ");
 						sb.append(dataSource.getAxisType(axisNumber1));
 						sb.append("= ");
 						sb.append(i1);
 					}
+					
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
 					if (axisNumber1 < dataSource.numDimensions()) {
+					
 						if (realWorldCoords[axisNumber1].subtract(BigDecimal.valueOf(modelCoords[axisNumber1])).abs().compareTo(BigDecimal.valueOf(0.000001)) > 0) {
+						
 							sb.append(" (");
 							sb.append(df.format(realWorldCoords[axisNumber1]));
 							sb.append(" ");
@@ -1710,6 +2043,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						sb.append(df.format(hpVal.v()));
 					sb.append(" ");
 					sb.append(dataSource.getValueUnit());
+					
 					readout.setText(sb.toString());
 				}
 			}
@@ -1730,12 +2064,18 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JLabel d = new JLabel("Dimensions");
 		d.setFont(font);
 		miscPanel.add(d);
+		
 		for (int i = 0; i < dataSource.numDimensions(); i++) {
+		
 			String axisName = dataSource.getAxisType(i);
+			
 			JLabel dimLabel = new JLabel(dataSource.dimension(i)+" : "+axisName);
+			
 			dimLabel.setFont(font);
+			
 			miscPanel.add(dimLabel);
 		}
+		
 		miscPanel.add(new JSeparator());
 		miscPanel.add(scaleLabel);
 		miscPanel.add(ctrXLabel);
@@ -1757,25 +2097,41 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+		
 				preferDataRange = !preferDataRange;
+				
 				setMinMax();
+				
 				String minStr = min.toString();
+				
 				String maxStr = max.toString();
+				
 				String dispMinStr = effectiveMinToStr();
+				
 				String dispMaxStr = effectiveMaxToStr();
+				
 				if (minStr.length() > MIN_MAX_CHAR_COUNT)
 					minStr = minStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
+				
 				if (maxStr.length() > MIN_MAX_CHAR_COUNT)
 					maxStr = maxStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
+				
 				if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
 					dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+				
 				if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
 					dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+				
 				minLabel.setText("Min: " + minStr);
+				
 				maxLabel.setText("Max: " + maxStr);
+				
 				dispMinLabel.setText("Disp Min: " + dispMinStr);
+				
 				dispMaxLabel.setText("Disp Max: " + dispMaxStr);
+				
 				pz.draw();
+				
 				frame.repaint();
 			}
 		});
@@ -1800,20 +2156,31 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		setMinMax();
 
 		String minStr = min.toString();
+		
 		String maxStr = max.toString();
+		
 		String dispMinStr = effectiveMinToStr();
+		
 		String dispMaxStr = effectiveMaxToStr();
+		
 		if (minStr.length() > MIN_MAX_CHAR_COUNT)
 			minStr = minStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
+		
 		if (maxStr.length() > MIN_MAX_CHAR_COUNT)
 			maxStr = maxStr.substring(0,MIN_MAX_CHAR_COUNT) + "...";
+		
 		if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
 			dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+		
 		if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
 			dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+		
 		minLabel.setText("Min: " + minStr);
+		
 		maxLabel.setText("Max: " + maxStr);
+		
 		dispMinLabel.setText("Disp Min: " + dispMinStr);
+		
 		dispMaxLabel.setText("Disp Max: " + dispMaxStr);
 
 		pz.draw();
@@ -1822,34 +2189,46 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	}
 
 	private BigDecimal actualMin() {
+		
 		HighPrecisionMember tmp = G.HP.construct();
+		
 		((HighPrecRepresentation)min).toHighPrec(tmp);
+		
 		return tmp.v();
 	}
 	
 	private BigDecimal actualMax() {
+		
 		HighPrecisionMember tmp = G.HP.construct();
+		
 		((HighPrecRepresentation)max).toHighPrec(tmp);
+		
 		return tmp.v();
 	}
 	
 	private BigDecimal effectiveMin() {
+		
 		if (dispMin == null)
 			return actualMin();
+		
 		return dispMin.v();
 	}
 
 	private BigDecimal effectiveMax() {
+		
 		if (dispMax == null)
 			return actualMax();
+		
 		return dispMax.v();
 	}
 	
 	private String effectiveMinToStr() {
+		
 		return effectiveMin().toString();
 	}
 	
 	private String effectiveMaxToStr() {
+		
 		return effectiveMax().toString();
 	}
 
@@ -1859,17 +2238,23 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	 * @param colorTable The ramp of argb colors.
 	 */
 	public void setColorTable(int[] colorTable) {
+		
 		this.colorTable = colorTable;
+		
 		pz.draw();
+		
 		frame.repaint();
 	}
 	
 	@SuppressWarnings({"rawtypes","unchecked"})
 	public DimensionedDataSource<U> grabCurrentPlane() {
+
 		int axisNumber0 = planeData.axisNumber0();
+		
 		int axisNumber1 = planeData.axisNumber1();
 		
 		long dimX = planeData.d0();
+		
 		long dimY = planeData.d1();
 		
 		DimensionedDataSource<U> newDs = (DimensionedDataSource<U>)
@@ -1880,8 +2265,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		TwoDView<U> view = new TwoDView<>(newDs);
 		
 		for (int y = 0; y < dimY; y++) {
+			
 			for (int x = 0; x < dimX; x++) {
+			
 				planeData.get(x, y , tmp);
+				
 				view.set(x, y, tmp);
 			}
 		}
@@ -1889,37 +2277,60 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		DimensionedDataSource<U> origDs = planeData.getDataSource();
 
 		String d0Str = axisNumber0 < origDs.numDimensions() ? origDs.getAxisType(axisNumber0) : "d0";
+		
 		String d1Str = axisNumber1 < origDs.numDimensions() ? origDs.getAxisType(axisNumber1) : "d1";
+		
 		String axes = "["+d0Str+":"+d1Str+"]";
+		
 		String miniTitle = axes + " slice";
+		
 		String extendedDims = "";
+		
 		if (origDs.numDimensions() > 2) {
+		
 			extendedDims = " at";
+			
 			int count = 0;;
+			
 			for (int i = 0; i < origDs.numDimensions(); i++) {
+			
 				if (i == axisNumber0 || i == axisNumber1)
 					continue;
+				
 				String axisLabel = origDs.getAxisType(i);
+				
 				long pos = planeData.getPositionValue(count);
+				
 				count++;
+				
 				extendedDims = extendedDims + " " + axisLabel + "("+pos+")"; 
 			}
 		}
+
 		miniTitle = miniTitle + extendedDims;
 
 		newDs.setName(origDs.getName().length() == 0 ? miniTitle : (miniTitle + " of "+origDs.getName()));
+		
 		if (axisNumber0 < origDs.numDimensions()) {
+			
 			newDs.setAxisType(0, origDs.getAxisType(axisNumber0));
+			
 			newDs.setAxisUnit(0, origDs.getAxisUnit(axisNumber0));
 		}
+		
 		if (axisNumber1 < origDs.numDimensions()) {
+		
 			newDs.setAxisType(1, origDs.getAxisType(axisNumber1));
+			
 			newDs.setAxisUnit(1, origDs.getAxisUnit(axisNumber1));
 		}
+		
 		newDs.setValueType(origDs.getValueType());
+		
 		newDs.setValueUnit(origDs.getValueUnit());
 	
 		CoordinateSpace origSpace = planeData.getDataSource().getCoordinateSpace();
+		
 		if (origSpace instanceof LinearNdCoordinateSpace) {
 
 			LinearNdCoordinateSpace origLinSpace = (LinearNdCoordinateSpace) origSpace;
@@ -1927,6 +2338,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			BigDecimal[] scales = new BigDecimal[2];
 
 			scales[0] = origLinSpace.getScale(axisNumber0);
+			
 			if (axisNumber1 < origDs.numDimensions())
 				scales[1] = origLinSpace.getScale(axisNumber1);
 			else
@@ -1936,6 +2348,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			BigDecimal[] offsets = new BigDecimal[2];
 		
 			offsets[0] = origLinSpace.getOffset(axisNumber0);
+			
 			if (axisNumber1 < origDs.numDimensions())
 				offsets[1] = origLinSpace.getOffset(axisNumber1);
 			else
@@ -1944,6 +2357,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			long[] coord = new long[origDs.numDimensions()];
 		
 			offsets[0] = origLinSpace.project(coord, axisNumber0);
+			
 			offsets[1] = origLinSpace.project(coord, axisNumber1);
 
 			LinearNdCoordinateSpace newLinSpace = new LinearNdCoordinateSpace(scales, offsets);
@@ -1961,19 +2375,28 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		private final int extraPos;
 		
 		public Incrementer(int extraNum) {
+			
 			extraPos = extraNum;
 		}
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			
 			// find dim pos in real world data source of extra dims pos i
 			long maxVal = planeData.getDataSourceAxisSize(extraPos);
+			
 			long pos = planeData.getPositionValue(extraPos);
+			
 			if (pos < maxVal - 1) {
+			
 				pos++;
+				
 				planeData.setPositionValue(extraPos, pos);
+				
 				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
+				
 				pz.draw();
+				
 				frame.repaint();
 			}
 		}
@@ -1986,18 +2409,26 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		private final int extraPos;
 		
 		public Decrementer(int extraNum) {
+			
 			extraPos = extraNum;
 		}
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			long maxVal = planeData.getDataSourceAxisSize(extraPos);
+			
 			long pos = planeData.getPositionValue(extraPos);
+			
 			if (pos > 0) {
+			
 				pos--;
+				
 				planeData.setPositionValue(extraPos, pos);
+				
 				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
+				
 				pz.draw();
+				
 				frame.repaint();
 			}
 		}
@@ -2010,15 +2441,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		private final int extraPos;
 		
 		public Home(int extraNum) {
+			
 			extraPos = extraNum;
 		}
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			
 			long maxVal = planeData.getDataSourceAxisSize(extraPos);
+			
 			planeData.setPositionValue(extraPos, 0);
+			
 			positionLabels[extraPos].setText(""+(1)+" / "+maxVal);
+			
 			pz.draw();
+			
 			frame.repaint();
 		}
 	}
@@ -2030,15 +2467,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		private final int extraPos;
 		
 		public End(int extraNum) {
+			
 			extraPos = extraNum;
 		}
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			
 			long maxVal = planeData.getDataSourceAxisSize(extraPos);
+			
 			planeData.setPositionValue(extraPos, maxVal-1);
+			
 			positionLabels[extraPos].setText(""+(maxVal)+" / "+maxVal);
+			
 			pz.draw();
+			
 			frame.repaint();
 		}
 	}
@@ -2050,6 +2493,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		private final int extraPos;
 		
 		public Animator(int extraNum) {
+			
 			extraPos = extraNum;
 		}
 		
@@ -2064,29 +2508,46 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 				@Override
 				protected Object doInBackground() throws Exception {
+			
 					long maxVal = planeData.getDataSourceAxisSize(extraPos);
+					
 					for (long i = 0; i < maxVal; i++) {
+					
 						if (pleaseQuitAnimating.get()) {
+		
 							pleaseQuitAnimating.getAndSet(false);
+							
 							animatingRightNow.set(false);
+							
 							return true;
 						}
+						
 						planeData.setPositionValue(extraPos, i);
+						
 						positionLabels[extraPos].setText(""+(i+1)+" / "+maxVal);
+						
 						pz.draw();
+						
 						// paint needed instead of repaint to show immediate animation
 						// But this method has a LOT of flicker. ImageJ1 uses double
 						// buffered drawing to avoid flicker. See ImageCanvas paint()
 						// I think.
+						
 						frame.paint(frame.getGraphics());
+						
 						try {
+
 							Thread.sleep(100);
+							
 						} catch(InterruptedException excep) {
 							;
 						}
 					}
+					
 					pleaseQuitAnimating.getAndSet(false);
+					
 					animatingRightNow.set(false);
+					
 					return true;
 				}
 				
@@ -2129,12 +2590,16 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		void pixelTypeBounds(T alg, U min, U max)
 	{
 		if (alg instanceof Bounded) {
+			
 			@SuppressWarnings("unchecked")
 			V enhancedAlg = (V) alg;
+			
 			enhancedAlg.minBound().call(min);
+			
 			enhancedAlg.maxBound().call(max);
 		}
 		else {
+			
 			alg.zero().call(min);
 			alg.zero().call(max);
 		}
@@ -2146,11 +2611,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		void pixelDataBounds(T alg, IndexedDataSource<U> data, U min, U max)
 	{
 		if (alg instanceof Ordered) {
+			
 			@SuppressWarnings("unchecked")
 			V enhancedAlg = (V) alg;
+			
 			MinMaxElement.compute(enhancedAlg, data, min, max);
 		}
 		else {
+			
 			alg.zero().call(min);
 			alg.zero().call(max);
 		}
@@ -2174,14 +2642,18 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	
 	private void findMinsAndMaxes(T alg, U dataMn, U dataMx) {
 
-		if (dataMn == null || dataMx == null)
+		if (dataMn == null || dataMx == null) {
+			
 			pixelDataBounds(alg, planeData.getDataSource().rawData(), dataMin, dataMax);
+		}
 		else {
+		
 			// Avoid rescanning the WHOLE dataset to find values we already know. On a
 			// very large dataset this can save minutes.
 			alg.assign().call(dataMn, dataMin);
 			alg.assign().call(dataMx, dataMax);
 		}
+		
 		pixelTypeBounds(alg, typeMin, typeMax);
 	}
 	
@@ -2206,54 +2678,83 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		Ordered<U> signumTester = null;
 		
 		public PanZoomView(int paneWidth, int paneHeight) {
+			
 			this.paneWidth = paneWidth;
+			
 			this.paneHeight = paneHeight;
+			
 			this.maxScale = Math.min(paneWidth, paneHeight);
+			
 			setInitialNumbers();
+			
 			if (alg instanceof NaN) {
+				
 				this.nanTester = (NaN<U>) alg;
 			}
 			if (alg instanceof Infinite) {
+				
 				this.infTester = (Infinite<U>) alg;
 			}
 			if (alg instanceof Ordered) {
+				
 				this.signumTester = (Ordered<U>) alg;
 			}
 			else {
+				
 				throw new IllegalArgumentException("Weird error: very strange real number type that is not ordered!");
 			}
 			if (!(alg.construct() instanceof HighPrecRepresentation)) {
+				
 				throw new IllegalArgumentException(
 						"this viewer requires the real image to support HighPrecisionRepresentation");
 			}
 		}
 
 		private void setInitialNumbers() {
+			
 			this.calculatedPaneWidth = paneWidth;
+			
 			this.calculatedPaneHeight = paneHeight;
+			
 			this.scaleNumer = 1;
+			
 			this.scaleDenom = 1;
+			
 			long modelWidth = planeData.d0();
+			
 			long modelHeight = planeData.d1();
+			
 			long ctrX = modelWidth / 2;
+			
 			long ctrY = modelHeight / 2;
+			
 			long ctrViewX = paneWidth / 2;
+			
 			long ctrViewY = paneHeight / 2;
+			
 			this.originX = ctrX - ctrViewX;
+			
 			this.originY = ctrY - ctrViewY;;
 		}
 
 		private void calcPaneSize() {
+			
 			if (scaleNumer == 1 && scaleDenom == 1) {
+				
 				this.calculatedPaneWidth = paneWidth;
+				
 				this.calculatedPaneHeight = paneHeight;
 			}
 			else if (scaleNumer > 1) {
+				
 				this.calculatedPaneWidth = paneWidth / scaleNumer;
+				
 				this.calculatedPaneHeight = paneHeight / scaleNumer;
 			}
 			else if (scaleDenom > 1) {
+			
 				this.calculatedPaneWidth = ((long) paneWidth) * scaleDenom;
+				
 				this.calculatedPaneHeight = ((long) paneHeight) * scaleDenom;
 			}
 			else
@@ -2261,22 +2762,27 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 
 		public long getVirtualOriginX() {
+			
 			return originX;
 		}
 		
 		public long getVirtualOriginY() {
+			
 			return originY;
 		}
 		
 		public long getVirtualWidth() {
+			
 			return calculatedPaneWidth;
 		}
 		
 		public long getVirtualHeight() {
+			
 			return calculatedPaneHeight;
 		}
 		
 		public int drawingBoxHalfSize() {  // this works well when we only support odd zoom factors
+			
 			return scaleNumer / 2;
 		}
 		
@@ -2289,6 +2795,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 		
 		public void reset() {
+			
 			setInitialNumbers();
 		}
 		
@@ -2297,31 +2804,55 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			boolean changed = false;
 
 			if (scaleDenom >= 3) {
+				
 				int origScale = scaleDenom;
+				
 				int newScale = scaleDenom - 2;
+				
 				long origXExtent = getVirtualWidth();
+				
 				long origYExtent = getVirtualHeight();
+				
 				long newXExtent = origXExtent * newScale / origScale;
+				
 				long newYExtent = origYExtent * newScale / origScale;
+				
 				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
+				
 				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
+				
 				originX += modelChangeForOriginX;
+				
 				originY += modelChangeForOriginY;
+				
 				scaleDenom = newScale;
+				
 				changed = true;
 			}
 			else if (scaleNumer + 2 <= maxScale) {
+				
 				int origScale = scaleNumer;
+				
 				int newScale = scaleNumer + 2;
+				
 				long origXExtent = getVirtualWidth();
+				
 				long origYExtent = getVirtualHeight();
+				
 				long newXExtent = origXExtent * origScale / newScale;
+				
 				long newYExtent = origYExtent * origScale / newScale;
+				
 				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
+				
 				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
+				
 				originX += modelChangeForOriginX;
+				
 				originY += modelChangeForOriginY;
+				
 				scaleNumer = newScale;
+				
 				changed = true;
 			}
 
@@ -2335,31 +2866,55 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			boolean changed = false;
 			
 			if (scaleNumer >= 3) {
+				
 				int origScale = scaleNumer;
+				
 				int newScale = scaleNumer - 2;
+				
 				long origXExtent = getVirtualWidth();
+				
 				long origYExtent = getVirtualHeight();
+				
 				long newXExtent = origXExtent * origScale / newScale;
+				
 				long newYExtent = origYExtent * origScale / newScale;
+				
 				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
+				
 				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
+				
 				originX -= modelChangeForOriginX;
+				
 				originY -= modelChangeForOriginY;
+				
 				scaleNumer = newScale;
+				
 				changed = true;
 			}
 			else if (scaleDenom + 2 <= maxScale) {
+			
 				int origScale = scaleDenom;
+				
 				int newScale = scaleDenom + 2;
+				
 				long origXExtent = getVirtualWidth();
+				
 				long origYExtent = getVirtualHeight();
+				
 				long newXExtent = origXExtent * newScale / origScale;
+				
 				long newYExtent = origYExtent * newScale / origScale;
+				
 				long modelChangeForOriginX = Math.abs(origXExtent - newXExtent) / 2;
+				
 				long modelChangeForOriginY = Math.abs(origYExtent - newYExtent) / 2;
+				
 				originX -= modelChangeForOriginX;
+				
 				originY -= modelChangeForOriginY;
+				
 				scaleDenom = newScale;
+				
 				changed = true;
 			}
 
@@ -2369,46 +2924,70 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 
 		public boolean panLeft(int numPixels) {
+			
 			long numModelUnits = pixelToModel(numPixels, 0);
+			
 			long newPos = originX - numModelUnits;
+			
 			if ((newPos <= 5 - planeData.d0()))
 				return false;
+			
 			if ((newPos >= planeData.d0() - 5))
 				return false;
+			
 			originX = newPos;
+			
 			return true;
 		}
 
 		public boolean panRight(int numPixels) {
+			
 			long numModelUnits = pixelToModel(numPixels, 0);
+			
 			long newPos = originX + numModelUnits;
+			
 			if ((newPos <= 5 - planeData.d0()))
 				return false;
+			
 			if ((newPos >= planeData.d0() - 5))
 				return false;
+			
 			originX = newPos;
+			
 			return true;
 		}
 
 		public boolean panUp(int numPixels) {
+			
 			long numModelUnits = pixelToModel(numPixels, 0);
+			
 			long newPos = originY - numModelUnits;
+			
 			if ((newPos <= 5 - planeData.d1()))
 				return false;
+			
 			if ((newPos >= planeData.d1() - 5))
 				return false;
+			
 			originY = newPos;
+			
 			return true;
 		}
 
 		public boolean panDown(int numPixels) {
+
 			long numModelUnits = pixelToModel(numPixels, 0);
+			
 			long newPos = originY + numModelUnits;
+			
 			if ((newPos <= 5 - planeData.d1()))
 				return false;
+			
 			if ((newPos >= planeData.d1() - 5))
 				return false;
+			
 			originY = newPos;
+			
 			return true;
 		}
 		
@@ -2457,9 +3036,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			if (alg instanceof NaN) {
 				this.nanTester = (NaN<U>) alg;
 			}
+
 			if (alg instanceof Infinite) {
 				this.infTester = (Infinite<U>) alg;
 			}
+			
 			if (alg instanceof Ordered) {
 				this.signumTester = (Ordered<U>) alg;
 			}
@@ -2475,26 +3056,45 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			// paint the pixels into the plane of data
 			
 			HighPrecisionMember sum = G.HP.construct();
+			
 			HighPrecisionMember tmp = G.HP.construct();
+			
 			U value = alg.construct();
+			
 			long maxDimX = planeData.d0();
+			
 			long maxDimY = planeData.d1();
+			
 			for (int y = 0; y < paneHeight; y++) {
+			
 				for (int x = 0; x < paneWidth; x++) {
+				
 					G.HP.zero().call(sum);
+					
 					boolean includesNans = false; 
+					
 					boolean includesPosInfs = false; 
+					
 					boolean includesNegInfs = false; 
+					
 					long numCounted = 0;
+					
 					boolean modelCoordsInBounds = false;
+					
 					long mx = pixelToModel(x, originX);
+					
 					long my = pixelToModel(y, originY);
+					
 					if (mx >= 0 && mx < maxDimX && my >= 0 && my < maxDimY) {
+					
 						modelCoordsInBounds = true;
+						
 						planeData.get(mx, my, value);
+						
 						if (nanTester != null && nanTester.isNaN().call(value))
 							includesNans = true;
 						else if (infTester != null && infTester.isInfinite().call(value)) {
+						
 							if (signumTester.signum().call(value) < 0)
 								includesNegInfs = true;
 							else
@@ -2506,7 +3106,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							numCounted++;
 						}
 					}
+					
 					int color = 0;
+					
 					if (modelCoordsInBounds) {
 
 						// calc average intensity
@@ -2521,6 +3123,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					}
 					
 					for (int dv = -drawingBoxHalfSize(); dv <= drawingBoxHalfSize(); dv++) {
+			
 						for (int du = -drawingBoxHalfSize(); du <= drawingBoxHalfSize(); du++) {
 
 							// plot a point
@@ -2533,10 +3136,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			// now paint a yellow outline around the image boundaries
 			
 			long maxX1 = planeData.d0()-1;
+			
 			long maxY1 = planeData.d1()-1;
+			
 			line(arrayInt, 0, 0, 0, maxY1);
+			
 			line(arrayInt, 0, maxY1, maxX1, maxY1);
+			
 			line(arrayInt, maxX1, maxY1, maxX1, 0);
+			
 			line(arrayInt, maxX1, 0, 0, 0);
 		}
 
@@ -2579,15 +3187,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			}
 			
 			HighPrecisionMember hpMin = new HighPrecisionMember();
+			
 			HighPrecisionMember hpMax = new HighPrecisionMember();
+			
 			((HighPrecRepresentation) min).toHighPrec(hpMin);
+			
 			((HighPrecRepresentation) max).toHighPrec(hpMax);
+			
 			if (dispMin != null && G.HP.isGreater().call(dispMin, hpMin))
 				G.HP.assign().call(dispMin, hpMin);
+			
 			if (dispMax != null && G.HP.isLess().call(dispMax, hpMax))
 				G.HP.assign().call(dispMax, hpMax);
 
 			BigDecimal numV;
+			
 			if (numValues <= 0)
 				numV = BigDecimal.ONE;
 			else
@@ -2603,6 +3217,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			if (denom.compareTo(BigDecimal.ZERO) == 0) {
 				denom = BigDecimal.ONE;
 			}
+
 			BigDecimal ratio = numer.divide(denom, HighPrecisionAlgebra.getContext());
 
 			if (ratio.compareTo(BigDecimal.ZERO) < 0)
@@ -2702,16 +3317,24 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				pY1 = BigInteger.valueOf(paneHeight-1);
 			
 			if (pX0.compareTo(pX1) == 0) {
+				
 				int x = pX0.intValue();
+				
 				int minY = Math.min(pY0.intValue(), pY1.intValue());
+				
 				int maxY = Math.max(pY0.intValue(), pY1.intValue());
+				
 				for (int y = minY; y <= maxY; y++)
 					plot(COLOR, arrayInt, x, y);
 			}
 			else if (pY0.compareTo(pY1) == 0) {
+			
 				int y = pY0.intValue();
+				
 				int minX = Math.min(pX0.intValue(), pX1.intValue());
+				
 				int maxX = Math.max(pX0.intValue(), pX1.intValue());
+				
 				for (int x = minX; x <= maxX; x++)
 					plot(COLOR, arrayInt, x, y);
 			}
@@ -2729,6 +3352,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		public DimensionedDataSource<ArgbMember> takeSnapshot()
 		{
 			int dimX = paneWidth;
+			
 			int dimY = paneHeight;
 			
 			DimensionedDataSource<ArgbMember> newDs = (DimensionedDataSource<ArgbMember>)
@@ -2745,14 +3369,23 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			int[] arrayInt = buffer.getData();
 			
 			ArgbMember tmp = G.ARGB.construct();
+			
 			for (int y = 0; y < dimY; y++) {
+				
 				final int rowPos = y * dimX;
+				
 				for (int x = 0; x < dimX; x++) {
+				
 					int argb = arrayInt[rowPos + x];
+					
 					tmp.setA(RgbUtils.a(argb));
+					
 					tmp.setR(RgbUtils.r(argb));
+					
 					tmp.setG(RgbUtils.g(argb));
+					
 					tmp.setB(RgbUtils.b(argb));
+					
 					view.set(x, y, tmp);
 				}
 			}
@@ -2852,6 +3485,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				}
 				
 				if (error != null) {
+				
 					JOptionPane.showMessageDialog(frame,
 						    "FFT error: ."+error,
 						    "WARNING",
@@ -2863,23 +3497,32 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				DimensionedDataSource<R> realData = (DimensionedDataSource<R>) input;
 				
 				long[] dims = new long[2];
+				
 				for (int i = 0; i < dims.length; i++) {
+				
 					dims[i] = realData.dimension(i);
 				}
 				
 				DimensionedDataSource<C> complexData = DimensionedStorage.allocate(cmplxAlg.construct(), dims);
 				
 				R realValue = realAlg.construct();
+				
 				R imagValue = realAlg.construct();
+				
 				C complexValue = cmplxAlg.construct();
 				
 				TwoDView<R> realVw = new TwoDView<>(realData);
+				
 				TwoDView<C> complexVw = new TwoDView<>(complexData);
 				
 				for (long y = 0; y < dims[1]; y++) {
+					
 					for (long x = 0; x < dims[0]; x++) {
+				
 						realVw.get(x, y, realValue);
+						
 						complexValue.setR(realValue);
+						
 						complexVw.set(x, y, complexValue);
 					}
 				}
@@ -2893,19 +3536,27 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				swapQuadrants(cmplxAlg, result);
 
 				IndexedDataSource<R> m = Storage.allocate(realValue, sz*sz);
+				
 				IndexedDataSource<R> p = Storage.allocate(realValue, sz*sz);
 				
 				GetRValues.compute(cmplxAlg, realAlg, result.rawData(), m);
+				
 				GetIValues.compute(cmplxAlg, realAlg, result.rawData(), p);
 				
 				R mag = realAlg.construct();
 				R phas = realAlg.construct();
 				for (long i = 0; i < sz; i++) {
+				
 					m.get(i, realValue);
+					
 					p.get(i, imagValue);
+					
 					PolarCoords.magnitude(realAlg, realValue, imagValue, mag);
+					
 					PolarCoords.phase(realAlg, realValue, imagValue, phas);
+					
 					m.set(i, mag);
+					
 					p.set(i, phas);
 				}
 		
@@ -2930,9 +3581,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				DimensionedDataSource<C> result2 = InvFFT2D.compute(cmplxAlg, realAlg, result);
 
 				IndexedDataSource<R> re = Storage.allocate(realValue, sz*sz);
+		
 				IndexedDataSource<R> im = Storage.allocate(realValue, sz*sz);
 
 				GetRValues.compute(cmplxAlg, realAlg, result2.rawData(), re);
+				
 				GetIValues.compute(cmplxAlg, realAlg, result2.rawData(), im);
 
 				DimensionedDataSource<R> reals =
@@ -3011,8 +3664,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		// here I am on the event thread hopefully it will update right away
 		
 		ImageIcon tmp = new ImageIcon(ICON_URL);
+		
 		Image image = tmp.getImage();
+		
 		Image scaledImage = image.getScaledInstance(80, 80, java.awt.Image.SCALE_DEFAULT);
+		
 		theLabel.setIcon(new ImageIcon(scaledImage));
 		
 		// here I start a new background thread
@@ -3025,8 +3681,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	{
 		if (!(oAlg instanceof Float16Algebra) && !(oAlg instanceof Float32Algebra) &&
 				!(oAlg instanceof Float64Algebra) && !(oAlg instanceof Float128Algebra) &&
-				!(oAlg instanceof HighPrecisionAlgebra))
-		{
+				!(oAlg instanceof HighPrecisionAlgebra)) {
+
 			JOptionPane.showMessageDialog(frame,
 				    "To float command not passed a real algebra to use for the output type",
 				    "WARNING",
@@ -3035,6 +3691,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 		
 		if (!(inAlg.construct() instanceof PrimitiveConversion)) {
+
 			JOptionPane.showMessageDialog(frame,
 				    "To float command input type does not support primitive conversion",
 				    "WARNING",
@@ -3044,12 +3701,16 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		int numD = input.numDimensions();
 		
 		long[] dims = new long[numD];
+		
 		for (int i = 0; i < numD; i++) {
+		
 			dims[i] = input.dimension(i);
 		}
 		
 		IntegerIndex tmp1 = new IntegerIndex(0);
+		
 		IntegerIndex tmp2 = new IntegerIndex(0);
+		
 		IntegerIndex tmp3 = new IntegerIndex(0);
 		
 		@SuppressWarnings("unchecked")
@@ -3058,15 +3719,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		DimensionedDataSource<M> output = DimensionedStorage.allocate(outAlg.construct(), dims);
 
 		IndexedDataSource<O> inList = input.rawData();  
+		
 		IndexedDataSource<M> outList = output.rawData();
 
 		O in  = inAlg.construct();
+		
 		M out = outAlg.construct();
 
 		long size = inList.size();
+		
 		for (long i = 0; i < size; i++) {
+			
 			inList.get(i, in);
+			
 			PrimitiveConverter.convert(tmp1, tmp2, tmp3, (PrimitiveConversion) in, out);
+			
 			outList.set(i, out);
 		}
 		
@@ -3080,9 +3747,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		void explode(DimensionedDataSource<U> dataSource, int axis)
 	{
 		V enhancedAlg = (V) alg;
+		
 		DimensionedDataSource<W> ds = (DimensionedDataSource<W>) dataSource;
+		
 		List<DimensionedDataSource<W>> results = NdSplit.compute(enhancedAlg, axis, 1L, ds);
+		
 		for (DimensionedDataSource<W> dataset : results) {
+		
 			new RealImageViewer<V,W>(enhancedAlg, dataset);
 		}
 	}

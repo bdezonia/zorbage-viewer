@@ -44,6 +44,8 @@ import javax.swing.*;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
+import nom.bdezonia.zorbage.algebra.G;
+import nom.bdezonia.zorbage.algorithm.BoolToUInt1;
 import nom.bdezonia.zorbage.algorithm.Copy;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.NdData;
@@ -56,6 +58,7 @@ import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
 import nom.bdezonia.zorbage.nifti.Nifti;
 import nom.bdezonia.zorbage.scifio.Scifio;
+import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.storage.file.FileStorage;
 import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.bool.BooleanMember;
@@ -89,6 +92,7 @@ import nom.bdezonia.zorbage.type.gaussian.int64.GaussianInt64Member;
 import nom.bdezonia.zorbage.type.gaussian.int8.GaussianInt8Member;
 import nom.bdezonia.zorbage.type.gaussian.unbounded.GaussianIntUnboundedMember;
 import nom.bdezonia.zorbage.type.geom.point.Point;
+import nom.bdezonia.zorbage.type.integer.int1.UnsignedInt1Member;
 import nom.bdezonia.zorbage.type.octonion.float128.OctonionFloat128Member;
 import nom.bdezonia.zorbage.type.octonion.float128.OctonionFloat128CartesianTensorProductMember;
 import nom.bdezonia.zorbage.type.octonion.float128.OctonionFloat128MatrixMember;
@@ -178,9 +182,12 @@ public class Main<T extends Algebra<T,U>, U> {
 		// this application's GUI.
 		
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
+
 			public void run() {
+				
 				main.createAndShowGUI();
 			}
+		
 		});
 	}
 
@@ -258,12 +265,14 @@ public class Main<T extends Algebra<T,U>, U> {
 
 				// GDAL was not found on system or failed to init?
 				if (GDAL_STATUS != 0) {
+					
 					JOptionPane.showMessageDialog(frame,
 						    "GDAL was not found on the system. You must install and/or configure it if you want GDAL functionality in this application.",
 						    "WARNING",
 						    JOptionPane.WARNING_MESSAGE);
 				}
 				else {
+					
 					JFileChooser chooser = new JFileChooser();
 					
 					chooser.showOpenDialog(frame);
@@ -459,7 +468,9 @@ public class Main<T extends Algebra<T,U>, U> {
 						// then gather dims from that first one as a template for others to follow
 						
 						long[] dims = new long[data.numDimensions()];
+						
 						for (int d = 0; d < data.numDimensions(); d++) {
+
 							dims[d] = data.dimension(d);
 						}
 						
@@ -593,7 +604,9 @@ public class Main<T extends Algebra<T,U>, U> {
 	private void displayAll(DataBundle bundle) {
 
 		List<Tuple2<T,DimensionedDataSource<U>>> list = bundle.bundle();
+
 		for (int i = 0; i < list.size(); i++) {
+		
 			displayData(list.get(i));
 		}
 	}
@@ -608,7 +621,11 @@ public class Main<T extends Algebra<T,U>, U> {
 		//     testing in this render and types do not provide a renderer. Can you use
 		//     algebras to reason on how to display resulting data?
 		
-		U type = tuple.a().construct();
+		T algebra = tuple.a();
+		
+		U type = algebra.construct();
+		
+		DimensionedDataSource<U> data = tuple.b();
 	
 		if (type instanceof Point) {
 			
@@ -616,25 +633,66 @@ public class Main<T extends Algebra<T,U>, U> {
 		}
 		else if (type instanceof BooleanMember) {
 			
-			System.out.println("Must display boolean based data somehow");
+			// for now convert boolean data to uint1 and then display
+			//   as a numeric data set.
+			
+			@SuppressWarnings("unchecked")
+			IndexedDataSource<BooleanMember> bools =
+					(IndexedDataSource<BooleanMember>) data.rawData();
+			
+			IndexedDataSource<UnsignedInt1Member> ints =
+					Storage.allocate(G.UINT1.construct(), data.rawData().size());
+					
+			BoolToUInt1.compute(bools, ints);
+			
+			long[] dims = new long[data.numDimensions()];
+			
+			for (int i = 0; i < dims.length; i++) {
+				dims[i] = data.dimension(i);
+			}
+			
+			// make the uint data
+			
+			DimensionedDataSource<UnsignedInt1Member> intData =
+					new NdData<UnsignedInt1Member>(dims,ints);
+
+			// copy forward the metadata from the original data set
+			
+			intData.setName( data.getName() );
+			intData.setSource( data.getSource() );
+			intData.setValueType( data.getValueType() );
+			intData.setValueUnit( data.getValueUnit() );
+			for (int i = 0; i < dims.length; i++) {
+				intData.setAxisType( i, data.getAxisType(i) );
+				intData.setAxisUnit( i, data.getAxisUnit(i) );
+			}
+			
+			// be nice to the GC
+			bools = null;
+			data = null;
+			tuple = null;
+			
+			// and display as numeric data
+			
+			displayRealImage(G.UINT1, intData);
 		}
 		else if ((type instanceof FixedStringMember) || (type instanceof StringMember) || (type instanceof CharMember)) {
-			displayTextData(tuple.a(), tuple.b());
+			
+			displayTextData(algebra, data);
 		}
-		else if (type instanceof CieLabMember)
-		{
-			displayCieLabColorImage(tuple.a(), tuple.b());
+		else if (type instanceof CieLabMember) {
+
+			displayCieLabColorImage(algebra, data);
 		}
-		else if ((type instanceof RgbMember) || (type instanceof ArgbMember))
-		{
-			displayRgbColorImage(tuple.a(), tuple.b());
+		else if ((type instanceof RgbMember) || (type instanceof ArgbMember)) {
+
+			displayRgbColorImage(algebra, data);
 		}
 		else if (type instanceof OctonionFloat128CartesianTensorProductMember ||
 				type instanceof OctonionFloat64CartesianTensorProductMember ||
 				type instanceof OctonionFloat32CartesianTensorProductMember ||
 				type instanceof OctonionFloat16CartesianTensorProductMember ||
-				type instanceof OctonionHighPrecisionCartesianTensorProductMember)
-		{
+				type instanceof OctonionHighPrecisionCartesianTensorProductMember) {
 			
 			System.out.println("Must display Octonion tensor based data somehow");
 		}	
@@ -642,8 +700,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				type instanceof QuaternionFloat64CartesianTensorProductMember ||
 				type instanceof QuaternionFloat32CartesianTensorProductMember ||
 				type instanceof QuaternionFloat16CartesianTensorProductMember ||
-				type instanceof QuaternionHighPrecisionCartesianTensorProductMember)
-		{
+				type instanceof QuaternionHighPrecisionCartesianTensorProductMember) {
 			
 			System.out.println("Must display Quaternion tensor based data somehow");
 		}	
@@ -651,8 +708,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				type instanceof ComplexFloat64CartesianTensorProductMember ||
 				type instanceof ComplexFloat32CartesianTensorProductMember ||
 				type instanceof ComplexFloat16CartesianTensorProductMember ||
-				type instanceof ComplexHighPrecisionCartesianTensorProductMember)
-		{
+				type instanceof ComplexHighPrecisionCartesianTensorProductMember) {
 			
 			System.out.println("Must display Complex tensor based data somehow");
 		}	
@@ -660,8 +716,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				type instanceof Float64CartesianTensorProductMember ||
 				type instanceof Float32CartesianTensorProductMember ||
 				type instanceof Float16CartesianTensorProductMember ||
-				type instanceof HighPrecisionCartesianTensorProductMember)
-		{
+				type instanceof HighPrecisionCartesianTensorProductMember) {
 			
 			System.out.println("Must display Real tensor based data somehow");
 		}	
@@ -669,8 +724,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				type instanceof OctonionFloat64MatrixMember ||
 				type instanceof OctonionFloat32MatrixMember ||
 				type instanceof OctonionFloat16MatrixMember ||
-				type instanceof OctonionHighPrecisionMatrixMember)
-		{
+				type instanceof OctonionHighPrecisionMatrixMember) {
 			
 			System.out.println("Must display Octonion matrix based data somehow");
 		}	
@@ -678,8 +732,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				type instanceof QuaternionFloat64MatrixMember ||
 				type instanceof QuaternionFloat32MatrixMember ||
 				type instanceof QuaternionFloat16MatrixMember ||
-				type instanceof QuaternionHighPrecisionMatrixMember)
-		{
+				type instanceof QuaternionHighPrecisionMatrixMember) {
 			
 			System.out.println("Must display Quaternion matrix based data somehow");
 		}	
@@ -687,8 +740,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				type instanceof ComplexFloat64MatrixMember ||
 				type instanceof ComplexFloat32MatrixMember ||
 				type instanceof ComplexFloat16MatrixMember ||
-				type instanceof ComplexHighPrecisionMatrixMember)
-		{
+				type instanceof ComplexHighPrecisionMatrixMember) {
 			
 			System.out.println("Must display Complex matrix based data somehow");
 		}	
@@ -696,8 +748,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				type instanceof Float64MatrixMember ||
 				type instanceof Float32MatrixMember ||
 				type instanceof Float16MatrixMember ||
-				type instanceof HighPrecisionMatrixMember)
-		{
+				type instanceof HighPrecisionMatrixMember) {
 			
 			System.out.println("Must display Real matrix based data somehow");
 		}	
@@ -705,8 +756,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				type instanceof OctonionFloat64RModuleMember ||
 				type instanceof OctonionFloat32RModuleMember ||
 				type instanceof OctonionFloat16RModuleMember ||
-				type instanceof OctonionHighPrecisionRModuleMember)
-		{
+				type instanceof OctonionHighPrecisionRModuleMember) {
 			
 			System.out.println("Must display Octonion rmodule based data somehow");
 		}	
@@ -714,8 +764,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				type instanceof QuaternionFloat64RModuleMember ||
 				type instanceof QuaternionFloat32RModuleMember ||
 				type instanceof QuaternionFloat16RModuleMember ||
-				type instanceof QuaternionHighPrecisionRModuleMember)
-		{
+				type instanceof QuaternionHighPrecisionRModuleMember) {
 			
 			System.out.println("Must display Quaternion rmodule based data somehow");
 		}	
@@ -723,8 +772,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				type instanceof ComplexFloat64VectorMember ||
 				type instanceof ComplexFloat32VectorMember ||
 				type instanceof ComplexFloat16VectorMember ||
-				type instanceof ComplexHighPrecisionVectorMember)
-		{
+				type instanceof ComplexHighPrecisionVectorMember) {
 			
 			System.out.println("Must display Complex vector based data somehow");
 		}	
@@ -732,8 +780,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				type instanceof Float64VectorMember ||
 				type instanceof Float32VectorMember ||
 				type instanceof Float16VectorMember ||
-				type instanceof HighPrecisionVectorMember)
-		{
+				type instanceof HighPrecisionVectorMember) {
 			
 			System.out.println("Must display Real vector based data somehow");
 		}	
@@ -741,17 +788,17 @@ public class Main<T extends Algebra<T,U>, U> {
 				(type instanceof OctonionFloat32Member) ||
 				(type instanceof OctonionFloat64Member) ||
 				(type instanceof OctonionFloat128Member) ||
-				(type instanceof OctonionHighPrecisionMember))
-		{
-			displayOctonionImage(tuple.a(), tuple.b());
+				(type instanceof OctonionHighPrecisionMember)) {
+			
+			displayOctonionImage(algebra, data);
 		}
 		else if ((type instanceof QuaternionFloat16Member) ||
 				(type instanceof QuaternionFloat32Member) ||
 				(type instanceof QuaternionFloat64Member) ||
 				(type instanceof QuaternionFloat128Member) ||
-				(type instanceof QuaternionHighPrecisionMember))
-		{
-			displayQuaternionImage(tuple.a(), tuple.b());
+				(type instanceof QuaternionHighPrecisionMember)) {
+			
+			displayQuaternionImage(algebra, data);
 		}
 		else if ((type instanceof ComplexFloat16Member) ||
 				(type instanceof ComplexFloat32Member) ||
@@ -762,9 +809,9 @@ public class Main<T extends Algebra<T,U>, U> {
 				(type instanceof GaussianInt16Member) ||
 				(type instanceof GaussianInt32Member) ||
 				(type instanceof GaussianInt64Member) ||
-				(type instanceof GaussianIntUnboundedMember))
-		{
-			displayComplexImage(tuple.a(), tuple.b());
+				(type instanceof GaussianIntUnboundedMember)) {
+			
+			displayComplexImage(algebra, data);
 		}
 		else {
 			// signed and unsigned ints
@@ -775,11 +822,13 @@ public class Main<T extends Algebra<T,U>, U> {
 			// section and have a final else clause that says "Can't identify
 			// type: ignoring dataset".
 			
-			displayRealImage(tuple.a(), tuple.b());
+			displayRealImage(algebra, data);
 		}
 	}
 	
-	private void displayCieLabColorImage(T alg, DimensionedDataSource<U> data) {
+	private <AA extends Algebra<AA,A>,A>
+		void displayCieLabColorImage(AA alg, DimensionedDataSource<A> data)
+	{
 		System.out.println("MUST DISPLAY A CIE LAB COLOR IMAGE "+data.getName());
 	}
 
@@ -788,31 +837,42 @@ public class Main<T extends Algebra<T,U>, U> {
 	//   similar things for quat and oct images. Maybe one window per "channel" and
 	//   you can get bounds on a channel.
 	
-	private void displayComplexImage(T alg, DimensionedDataSource<U> data) {
+	private <AA extends Algebra<AA,A>,A>
+		void displayComplexImage(AA alg, DimensionedDataSource<A> data)
+	{
 		System.out.println("MUST DISPLAY A COMPLEX IMAGE "+data.getName());
 	}
 
-	private void displayQuaternionImage(T alg, DimensionedDataSource<U> data) {
+	private <AA extends Algebra<AA,A>,A>
+		void displayQuaternionImage(AA alg, DimensionedDataSource<A> data)
+	{
 		System.out.println("MUST DISPLAY A QUATERNION IMAGE "+data.getName());
 	}
 
-	private void displayOctonionImage(T alg, DimensionedDataSource<U> data) {
+	private <AA extends Algebra<AA,A>,A>
+		void displayOctonionImage(AA alg, DimensionedDataSource<A> data)
+	{
 		System.out.println("MUST DISPLAY AN OCTONION IMAGE "+data.getName());
 	}
 
-	private void displayTextData(T alg, DimensionedDataSource<U> data) {
+	private <AA extends Algebra<AA,A>,A>
+		void displayTextData(AA alg, DimensionedDataSource<A> data)
+	{
 
-		new TextViewer<T,U>(alg, data);
+		new TextViewer<AA,A>(alg, data);
 	}
 
-	private void displayRgbColorImage(T alg, DimensionedDataSource<U> data) {
-		
-		new RgbColorImageViewer<T,U>(alg, data);
+	private <AA extends Algebra<AA,A>,A>
+		void displayRgbColorImage(AA alg, DimensionedDataSource<A> data)
+	{
+		new RgbColorImageViewer<AA,A>(alg, data);
 	}
 	
-	private	void displayRealImage(T alg, DimensionedDataSource<U> data) {
+	private <AA extends Algebra<AA,A>,A>
+		void displayRealImage(AA alg, DimensionedDataSource<A> data)
+	{
 		
-		new RealImageViewer<T,U>(alg, data);
+		new RealImageViewer<AA,A>(alg, data);
 	}
 	
 }

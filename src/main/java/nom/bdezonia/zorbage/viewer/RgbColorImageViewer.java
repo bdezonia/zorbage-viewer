@@ -117,7 +117,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 
 		this.alg = alg;
 		this.planeData = new PlaneView<>(dataSource, axisNumber0, axisNumber1);
-		this.pz = new PanZoomView(512, 512);
+		this.pz = new PanZoomView(3*512, 3*512);
 
 		String name = dataSource.getName();
 		

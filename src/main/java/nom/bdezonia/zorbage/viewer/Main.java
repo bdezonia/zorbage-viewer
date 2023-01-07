@@ -57,6 +57,7 @@ import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
 import nom.bdezonia.zorbage.nifti.Nifti;
+import nom.bdezonia.zorbage.nmr.NmrReader;
 import nom.bdezonia.zorbage.scifio.Scifio;
 import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.storage.file.FileStorage;
@@ -408,6 +409,54 @@ public class Main<T extends Algebra<T,U>, U> {
 				}
 			}
 		});
+
+		JButton loadNMR = new JButton("Load using nmr");
+		loadNMR.addMouseListener(new MouseListener() {
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+			}
+			
+			@Override
+			public void mousePressed(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+
+				JFileChooser chooser = new JFileChooser();
+				
+				chooser.showOpenDialog(frame);
+				
+				File f = chooser.getSelectedFile();
+
+				if (f != null) {
+				
+					long t0 = System.currentTimeMillis();
+					
+					DataBundle bundle = NmrReader.open(f.getAbsolutePath());
+				
+					long t1 = System.currentTimeMillis();
+					
+					displayAll(bundle);
+
+					long t2 = System.currentTimeMillis();
+					
+					System.out.println("LOAD TIME = "+(t1-t0));
+					
+					System.out.println("DRAW TIME = "+(t2-t1));
+				}
+			}
+		});
+
 		JButton loadVStack = new JButton("Test Nifti VSTACK");
 		loadVStack.addMouseListener(new MouseListener() {
 			
@@ -576,6 +625,8 @@ public class Main<T extends Algebra<T,U>, U> {
 		loadNetcdf.setMaximumSize(buttonSize);
 		loadNifti.setMinimumSize(buttonSize);
 		loadNifti.setMaximumSize(buttonSize);
+		loadNMR.setMinimumSize(buttonSize);
+		loadNMR.setMaximumSize(buttonSize);
 		loadScifio.setMinimumSize(buttonSize);
 		loadScifio.setMaximumSize(buttonSize);
 		loadVStack.setMinimumSize(buttonSize);
@@ -585,6 +636,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		box.add(loadGdal);
 		box.add(loadNetcdf);
 		box.add(loadNifti);
+		box.add(loadNMR);
 		box.add(loadScifio);
 		box.add(loadVStack);
 		

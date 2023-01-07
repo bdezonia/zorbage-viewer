@@ -147,8 +147,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 	private static final URL ICON_URL = Main.class.getClassLoader().getResource("construction.gif");
 	
-	private static int desiredWidth = 512;
-	private static int desiredHeight = 512;
+	private static int desiredWidth = 3*512;
+	private static int desiredHeight = 3*512;
 	
 	private final T alg;
 	private final PlaneView<U> planeData;

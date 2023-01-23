@@ -54,6 +54,7 @@ import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.ecat.Ecat;
 import nom.bdezonia.zorbage.gdal.Gdal;
 import nom.bdezonia.zorbage.misc.DataBundle;
+import nom.bdezonia.zorbage.misc.DataSourceUtils;
 import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
 import nom.bdezonia.zorbage.nifti.Nifti;
@@ -516,12 +517,7 @@ public class Main<T extends Algebra<T,U>, U> {
 						
 						// then gather dims from that first one as a template for others to follow
 						
-						long[] dims = new long[data.numDimensions()];
-						
-						for (int d = 0; d < data.numDimensions(); d++) {
-
-							dims[d] = data.dimension(d);
-						}
+						long[] dims = DataSourceUtils.dimensions(data);
 						
 						int i = 0;
 						
@@ -697,11 +693,7 @@ public class Main<T extends Algebra<T,U>, U> {
 					
 			BoolToUInt1.compute(bools, ints);
 			
-			long[] dims = new long[data.numDimensions()];
-			
-			for (int i = 0; i < dims.length; i++) {
-				dims[i] = data.dimension(i);
-			}
+			long[] dims = DataSourceUtils.dimensions(data);
 			
 			// make the uint data
 			

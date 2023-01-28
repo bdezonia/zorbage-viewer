@@ -58,7 +58,7 @@ import nom.bdezonia.zorbage.misc.DataSourceUtils;
 import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
 import nom.bdezonia.zorbage.nifti.Nifti;
-import nom.bdezonia.zorbage.nmr.NmrReader;
+import nom.bdezonia.zorbage.nmr.TwoDTextReader;
 import nom.bdezonia.zorbage.scifio.Scifio;
 import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.storage.file.FileStorage;
@@ -443,7 +443,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				
 					long t0 = System.currentTimeMillis();
 					
-					DataBundle bundle = NmrReader.open(f.getAbsolutePath());
+					DataBundle bundle = TwoDTextReader.open(f.getAbsolutePath());
 				
 					long t1 = System.currentTimeMillis();
 					

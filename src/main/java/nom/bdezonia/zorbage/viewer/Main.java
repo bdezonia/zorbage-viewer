@@ -47,11 +47,16 @@ import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algorithm.BoolToUInt1;
 import nom.bdezonia.zorbage.algorithm.Copy;
+import nom.bdezonia.zorbage.algorithm.FlipAlongDimension;
+import nom.bdezonia.zorbage.algorithm.ReplaceIf;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
+import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.data.NdData;
 import nom.bdezonia.zorbage.datasource.ConcatenatedDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
+import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.ecat.Ecat;
+import nom.bdezonia.zorbage.function.Function1;
 import nom.bdezonia.zorbage.gdal.Gdal;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.misc.DataSourceUtils;
@@ -146,6 +151,7 @@ import nom.bdezonia.zorbage.type.real.float32.Float32MatrixMember;
 import nom.bdezonia.zorbage.type.real.float32.Float32VectorMember;
 import nom.bdezonia.zorbage.type.real.float64.Float64CartesianTensorProductMember;
 import nom.bdezonia.zorbage.type.real.float64.Float64MatrixMember;
+import nom.bdezonia.zorbage.type.real.float64.Float64Member;
 import nom.bdezonia.zorbage.type.real.float64.Float64VectorMember;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionCartesianTensorProductMember;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMatrixMember;
@@ -445,6 +451,80 @@ public class Main<T extends Algebra<T,U>, U> {
 					
 					DataBundle bundle = TwoDTextReader.open(f.getAbsolutePath());
 				
+					// preprocess the data for Ben H: experimental code to toss
+					//
+					//   note: ben's data looks to have very large magnitudes! Because
+					//     it came from fourier xformed data.
+					
+					for (int dsNum = 0; dsNum < bundle.dbls.size(); dsNum++) {
+					
+						DimensionedDataSource<?> img = bundle.dbls.get(dsNum);
+						
+						@SuppressWarnings("unchecked")
+						DimensionedDataSource<Float64Member> orig =
+								(DimensionedDataSource<Float64Member>) img;
+
+						long x = orig.dimension(0);
+						long y = orig.dimension(1);
+						
+						long halfX = x / 2;
+						long halfY = x / 2;
+
+						long[] dims = new long[] {x-halfX, y-halfY};
+						
+						DimensionedDataSource<Float64Member> cropped =
+								DimensionedStorage.allocate(G.DBL.construct(), dims);
+						
+						TwoDView<Float64Member> vw1 = new TwoDView<Float64Member>(orig);
+						
+						TwoDView<Float64Member> vw2 = new TwoDView<Float64Member>(cropped);
+
+						Float64Member val = G.DBL.construct();
+						
+						for (long r = halfY; r < y; r++) {
+							for (long c = halfX; c < x; c++) {
+								
+								vw1.get(c, r, val);
+								vw2.set(c - halfX, r - halfY, val);
+							}							
+						}
+								
+						bundle.dbls.set(dsNum, cropped);
+						
+						FlipAlongDimension.compute(G.DBL, 1, cropped);
+						
+						Float64Member ZERO = G.DBL.construct(0.0);
+
+						// NOTE: set max allowed value here!
+						
+						Float64Member MAX = G.DBL.construct(16384.0);
+
+						Function1<Boolean,Float64Member> lessThanZero =
+							new Function1<Boolean, Float64Member>()
+						{
+							@Override
+							public Boolean call(Float64Member val) {
+								
+								return val.v() < ZERO.v();
+							}
+						}; 
+						
+						
+						Function1<Boolean,Float64Member> greaterThanMax =
+							new Function1<Boolean, Float64Member>()
+						{
+							@Override
+							public Boolean call(Float64Member val) {
+								
+								return val.v() > MAX.v();
+							}
+						}; 
+						
+						ReplaceIf.compute(G.DBL, lessThanZero, ZERO, cropped.rawData());
+						
+						ReplaceIf.compute(G.DBL, greaterThanMax, MAX, cropped.rawData());
+					}
+					
 					long t1 = System.currentTimeMillis();
 					
 					displayAll(bundle);

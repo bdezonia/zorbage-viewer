@@ -61,37 +61,37 @@
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-ecat</artifactId>
-      <version>0.0.6-SNAPSHOT</version>
+      <version>0.0.6</version>
     </dependency>
 
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-gdal</artifactId>
-      <version>0.1.8-SNAPSHOT</version>
+      <version>0.1.8</version>
     </dependency>
 
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-netcdf</artifactId>
-      <version>0.1.6-SNAPSHOT</version>
-    </dependency>
-  
-    <dependency>
-      <groupId>io.github.bdezonia</groupId>
-      <artifactId>zorbage-nmr</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>0.1.6</version>
     </dependency>
   
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-nifti</artifactId>
-      <version>0.1.6-SNAPSHOT</version>
+      <version>0.1.6</version>
+    </dependency>
+  
+    <dependency>
+      <groupId>io.github.bdezonia</groupId>
+      <artifactId>zorbage-nmr</artifactId>
+      <version>0.0.1</version>
     </dependency>
   
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-scifio</artifactId>
-      <version>0.1.7-SNAPSHOT</version>
+      <version>0.1.7</version>
     </dependency>
   
   </dependencies>

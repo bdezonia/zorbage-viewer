@@ -3732,6 +3732,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		output.setSource("Type conversion of "+input.getSource());
 		
+		output.setName("Type conversion of "+input.getSource());
+		
 		// TODO: copy metadata to output!
 		
 		new RealImageViewer<L,M>(outAlg, output);

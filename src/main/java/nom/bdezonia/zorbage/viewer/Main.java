@@ -46,17 +46,13 @@ import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algorithm.BoolToUInt1;
+import nom.bdezonia.zorbage.algorithm.ClampToRange;
 import nom.bdezonia.zorbage.algorithm.Copy;
-import nom.bdezonia.zorbage.algorithm.FlipAlongDimension;
-import nom.bdezonia.zorbage.algorithm.ReplaceIf;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
-import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.data.NdData;
 import nom.bdezonia.zorbage.datasource.ConcatenatedDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
-import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.ecat.Ecat;
-import nom.bdezonia.zorbage.function.Function1;
 import nom.bdezonia.zorbage.gdal.Gdal;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.misc.DataSourceUtils;
@@ -451,6 +447,10 @@ public class Main<T extends Algebra<T,U>, U> {
 					
 					DataBundle bundle = TwoDTextReader.open(f.getAbsolutePath());
 				
+					/*
+					
+						// TODO: temp disablement
+					
 					// preprocess the data for Ben H: experimental code to toss
 					//
 					//   note: ben's data looks to have very large magnitudes! Because
@@ -488,41 +488,34 @@ public class Main<T extends Algebra<T,U>, U> {
 								vw2.set(c - halfX, r - halfY, val);
 							}							
 						}
-								
+	
 						bundle.dbls.set(dsNum, cropped);
 						
 						FlipAlongDimension.compute(G.DBL, 1, cropped);
+					}
+					*/
+
+
+					// for Ben: clamp real data so that neg and very large pos values don't cause problems.
+					
+					for (int dsNum = 0; dsNum < bundle.dbls.size(); dsNum++) {
 						
-						Float64Member ZERO = G.DBL.construct(0.0);
+						
+						DimensionedDataSource<?> img = bundle.dbls.get(dsNum);
+						
+						@SuppressWarnings("unchecked")
+						DimensionedDataSource<Float64Member> data =
+								(DimensionedDataSource<Float64Member>) img;
+
+						// NOTE: set min allowed value here!
+						
+						Float64Member MIN = G.DBL.construct(0.0);
 
 						// NOTE: set max allowed value here!
 						
-						Float64Member MAX = G.DBL.construct(16384.0);
+						Float64Member MAX = G.DBL.construct(50000.0);
 
-						Function1<Boolean,Float64Member> lessThanZero =
-							new Function1<Boolean, Float64Member>()
-						{
-							@Override
-							public Boolean call(Float64Member val) {
-								
-								return val.v() < ZERO.v();
-							}
-						}; 
-						
-						
-						Function1<Boolean,Float64Member> greaterThanMax =
-							new Function1<Boolean, Float64Member>()
-						{
-							@Override
-							public Boolean call(Float64Member val) {
-								
-								return val.v() > MAX.v();
-							}
-						}; 
-						
-						ReplaceIf.compute(G.DBL, lessThanZero, ZERO, cropped.rawData());
-						
-						ReplaceIf.compute(G.DBL, greaterThanMax, MAX, cropped.rawData());
+						ClampToRange.compute(G.DBL, MIN, MAX, data.rawData(), data.rawData());
 					}
 					
 					long t1 = System.currentTimeMillis();
@@ -959,12 +952,14 @@ public class Main<T extends Algebra<T,U>, U> {
 	// how would you display complex data? a channel for r and i? otherwise it's not
 	//   bounded and it's not ordered so you can't get a display range from it. Also
 	//   similar things for quat and oct images. Maybe one window per "channel" and
-	//   you can get bounds on a channel.
+	//   you can get bounds on a channel. For now I will display complex magnitude
+	//   data.
 	
+	@SuppressWarnings("unchecked")
 	private <AA extends Algebra<AA,A>,A>
 		void displayComplexImage(AA alg, DimensionedDataSource<A> data)
 	{
-		System.out.println("MUST DISPLAY A COMPLEX IMAGE "+data.getName());
+		new ComplexImageViewer<>(G.CDBL, G.DBL, (DimensionedDataSource<ComplexFloat64Member>) data);
 	}
 
 	private <AA extends Algebra<AA,A>,A>

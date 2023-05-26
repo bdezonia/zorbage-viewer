@@ -101,29 +101,24 @@ import nom.bdezonia.zorbage.algebra.SetComplex;
 import nom.bdezonia.zorbage.algebra.Trigonometric;
 import nom.bdezonia.zorbage.algebra.Unity;
 import nom.bdezonia.zorbage.algorithm.FFT2D;
-import nom.bdezonia.zorbage.algorithm.GetIValues;
-import nom.bdezonia.zorbage.algorithm.GetRValues;
-import nom.bdezonia.zorbage.algorithm.InvFFT2D;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.algorithm.NdSplit;
-import nom.bdezonia.zorbage.algorithm.PolarCoords;
 import nom.bdezonia.zorbage.algorithm.Transform2;
 import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
 import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
-import nom.bdezonia.zorbage.data.NdData;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
 import nom.bdezonia.zorbage.procedure.Procedure2;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
-import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
 import nom.bdezonia.zorbage.type.color.RgbUtils;
+import nom.bdezonia.zorbage.type.complex.float64.ComplexFloat64Member;
 import nom.bdezonia.zorbage.type.integer.int8.UnsignedInt8Member;
 import nom.bdezonia.zorbage.type.real.float128.Float128Algebra;
 import nom.bdezonia.zorbage.type.real.float128.Float128Member;
@@ -3394,6 +3389,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	public <CA extends Algebra<CA,C> & Addition<C> & Multiplication<C> & Conjugate<C>,
 			C extends SetComplex<R> & GetComplex<R> & Allocatable<C>,
 			RA extends Algebra<RA,R> & Trigonometric<R> & RealConstants<R> &
@@ -3415,7 +3411,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				else if (!(complexAlgebra instanceof Multiplication))
 					error = "Complex algebra does not implement Multiplication";
 				
-				@SuppressWarnings("unchecked")
+				//@SuppressWarnings("unchecked")
 				CA cmplxAlg = (CA) complexAlgebra;
 				
 				C tmpC = cmplxAlg.construct();
@@ -3459,7 +3455,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				else if (!(realAlgebra instanceof Ordered))
 					error = "Real algebra does not implement Ordered";
 				
-				@SuppressWarnings("unchecked")
+				//@SuppressWarnings("unchecked")
 				RA realAlg = (RA) realAlgebra;
 				
 				R tmpR = realAlg.construct();
@@ -3493,7 +3489,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					return false;
 				}
 
-				@SuppressWarnings("unchecked")
+				//@SuppressWarnings("unchecked")
 				DimensionedDataSource<R> realData = (DimensionedDataSource<R>) input;
 				
 				long[] dims = new long[2];
@@ -3506,8 +3502,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				DimensionedDataSource<C> complexData = DimensionedStorage.allocate(cmplxAlg.construct(), dims);
 				
 				R realValue = realAlg.construct();
-				
-				R imagValue = realAlg.construct();
 				
 				C complexValue = cmplxAlg.construct();
 				
@@ -3527,13 +3521,21 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					}
 				}
 				
-				DimensionedDataSource<C> result = FFT2D.compute(cmplxAlg, realAlg, complexData);
+				DimensionedDataSource<C> output = FFT2D.compute(cmplxAlg, realAlg, complexData);
+		
+				// swap quadrants: this should be a runtime option somewhere
 				
-				long sz = result.dimension(0);
+				swapQuadrants(cmplxAlg, output);  // TODO: replace with call to SwapQuadrants.compute() from base zorbage library
 
-				// swap quadrants: this should be a runtime option
+				// TODO: FIXME: assuming algebras backing complex data are ComplexFloat64 oriented. They may not be.
 				
-				swapQuadrants(cmplxAlg, result);
+				new ComplexImageViewer<>(G.CDBL, G.DBL, (DimensionedDataSource<ComplexFloat64Member>) output);
+
+/*
+ 				
+ OLD APPROACH: view real and imag channels separately and invert to prove that FFT/INVFFT is working
+ 
+				long sz = result.dimension(0);
 
 				IndexedDataSource<R> m = Storage.allocate(realValue, sz*sz);
 				
@@ -3576,7 +3578,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 				// swap quadrants again to undo prev swap
 				
-				swapQuadrants(cmplxAlg, result);
+				swapQuadrants(cmplxAlg, result);  // TODO: replace with SwapQuadrants.compute() from base zorbage library
 				
 				DimensionedDataSource<C> result2 = InvFFT2D.compute(cmplxAlg, realAlg, result);
 
@@ -3601,21 +3603,12 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				new RealImageViewer<>(realAlg, reals);
 
 				new RealImageViewer<>(realAlg, imags);
-				
+*/
+
 				return true;
 			}
 
-/* Support this instead of real viewers someday
-
-				DimensionedDataSource<M> complexDs =
-						new NdData<M>(new long[] {edgeSize, edgeSize}, complexOutput);
-
-				complexDs.setName("FFT of "+input.getName());
-
-				complexDs.setSource(input.getSource());
-
-				new ComplexImageViewer<L,M,N,O>(cmplxAlg, realAlg, complexDs);
-*/
+			  // TODO: replace with SwapQuadrants.compute() from base zorbage library
 			
 			private void swapQuadrants(CA alg, DimensionedDataSource<C> data) {
 				
@@ -3736,6 +3729,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			outList.set(i, out);
 		}
+		
+		output.setSource("Type conversion of "+input.getSource());
+		
+		output.setName("Type conversion of "+input.getSource());
 		
 		// TODO: copy metadata to output!
 		

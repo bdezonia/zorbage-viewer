@@ -31,7 +31,17 @@
 package nom.bdezonia.zorbage.viewer;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
+import nom.bdezonia.zorbage.algebra.G;
+import nom.bdezonia.zorbage.algorithm.PolarCoords;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
+import nom.bdezonia.zorbage.data.DimensionedStorage;
+import nom.bdezonia.zorbage.misc.DataSourceUtils;
+import nom.bdezonia.zorbage.sampling.IntegerIndex;
+import nom.bdezonia.zorbage.sampling.SamplingCartesianIntegerGrid;
+import nom.bdezonia.zorbage.sampling.SamplingIterator;
+import nom.bdezonia.zorbage.type.complex.float64.ComplexFloat64Member;
+import nom.bdezonia.zorbage.type.real.float64.Float64Algebra;
+import nom.bdezonia.zorbage.type.real.float64.Float64Member;
 
 /**
  * 
@@ -40,17 +50,59 @@ import nom.bdezonia.zorbage.data.DimensionedDataSource;
  */
 public class ComplexImageViewer<L extends Algebra<L,M>, M, N extends Algebra<N,O>, O> {
 
-	private final L complexAlg;
-	private final N realAlg;
-	private final DimensionedDataSource<M> data;
-	
+	@SuppressWarnings("unchecked")
 	public ComplexImageViewer(L complexAlgebra, N realAlgebra, DimensionedDataSource<M> data) {
-		this.complexAlg = complexAlgebra;
-		this.realAlg = realAlgebra;
-		this.data = data;
-		System.out.println("Got a complex data source with numDims = "+data.numDimensions());
-		for (int i = 0; i < data.numDimensions(); i++) {
-			System.out.println("  dim " + i + " = " + data.dimension(i));
+
+		long[] origDims = DataSourceUtils.dimensions(data);
+		
+		int numD = origDims.length;
+		
+		DimensionedDataSource<Float64Member> complexMagnitudes = DimensionedStorage.allocate(G.DBL.construct(), origDims);
+		
+		IntegerIndex min = new IntegerIndex(numD);
+
+		IntegerIndex max = new IntegerIndex(numD);
+		
+		for (int i = 0; i < numD; i++) {
+			
+			max.set(i, data.dimension(i) - 1);
 		}
+		
+		SamplingCartesianIntegerGrid sampling = new SamplingCartesianIntegerGrid(min, max);
+		
+		SamplingIterator<IntegerIndex> iter = sampling.iterator();
+		
+		IntegerIndex location = new IntegerIndex(numD);
+
+		ComplexFloat64Member complexValue = G.CDBL.construct();
+
+		Float64Member real = G.DBL.construct();
+		
+		Float64Member imag = G.DBL.construct();
+		
+		Float64Member magnitude = G.DBL.construct();
+		
+		while (iter.hasNext()) {
+			
+			iter.next(location);
+
+			// TODO: FIXME later. Provide a more general approach than assuming complex doubles.
+			
+			((DimensionedDataSource<ComplexFloat64Member>) data).get(location, complexValue);
+			
+			complexValue.getR(real);
+			
+			complexValue.getI(imag);
+			
+			PolarCoords.magnitude(G.DBL, real, imag, magnitude);
+			
+			complexMagnitudes.set(location, magnitude);
+		}
+		
+		complexMagnitudes.setName("Complex magnitudes of "+data.getName());
+
+		complexMagnitudes.setSource(data.getSource());
+		
+		new RealImageViewer<Float64Algebra,Float64Member>(G.DBL, complexMagnitudes);
 	}
 }

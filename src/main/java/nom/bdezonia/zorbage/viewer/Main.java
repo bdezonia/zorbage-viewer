@@ -46,6 +46,7 @@ import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algorithm.BoolToUInt1;
+import nom.bdezonia.zorbage.algorithm.ClampToRange;
 import nom.bdezonia.zorbage.algorithm.Copy;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.NdData;
@@ -146,6 +147,7 @@ import nom.bdezonia.zorbage.type.real.float32.Float32MatrixMember;
 import nom.bdezonia.zorbage.type.real.float32.Float32VectorMember;
 import nom.bdezonia.zorbage.type.real.float64.Float64CartesianTensorProductMember;
 import nom.bdezonia.zorbage.type.real.float64.Float64MatrixMember;
+import nom.bdezonia.zorbage.type.real.float64.Float64Member;
 import nom.bdezonia.zorbage.type.real.float64.Float64VectorMember;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionCartesianTensorProductMember;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMatrixMember;
@@ -445,6 +447,77 @@ public class Main<T extends Algebra<T,U>, U> {
 					
 					DataBundle bundle = TwoDTextReader.open(f.getAbsolutePath());
 				
+					/*
+					
+						// TODO: temp disablement
+					
+					// preprocess the data for Ben H: experimental code to toss
+					//
+					//   note: ben's data looks to have very large magnitudes! Because
+					//     it came from fourier xformed data.
+					
+					for (int dsNum = 0; dsNum < bundle.dbls.size(); dsNum++) {
+					
+						DimensionedDataSource<?> img = bundle.dbls.get(dsNum);
+						
+						@SuppressWarnings("unchecked")
+						DimensionedDataSource<Float64Member> orig =
+								(DimensionedDataSource<Float64Member>) img;
+
+						long x = orig.dimension(0);
+						long y = orig.dimension(1);
+						
+						long halfX = x / 2;
+						long halfY = x / 2;
+
+						long[] dims = new long[] {x-halfX, y-halfY};
+						
+						DimensionedDataSource<Float64Member> cropped =
+								DimensionedStorage.allocate(G.DBL.construct(), dims);
+						
+						TwoDView<Float64Member> vw1 = new TwoDView<Float64Member>(orig);
+						
+						TwoDView<Float64Member> vw2 = new TwoDView<Float64Member>(cropped);
+
+						Float64Member val = G.DBL.construct();
+						
+						for (long r = halfY; r < y; r++) {
+							for (long c = halfX; c < x; c++) {
+								
+								vw1.get(c, r, val);
+								vw2.set(c - halfX, r - halfY, val);
+							}							
+						}
+	
+						bundle.dbls.set(dsNum, cropped);
+						
+						FlipAlongDimension.compute(G.DBL, 1, cropped);
+					}
+					*/
+
+
+					// for Ben: clamp real data so that neg and very large pos values don't cause problems.
+					
+					for (int dsNum = 0; dsNum < bundle.dbls.size(); dsNum++) {
+						
+						
+						DimensionedDataSource<?> img = bundle.dbls.get(dsNum);
+						
+						@SuppressWarnings("unchecked")
+						DimensionedDataSource<Float64Member> data =
+								(DimensionedDataSource<Float64Member>) img;
+
+						// NOTE: set min allowed value here!
+						
+						Float64Member MIN = G.DBL.construct(0.0);
+
+						// NOTE: set max allowed value here!
+						
+						Float64Member MAX = G.DBL.construct(50000.0);
+
+						ClampToRange.compute(G.DBL, MIN, MAX, data.rawData(), data.rawData());
+					}
+					
 					long t1 = System.currentTimeMillis();
 					
 					displayAll(bundle);
@@ -879,12 +952,14 @@ public class Main<T extends Algebra<T,U>, U> {
 	// how would you display complex data? a channel for r and i? otherwise it's not
 	//   bounded and it's not ordered so you can't get a display range from it. Also
 	//   similar things for quat and oct images. Maybe one window per "channel" and
-	//   you can get bounds on a channel.
+	//   you can get bounds on a channel. For now I will display complex magnitude
+	//   data.
 	
+	@SuppressWarnings("unchecked")
 	private <AA extends Algebra<AA,A>,A>
 		void displayComplexImage(AA alg, DimensionedDataSource<A> data)
 	{
-		System.out.println("MUST DISPLAY A COMPLEX IMAGE "+data.getName());
+		new ComplexImageViewer<>(G.CDBL, G.DBL, (DimensionedDataSource<ComplexFloat64Member>) data);
 	}
 
 	private <AA extends Algebra<AA,A>,A>

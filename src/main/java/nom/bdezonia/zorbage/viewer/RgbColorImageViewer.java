@@ -51,6 +51,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -59,6 +60,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
@@ -66,14 +68,20 @@ import javax.swing.SwingWorker;
 
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
+import nom.bdezonia.zorbage.algebra.G;
+import nom.bdezonia.zorbage.algebra.SetFromDoubles;
 import nom.bdezonia.zorbage.algorithm.NdSplit;
 import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
 import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
+import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
+import nom.bdezonia.zorbage.misc.DataSourceUtils;
+import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
+import nom.bdezonia.zorbage.type.color.RgbAlgebra;
 import nom.bdezonia.zorbage.type.color.RgbMember;
 import nom.bdezonia.zorbage.type.color.RgbUtils;
 
@@ -191,6 +199,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		JButton panUp = new JButton("Pan Up");
 		JButton panDown = new JButton("Pan Down");
 		JButton resetZoom = new JButton("Reset Pan/Zoom");
+		JButton toFloat = new JButton("To Float ...");
 		JButton explode = new JButton("Explode ...");
 		JButton saveAs = new JButton("Save As ...");
 		Dimension size = new Dimension(150, 40);
@@ -201,6 +210,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		panUp.setMinimumSize(size);
 		panDown.setMinimumSize(size);
 		resetZoom.setMinimumSize(size);
+		toFloat.setMinimumSize(size);
 		snapshot.setMinimumSize(size);
 		grabPlane.setMinimumSize(size);
 		swapAxes.setMinimumSize(size);
@@ -213,6 +223,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		panUp.setMaximumSize(size);
 		panDown.setMaximumSize(size);
 		resetZoom.setMaximumSize(size);
+		toFloat.setMaximumSize(size);
 		snapshot.setMaximumSize(size);
 		grabPlane.setMaximumSize(size);
 		swapAxes.setMaximumSize(size);
@@ -226,6 +237,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		vertBox.add(panUp);
 		vertBox.add(panDown);
 		vertBox.add(resetZoom);
+		vertBox.add(toFloat);
 		vertBox.add(snapshot);
 		vertBox.add(grabPlane);
 		vertBox.add(swapAxes);
@@ -395,6 +407,100 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 				setZoomCenterLabels();
 				pz.draw();
 				frame.repaint();
+			}
+		});
+		toFloat.addActionListener(new ActionListener() {
+
+			boolean cancelled = false;
+			Algebra<?,?> fltAlg = null;
+			
+			@SuppressWarnings({"rawtypes", "unchecked"})
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+				dlg.setLocationByPlatform(true);
+				dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
+				dlg.add(new JLabel("Choose floating point type of output"));
+				ButtonGroup bg = new ButtonGroup();
+				JRadioButton f16 = new JRadioButton("16 bit float");
+				JRadioButton f32 = new JRadioButton("32 bit float");
+				JRadioButton f64 = new JRadioButton("64 bit float");
+				JRadioButton f128 = new JRadioButton("128 bit float");
+				JRadioButton fhp = new JRadioButton("Unbounded float");
+				bg.add(f16);
+				bg.add(f32);
+				bg.add(f64);
+				bg.add(f128);
+				bg.add(fhp);
+				dlg.add(f16);
+				dlg.add(f32);
+				dlg.add(f64);
+				dlg.add(f128);
+				dlg.add(fhp);
+				f16.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						fltAlg = G.HLF;
+					}
+				});
+				f32.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						fltAlg = G.FLT;
+					}
+				});
+				f64.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						fltAlg = G.DBL;
+					}
+				});
+				f128.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						fltAlg = G.QUAD;
+					}
+				});
+				fhp.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						fltAlg = G.HP;
+					}
+				});
+				
+				JButton ok = new JButton("Ok");
+				ok.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+					
+						cancelled = false;
+						
+						dlg.setVisible(false);
+					}
+				});
+				JButton cancel = new JButton("Cancel");
+				cancel.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						
+						cancelled = true;
+						
+						dlg.setVisible(false);
+					}
+				});
+				dlg.add(ok);
+				dlg.add(cancel);
+				dlg.pack();
+				dlg.setVisible(true);
+				if (!cancelled && fltAlg != null) {
+
+					convertToFloat((Algebra)fltAlg, alg, dataSource);
+				}
 			}
 		});
 		explode.addActionListener(new ActionListener() {
@@ -1392,4 +1498,79 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 
+	
+	<FA extends Algebra<FA,F>,
+		F extends Allocatable<F> & SetFromDoubles,
+		RGBA extends Algebra<RGBA, RGB>,
+		RGB>
+		void convertToFloat(FA fltAlg, RGBA rgbAlg, DimensionedDataSource<RGB> dataSource)
+	{
+		long[] dims = DataSourceUtils.dimensions(dataSource);
+		
+		DimensionedDataSource<F> fltDataSource = DimensionedStorage.allocate(fltAlg.construct(), dims);
+		
+		if (rgbAlg instanceof RgbAlgebra) {
+
+			RgbAlgebra alg = (RgbAlgebra) rgbAlg;
+			
+			@SuppressWarnings("unchecked")
+			IndexedDataSource<RgbMember> ds = (IndexedDataSource<RgbMember>) dataSource.rawData();
+
+			IndexedDataSource<F> fltDs = (IndexedDataSource<F>) fltDataSource.rawData();
+
+			RgbMember rgbVal = alg.construct();
+			
+			F fltVal = fltAlg.construct();
+			
+			for (long i = 0; i < ds.size(); i++) {
+				
+				ds.get(i, rgbVal);
+				
+				double intensity = intensity(rgbVal.r(), rgbVal.g(), rgbVal.b());
+				
+				fltVal.setFromDoubles(intensity);
+
+				fltDs.set(i, fltVal);
+			}
+		}
+		else if (rgbAlg instanceof ArgbAlgebra) {
+			
+			ArgbAlgebra alg = (ArgbAlgebra) rgbAlg;
+			
+			@SuppressWarnings("unchecked")
+			IndexedDataSource<ArgbMember> ds = (IndexedDataSource<ArgbMember>) dataSource.rawData();
+
+			IndexedDataSource<F> fltDs = (IndexedDataSource<F>) fltDataSource.rawData();
+
+			ArgbMember argbVal = alg.construct();
+			
+			F fltVal = fltAlg.construct();
+			
+			for (long i = 0; i < ds.size(); i++) {
+				
+				ds.get(i, argbVal);
+				
+				double intensity = intensity(argbVal.r(), argbVal.g(), argbVal.b());
+				
+				intensity *= argbVal.a() / 255.0;  // dim intensity based upon alpha value
+				
+				fltVal.setFromDoubles(intensity);
+
+				fltDs.set(i, fltVal);
+			}
+		}
+		else {
+			
+			throw new IllegalArgumentException("ToFloat only works with ARGB or RGB data");
+		}
+		
+		new RealImageViewer<FA,F>(fltAlg, fltDataSource);
+	}
+
+	// I think this comes from a wikipedia articke on GrayScale
+	
+	double intensity(int r, int g, int b) {
+		
+		return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	}
 }

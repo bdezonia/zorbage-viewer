@@ -1231,8 +1231,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							break;
 						}
 					}
-					if (channelDim != -1)
+					if (channelDim != -1) {
+						
 						dataSource = MakeColorDatasource.compute(casted, channelDim);
+					}
 					else
 						JOptionPane.showMessageDialog(frame,
 							    "Image is not 3 or 4 channel data. Cannot make color image.",
@@ -3524,7 +3526,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 				DimensionedDataSource<C> output = FFT2D.compute(cmplxAlg, realAlg, complexData);
 		
-				// swap quadrants: this should be a runtime option somewhere
+				// swap quadrants: this should be a runtime option somewhere or a associated with a button
 				
 				SwapQuadrants.compute(cmplxAlg, output);
 

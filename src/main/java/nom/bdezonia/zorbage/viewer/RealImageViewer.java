@@ -104,6 +104,7 @@ import nom.bdezonia.zorbage.algorithm.FFT2D;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.algorithm.NdSplit;
+import nom.bdezonia.zorbage.algorithm.SwapQuadrants;
 import nom.bdezonia.zorbage.algorithm.Transform2;
 import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
 import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
@@ -3525,7 +3526,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 				// swap quadrants: this should be a runtime option somewhere
 				
-				swapQuadrants(cmplxAlg, output);  // TODO: replace with call to SwapQuadrants.compute() from base zorbage library
+				SwapQuadrants.compute(cmplxAlg, output);
 
 				// TODO: FIXME: assuming algebras backing complex data are ComplexFloat64 oriented. They may not be.
 				
@@ -3578,7 +3579,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 				// swap quadrants again to undo prev swap
 				
-				swapQuadrants(cmplxAlg, result);  // TODO: replace with SwapQuadrants.compute() from base zorbage library
+				SwapQuadrants.compute(cmplxAlg, result);
 				
 				DimensionedDataSource<C> result2 = InvFFT2D.compute(cmplxAlg, realAlg, result);
 
@@ -3608,39 +3609,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				return true;
 			}
 
-			  // TODO: replace with SwapQuadrants.compute() from base zorbage library
-			
-			private void swapQuadrants(CA alg, DimensionedDataSource<C> data) {
-				
-				C tmp1 = alg.construct();
-				C tmp2 = alg.construct();
-				
-				TwoDView<C> vw = new TwoDView<C>(data);
-
-				long quadSize = vw.d0() / 2;
-				
-				// swap ul and lr
-				for (long y = 0; y < quadSize; y++) {
-					for (long x = 0; x < quadSize; x++) {
-						vw.get(x, y, tmp1);
-						vw.get(x+quadSize, y+quadSize, tmp2);
-						vw.set(x+quadSize, y+quadSize, tmp1);
-						vw.set(x, y, tmp2);
-					}
-				}
-			
-				// swap ur and ll
-
-				for (long y = 0; y < quadSize; y++) {
-					for (long x = quadSize; x < vw.d0(); x++) {
-						vw.get(x, y, tmp1);
-						vw.get(x-quadSize, y+quadSize, tmp2);
-						vw.set(x-quadSize, y+quadSize, tmp1);
-						vw.set(x, y, tmp2);
-					}
-				}
-			}
-			
 			@Override
 			protected void done() {
 

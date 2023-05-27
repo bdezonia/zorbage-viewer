@@ -1526,7 +1526,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 				
 				ds.get(i, rgbVal);
 				
-				double intensity = intensity(rgbVal.r(), rgbVal.g(), rgbVal.b());
+				double intensity = RgbUtils.intensity(rgbVal.r(), rgbVal.g(), rgbVal.b());
 				
 				fltVal.setFromDoubles(intensity);
 
@@ -1550,9 +1550,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 				
 				ds.get(i, argbVal);
 				
-				double intensity = intensity(argbVal.r(), argbVal.g(), argbVal.b());
-				
-				intensity *= argbVal.a() / 255.0;  // dim intensity based upon alpha value
+				double intensity = RgbUtils.intensity(argbVal.a(), argbVal.r(), argbVal.g(), argbVal.b());
 				
 				fltVal.setFromDoubles(intensity);
 
@@ -1565,12 +1563,5 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		}
 		
 		new RealImageViewer<FA,F>(fltAlg, fltDataSource);
-	}
-
-	// I think this comes from a wikipedia articke on GrayScale
-	
-	double intensity(int r, int g, int b) {
-		
-		return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 	}
 }

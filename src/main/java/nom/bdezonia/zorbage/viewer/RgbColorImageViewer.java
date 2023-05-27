@@ -637,7 +637,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			U value = alg.construct();
 			RgbMember rgb = (value instanceof RgbMember) ? (RgbMember) value : null;
 			ArgbMember argb = (value instanceof ArgbMember) ? (ArgbMember) value : null;
-					
+
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				long i0 = pz.pixelToModel(e.getX(), pz.getVirtualOriginX());
@@ -1497,12 +1497,11 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			new RgbColorImageViewer<V,W>(enhancedAlg, dataset);
 		}
 	}
-
 	
 	<FA extends Algebra<FA,F>,
-		F extends Allocatable<F> & SetFromDoubles,
-		RGBA extends Algebra<RGBA, RGB>,
-		RGB>
+			F extends Allocatable<F> & SetFromDoubles,
+			RGBA extends Algebra<RGBA, RGB>,
+			RGB>
 		void convertToFloat(FA fltAlg, RGBA rgbAlg, DimensionedDataSource<RGB> dataSource)
 	{
 		long[] dims = DataSourceUtils.dimensions(dataSource);

@@ -33,7 +33,8 @@ package nom.bdezonia.zorbage.viewer;
 import nom.bdezonia.zorbage.algebra.Addition;
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
-import nom.bdezonia.zorbage.algebra.GetComplex;
+import nom.bdezonia.zorbage.algebra.GetI;
+import nom.bdezonia.zorbage.algebra.GetR;
 import nom.bdezonia.zorbage.algebra.Multiplication;
 import nom.bdezonia.zorbage.algebra.Roots;
 import nom.bdezonia.zorbage.algorithm.PolarCoords;
@@ -49,14 +50,42 @@ import nom.bdezonia.zorbage.sampling.SamplingIterator;
  * @author Barry DeZonia
  *
  */
-public class ComplexImageViewer<CA extends Algebra<CA,C>,
-									C extends GetComplex<R>,
-									RA extends Algebra<RA,R> & Roots<R> & Addition<R> & Multiplication<R>,
-									R extends Allocatable<R>>
+public class ComplexImageViewer
 {
-
-	public ComplexImageViewer(CA complexAlgebra, RA realAlgebra, DimensionedDataSource<C> data) {
-
+	// do not instantiate
+	
+	private ComplexImageViewer() { }
+	
+	/**
+	 * 
+	 * @param <CA>
+	 * @param <C>
+	 * @param <RA>
+	 * @param <R>
+	 * @param complexAlgebra
+	 * @param realAlgebra
+	 * @param data
+	 * @return
+	 */
+	public static <CA extends Algebra<CA,C>,
+					C extends GetR<R> & GetI<R>,
+					RA extends Algebra<RA,R> & Roots<R> & Addition<R> &
+								Multiplication<R>,
+					R extends Allocatable<R>>
+	
+		RealImageViewer<RA,R>
+	
+			view(Algebra<?,?> cAlg, Algebra<?,?> rAlg, DimensionedDataSource<?> input)
+	{
+		@SuppressWarnings("unchecked")
+		DimensionedDataSource<C> data = (DimensionedDataSource<C>) input;
+		
+		@SuppressWarnings("unchecked")
+		CA complexAlgebra = (CA) cAlg;
+		
+		@SuppressWarnings("unchecked")
+		RA realAlgebra = (RA) rAlg;
+		
 		long[] origDims = DataSourceUtils.dimensions(data);
 		
 		int numD = origDims.length;
@@ -90,8 +119,6 @@ public class ComplexImageViewer<CA extends Algebra<CA,C>,
 			
 			iter.next(location);
 
-			// TODO: FIXME later. Provide a more general approach than assuming complex doubles.
-			
 			data.get(location, complexValue);
 			
 			complexValue.getR(real);
@@ -107,6 +134,6 @@ public class ComplexImageViewer<CA extends Algebra<CA,C>,
 
 		complexMagnitudes.setSource(data.getSource());
 		
-		new RealImageViewer<>(realAlgebra, complexMagnitudes);
+		return new RealImageViewer<>(realAlgebra, complexMagnitudes);
 	}
 }

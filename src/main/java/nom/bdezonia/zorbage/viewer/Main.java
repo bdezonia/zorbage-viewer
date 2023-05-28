@@ -732,6 +732,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private	void displayData(Tuple2<T, DimensionedDataSource<U>> tuple)
 	{
 		// TODO: there now are all kinds of multidim data sources theoretically possible:
@@ -757,7 +758,7 @@ public class Main<T extends Algebra<T,U>, U> {
 			// for now convert boolean data to uint1 and then display
 			//   as a numeric data set.
 			
-			@SuppressWarnings("unchecked")
+			//@SuppressWarnings("unchecked")
 			IndexedDataSource<BooleanMember> bools =
 					(IndexedDataSource<BooleanMember>) data.rawData();
 			
@@ -921,14 +922,33 @@ public class Main<T extends Algebra<T,U>, U> {
 				(type instanceof ComplexFloat32Member) ||
 				(type instanceof ComplexFloat64Member) ||
 				(type instanceof ComplexFloat128Member) ||
-				(type instanceof ComplexHighPrecisionMember) ||
-				(type instanceof GaussianInt8Member) ||
+				(type instanceof ComplexHighPrecisionMember)) {
+			
+			if (type instanceof ComplexFloat16Member)
+				displayComplexImage(G.CHLF, G.HLF, (DimensionedDataSource<ComplexFloat16Member>) data);
+			
+			else if (type instanceof ComplexFloat32Member)
+				displayComplexImage(G.CFLT, G.FLT, (DimensionedDataSource<ComplexFloat32Member>) data);
+			
+			else if (type instanceof ComplexFloat64Member)
+				displayComplexImage(G.CDBL, G.DBL, (DimensionedDataSource<ComplexFloat64Member>) data);
+			
+			else if (type instanceof ComplexFloat128Member)
+				displayComplexImage(G.CQUAD, G.QUAD, (DimensionedDataSource<ComplexFloat128Member>) data);
+			
+			else if (type instanceof ComplexHighPrecisionMember)
+				displayComplexImage(G.CHP, G.HP, (DimensionedDataSource<ComplexHighPrecisionMember>) data);
+			
+			else
+				System.out.println("Unknown complex type found: " + type);
+		}
+		else if ((type instanceof GaussianInt8Member) ||
 				(type instanceof GaussianInt16Member) ||
 				(type instanceof GaussianInt32Member) ||
 				(type instanceof GaussianInt64Member) ||
 				(type instanceof GaussianIntUnboundedMember)) {
 			
-			displayComplexImage(algebra, data);
+			System.out.println("Must display gaussian integer based data somehow");
 		}
 		else {
 			// signed and unsigned ints
@@ -955,11 +975,14 @@ public class Main<T extends Algebra<T,U>, U> {
 	//   you can get bounds on a channel. For now I will display complex magnitude
 	//   data.
 	
-	@SuppressWarnings("unchecked")
-	private <AA extends Algebra<AA,A>,A>
-		void displayComplexImage(AA alg, DimensionedDataSource<A> data)
+	//@SuppressWarnings("unchecked")
+	private <CA extends Algebra<CA,C>,
+				C,
+				RA extends Algebra<RA, R>,
+				R>
+		void displayComplexImage(CA cAlg, RA rAlg, DimensionedDataSource<C> data)
 	{
-		new ComplexImageViewer<>(G.CDBL, G.DBL, (DimensionedDataSource<ComplexFloat64Member>) data);
+		ComplexImageViewer.view(cAlg, rAlg, data);
 	}
 
 	private <AA extends Algebra<AA,A>,A>

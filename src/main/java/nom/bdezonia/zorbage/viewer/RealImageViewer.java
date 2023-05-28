@@ -117,7 +117,6 @@ import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
 import nom.bdezonia.zorbage.type.color.RgbUtils;
-import nom.bdezonia.zorbage.type.complex.float64.ComplexFloat64Member;
 import nom.bdezonia.zorbage.type.integer.int8.UnsignedInt8Member;
 import nom.bdezonia.zorbage.type.real.float128.Float128Algebra;
 import nom.bdezonia.zorbage.type.real.float128.Float128Member;
@@ -3394,7 +3393,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	public <CA extends Algebra<CA,C> & Addition<C> & Multiplication<C>,
 			C extends SetR<R> & SetI<R> & Allocatable<C>,
 			RA extends Algebra<RA,R> & Trigonometric<R> & RealConstants<R> &
-				Multiplication<R> & Addition<R> & Invertible<R> & Unity<R>,
+				Multiplication<R> & Addition<R> & Invertible<R> & Unity<R> &
+				Roots<R>,
 			R extends Allocatable<R>>
 		void doFFT(Algebra<?,?> complexAlgebra, Algebra<?,?> realAlgebra, DimensionedDataSource<?> input, JLabel theLabel)
 	{
@@ -3505,9 +3505,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 				SwapQuadrants.compute(cmplxAlg, output);
 
-				// TODO: FIXME: assuming algebras backing complex data are ComplexFloat64 oriented. They may not be.
-				
-				new ComplexImageViewer<>(G.CDBL, G.DBL, (DimensionedDataSource<ComplexFloat64Member>) output);
+				ComplexImageViewer.view(cmplxAlg, realAlg, output);
 
 /*
  				

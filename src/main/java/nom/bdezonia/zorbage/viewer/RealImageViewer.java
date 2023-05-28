@@ -81,15 +81,12 @@ import nom.bdezonia.zorbage.algebra.Addition;
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.Bounded;
-import nom.bdezonia.zorbage.algebra.Conjugate;
 import nom.bdezonia.zorbage.algebra.Exponential;
 import nom.bdezonia.zorbage.algebra.G;
-import nom.bdezonia.zorbage.algebra.GetComplex;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
 import nom.bdezonia.zorbage.algebra.Hyperbolic;
 import nom.bdezonia.zorbage.algebra.Infinite;
 import nom.bdezonia.zorbage.algebra.IntegralDivision;
-import nom.bdezonia.zorbage.algebra.InverseTrigonometric;
 import nom.bdezonia.zorbage.algebra.Invertible;
 import nom.bdezonia.zorbage.algebra.Multiplication;
 import nom.bdezonia.zorbage.algebra.NaN;
@@ -97,7 +94,8 @@ import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algebra.Power;
 import nom.bdezonia.zorbage.algebra.RealConstants;
 import nom.bdezonia.zorbage.algebra.Roots;
-import nom.bdezonia.zorbage.algebra.SetComplex;
+import nom.bdezonia.zorbage.algebra.SetI;
+import nom.bdezonia.zorbage.algebra.SetR;
 import nom.bdezonia.zorbage.algebra.Trigonometric;
 import nom.bdezonia.zorbage.algebra.Unity;
 import nom.bdezonia.zorbage.algorithm.FFT2D;
@@ -3393,11 +3391,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <CA extends Algebra<CA,C> & Addition<C> & Multiplication<C> & Conjugate<C>,
-			C extends SetComplex<R> & GetComplex<R> & Allocatable<C>,
+	public <CA extends Algebra<CA,C> & Addition<C> & Multiplication<C>,
+			C extends SetR<R> & SetI<R> & Allocatable<C>,
 			RA extends Algebra<RA,R> & Trigonometric<R> & RealConstants<R> &
-				Multiplication<R> & Addition<R> & Invertible<R> & Unity<R> &
-				NaN<R> & InverseTrigonometric<R> & Roots<R> & Ordered<R>,
+				Multiplication<R> & Addition<R> & Invertible<R> & Unity<R>,
 			R extends Allocatable<R>>
 		void doFFT(Algebra<?,?> complexAlgebra, Algebra<?,?> realAlgebra, DimensionedDataSource<?> input, JLabel theLabel)
 	{
@@ -3419,11 +3416,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 				C tmpC = cmplxAlg.construct();
 				
-				if (!(tmpC instanceof SetComplex))
-					error = "Complex number does not implement SetComplex";
+				if (!(tmpC instanceof SetR))
+					error = "Complex number does not implement SetR";
 				
-				else if (!(tmpC instanceof GetComplex))
-					error = "Complex number does not implement GetComplex";
+				else if (!(tmpC instanceof SetI))
+					error = "Complex number does not implement SetI";
 				
 				else if (!(tmpC instanceof Allocatable))
 					error = "Complex number does not implement Allocatable";
@@ -3446,18 +3443,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				else if (!(realAlgebra instanceof Unity))
 					error = "Real algebra does not implement Unity";
 		
-				else if (!(realAlgebra instanceof NaN))
-					error = "Real algebra does not implement NaN";
-				
-				else if (!(realAlgebra instanceof InverseTrigonometric))
-					error = "Real algebra does not implement InverseTrigonometric";
-				
-				else if (!(realAlgebra instanceof Roots))
-					error = "Real algebra does not implement Roots";
-				
-				else if (!(realAlgebra instanceof Ordered))
-					error = "Real algebra does not implement Ordered";
-				
 				//@SuppressWarnings("unchecked")
 				RA realAlg = (RA) realAlgebra;
 				
@@ -3467,16 +3452,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 					tmpC.setR(tmpR);
 					tmpC.setI(tmpR);
-					
-				} catch (ClassCastException e) {
-					
-					error = "Complex algebra and real algebra are not compatible";
-				}
-				
-				try {
-					
-					tmpC.getR(tmpR);
-					tmpC.getI(tmpR);
 					
 				} catch (ClassCastException e) {
 					

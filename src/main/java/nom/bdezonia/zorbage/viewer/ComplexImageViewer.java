@@ -30,8 +30,12 @@
  */
 package nom.bdezonia.zorbage.viewer;
 
+import nom.bdezonia.zorbage.algebra.Addition;
 import nom.bdezonia.zorbage.algebra.Algebra;
-import nom.bdezonia.zorbage.algebra.G;
+import nom.bdezonia.zorbage.algebra.Allocatable;
+import nom.bdezonia.zorbage.algebra.GetComplex;
+import nom.bdezonia.zorbage.algebra.Multiplication;
+import nom.bdezonia.zorbage.algebra.Roots;
 import nom.bdezonia.zorbage.algorithm.PolarCoords;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
@@ -39,25 +43,25 @@ import nom.bdezonia.zorbage.misc.DataSourceUtils;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingCartesianIntegerGrid;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
-import nom.bdezonia.zorbage.type.complex.float64.ComplexFloat64Member;
-import nom.bdezonia.zorbage.type.real.float64.Float64Algebra;
-import nom.bdezonia.zorbage.type.real.float64.Float64Member;
 
 /**
  * 
  * @author Barry DeZonia
  *
  */
-public class ComplexImageViewer<L extends Algebra<L,M>, M, N extends Algebra<N,O>, O> {
+public class ComplexImageViewer<CA extends Algebra<CA,C>,
+									C extends GetComplex<R>,
+									RA extends Algebra<RA,R> & Roots<R> & Addition<R> & Multiplication<R>,
+									R extends Allocatable<R>>
+{
 
-	@SuppressWarnings("unchecked")
-	public ComplexImageViewer(L complexAlgebra, N realAlgebra, DimensionedDataSource<M> data) {
+	public ComplexImageViewer(CA complexAlgebra, RA realAlgebra, DimensionedDataSource<C> data) {
 
 		long[] origDims = DataSourceUtils.dimensions(data);
 		
 		int numD = origDims.length;
 		
-		DimensionedDataSource<Float64Member> complexMagnitudes = DimensionedStorage.allocate(G.DBL.construct(), origDims);
+		DimensionedDataSource<R> complexMagnitudes = DimensionedStorage.allocate(realAlgebra.construct(), origDims);
 		
 		IntegerIndex min = new IntegerIndex(numD);
 
@@ -74,13 +78,13 @@ public class ComplexImageViewer<L extends Algebra<L,M>, M, N extends Algebra<N,O
 		
 		IntegerIndex location = new IntegerIndex(numD);
 
-		ComplexFloat64Member complexValue = G.CDBL.construct();
+		C complexValue = complexAlgebra.construct();
 
-		Float64Member real = G.DBL.construct();
+		R real = realAlgebra.construct();
 		
-		Float64Member imag = G.DBL.construct();
+		R imag = realAlgebra.construct();
 		
-		Float64Member magnitude = G.DBL.construct();
+		R magnitude = realAlgebra.construct();
 		
 		while (iter.hasNext()) {
 			
@@ -88,13 +92,13 @@ public class ComplexImageViewer<L extends Algebra<L,M>, M, N extends Algebra<N,O
 
 			// TODO: FIXME later. Provide a more general approach than assuming complex doubles.
 			
-			((DimensionedDataSource<ComplexFloat64Member>) data).get(location, complexValue);
+			data.get(location, complexValue);
 			
 			complexValue.getR(real);
 			
 			complexValue.getI(imag);
 			
-			PolarCoords.magnitude(G.DBL, real, imag, magnitude);
+			PolarCoords.magnitude(realAlgebra, real, imag, magnitude);
 			
 			complexMagnitudes.set(location, magnitude);
 		}
@@ -103,6 +107,6 @@ public class ComplexImageViewer<L extends Algebra<L,M>, M, N extends Algebra<N,O
 
 		complexMagnitudes.setSource(data.getSource());
 		
-		new RealImageViewer<Float64Algebra,Float64Member>(G.DBL, complexMagnitudes);
+		new RealImageViewer<>(realAlgebra, complexMagnitudes);
 	}
 }

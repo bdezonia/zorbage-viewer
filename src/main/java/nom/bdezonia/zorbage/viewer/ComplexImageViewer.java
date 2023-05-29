@@ -30,12 +30,15 @@
  */
 package nom.bdezonia.zorbage.viewer;
 
+import nom.bdezonia.zorbage.algebra.AbsoluteValue;
 import nom.bdezonia.zorbage.algebra.Addition;
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.GetI;
 import nom.bdezonia.zorbage.algebra.GetR;
+import nom.bdezonia.zorbage.algebra.Invertible;
 import nom.bdezonia.zorbage.algebra.Multiplication;
+import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algebra.Roots;
 import nom.bdezonia.zorbage.algorithm.PolarCoords;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
@@ -70,7 +73,8 @@ public class ComplexImageViewer
 	public static <CA extends Algebra<CA,C>,
 					C extends GetR<R> & GetI<R>,
 					RA extends Algebra<RA,R> & Roots<R> & Addition<R> &
-								Multiplication<R>,
+								Multiplication<R> & Ordered<R> &
+								AbsoluteValue<R,R> & Invertible<R>,
 					R extends Allocatable<R>>
 	
 		RealImageViewer<RA,R>

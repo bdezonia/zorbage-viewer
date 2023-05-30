@@ -1379,8 +1379,9 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					doFFT(G.CFLT, G.FLT, data, constructionLabel);
 				}
 				else if (min instanceof Float64Member) {
-					
+
 					doFFT(G.CDBL, G.DBL, data, constructionLabel);
+					
 				}
 				else if (min instanceof Float128Member) {
 					
@@ -3390,7 +3391,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <CA extends Algebra<CA,C> & Addition<C> & Multiplication<C>,
+	private <CA extends Algebra<CA,C> & Addition<C> & Multiplication<C>,
 			C extends SetR<R> & SetI<R> & Allocatable<C>,
 			RA extends Algebra<RA,R> & Trigonometric<R> & RealConstants<R> &
 				Multiplication<R> & Addition<R> & Invertible<R> & Unity<R> &

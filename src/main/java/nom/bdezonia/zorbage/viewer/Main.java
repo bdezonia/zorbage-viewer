@@ -445,7 +445,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				
 					long t0 = System.currentTimeMillis();
 					
-					DataBundle bundle = PipeToTextReader.open(f.getAbsolutePath());
+					DataBundle bundle = PipeToTextReader.read(f.getAbsolutePath());
 					
 					/*
 					

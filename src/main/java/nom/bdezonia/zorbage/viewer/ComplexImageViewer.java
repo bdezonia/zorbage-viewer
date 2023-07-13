@@ -92,24 +92,17 @@ public class ComplexImageViewer
 		
 		long[] origDims = DataSourceUtils.dimensions(data);
 		
-		int numD = origDims.length;
+		DimensionedDataSource<R> complexMagnitudes =
+				
+				DimensionedStorage.allocate(realAlgebra.construct(), origDims);
 		
-		DimensionedDataSource<R> complexMagnitudes = DimensionedStorage.allocate(realAlgebra.construct(), origDims);
-		
-		IntegerIndex min = new IntegerIndex(numD);
-
-		IntegerIndex max = new IntegerIndex(numD);
-		
-		for (int i = 0; i < numD; i++) {
-			
-			max.set(i, data.dimension(i) - 1);
-		}
-		
-		SamplingCartesianIntegerGrid sampling = new SamplingCartesianIntegerGrid(min, max);
+		SamplingCartesianIntegerGrid sampling =
+				
+				new SamplingCartesianIntegerGrid(origDims);
 		
 		SamplingIterator<IntegerIndex> iter = sampling.iterator();
 		
-		IntegerIndex location = new IntegerIndex(numD);
+		IntegerIndex location = new IntegerIndex(origDims.length);
 
 		C complexValue = complexAlgebra.construct();
 

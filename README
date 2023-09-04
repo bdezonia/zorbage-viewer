@@ -23,10 +23,12 @@ Supported file types:
 AAIGrid – Arc/Info ASCII Grid
 ACE2 – ACE2
 ADRG – ADRG/ARC Digitized Raster Graphics (.gen/.thf)
+AIFF – AIFF audio files
 AIG – Arc/Info Binary Grid
 AIRSAR – AIRSAR Polarimetric Format
 APNG – Animated Portable Network Graphics  
 ARG – Azavea Raster Grid
+AU – AU audio files
 AVI – Audio Video Interleave 
 BAG – Bathymetry Attributed Grid
 BLX – Magellan BLX Topo File Format
@@ -192,6 +194,7 @@ TSX – TerraSAR-X Product
 USGSDEM – USGS ASCII DEM (and CDED)
 VICAR – VICAR
 VRT – GDAL Virtual Format
+WAV – WAVE audio files
 WCS – OGC Web Coverage Service
 WEBP - WEBP
 WMS – Web Map Services

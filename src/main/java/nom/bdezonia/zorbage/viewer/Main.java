@@ -54,6 +54,7 @@ import nom.bdezonia.zorbage.datasource.ConcatenatedDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.ecat.Ecat;
 import nom.bdezonia.zorbage.gdal.Gdal;
+import nom.bdezonia.zorbage.jaudio.JAudio;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.misc.DataSourceUtils;
 import nom.bdezonia.zorbage.misc.LongUtils;
@@ -293,9 +294,45 @@ public class Main<T extends Algebra<T,U>, U> {
 			}
 		});
 
+		JButton loadJAudio = new JButton("Load using jaudio");
+		loadJAudio.addMouseListener(new MouseListener() {
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+			}
+			
+			public void mousePressed(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+
+				JFileChooser chooser = new JFileChooser();
+				
+				chooser.showOpenDialog(frame);
+				
+				File f = chooser.getSelectedFile();
+
+				if (f != null) {
+				
+					DataBundle bundle = JAudio.read(f.getAbsolutePath());
+				
+					displayAll(bundle);
+				}
+			}
+		});
+
 		JButton loadNetcdf = new JButton("Load using netcdf");
 		loadNetcdf.addMouseListener(new MouseListener() {
-			
+
 			@Override
 			public void mouseReleased(MouseEvent e) {
 			}
@@ -690,6 +727,8 @@ public class Main<T extends Algebra<T,U>, U> {
 		loadEcat.setMaximumSize(buttonSize);
 		loadGdal.setMinimumSize(buttonSize);
 		loadGdal.setMaximumSize(buttonSize);
+		loadJAudio.setMinimumSize(buttonSize);
+		loadJAudio.setMaximumSize(buttonSize);
 		loadNetcdf.setMinimumSize(buttonSize);
 		loadNetcdf.setMaximumSize(buttonSize);
 		loadNifti.setMinimumSize(buttonSize);
@@ -703,6 +742,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		box.add(loadEcat);
 		box.add(loadGdal);
+		box.add(loadJAudio);
 		box.add(loadNetcdf);
 		box.add(loadNifti);
 		box.add(loadNMR);

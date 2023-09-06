@@ -140,8 +140,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 	private static final URL ICON_URL = Main.class.getClassLoader().getResource("construction.gif");
 	
-	private static int desiredWidth = 3*512;
-	private static int desiredHeight = 3*512;
+	private static int desiredWidth = 1024;
+	private static int desiredHeight = 1024;
 	
 	private final T alg;
 	private final PlaneView<U> planeData;
@@ -310,7 +310,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton panDown = new JButton("Pan Down");
 		JButton resetZoom = new JButton("Reset Pan/Zoom");
 		JButton dispRange = new JButton("Display Range ...");
-		JButton winSize = new JButton("Window Size ...");
 		JButton toColor = new JButton("To Color");
 		JButton toFloat = new JButton("To Float ...");
 		JButton explode = new JButton("Explode ...");
@@ -327,7 +326,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		panDown.setMinimumSize(size);
 		resetZoom.setMinimumSize(size);
 		dispRange.setMinimumSize(size);
-		winSize.setMinimumSize(size);
 		toColor.setMinimumSize(size);
 		toFloat.setMinimumSize(size);
 		snapshot.setMinimumSize(size);
@@ -346,7 +344,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		panDown.setMaximumSize(size);
 		resetZoom.setMaximumSize(size);
 		dispRange.setMaximumSize(size);
-		winSize.setMaximumSize(size);
 		toColor.setMaximumSize(size);
 		toFloat.setMaximumSize(size);
 		snapshot.setMaximumSize(size);
@@ -366,7 +363,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		vertBox.add(panDown);
 		vertBox.add(resetZoom);
 		vertBox.add(dispRange);
-		vertBox.add(winSize);
 		vertBox.add(toColor);
 		vertBox.add(toFloat);
 		vertBox.add(snapshot);
@@ -1118,87 +1114,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				};
 				
 				worker.execute();
-			}
-		});
-		winSize.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-			
-				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
-				dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
-				dlg.add(new JLabel("Choose width and height of new data windows"));
-				dlg.add(new JLabel("Width (maximum of 1024)"));
-				JTextField widthField = new JTextField(8);
-				widthField.setText(""+desiredWidth);
-				dlg.add(widthField);
-				dlg.add(new JLabel("Height (maximum of 1024)"));
-				JTextField heightField = new JTextField(8);
-				heightField.setText(""+desiredHeight);
-				dlg.add(heightField);
-				JButton ok = new JButton("Ok");
-				dlg.add(ok);
-				JButton cancel = new JButton("Cancel");
-				dlg.add(cancel);
-				ok.addActionListener(new ActionListener() {
-					
-					@Override
-					public void actionPerformed(ActionEvent e) {
-
-						dlg.setVisible(false);
-						
-						int width;
-						
-						int height;
-						
-						String widthStr = widthField.getText();
-						
-						if (widthStr != null && widthStr.length() > 0) {
-						
-							try { 
-							
-								width = Integer.parseInt(widthStr);
-							
-							} catch (NumberFormatException exc) {
-							
-								return;
-							}
-							
-							if (width < 1 || width > 1024) return;
-						}
-						else
-							return;
-						
-						String heightStr = heightField.getText();
-						
-						if (heightStr != null && heightStr.length() > 0) {
-						
-							try { 
-							
-								height = Integer.parseInt(heightStr);
-							
-							} catch (NumberFormatException exc) {
-							
-								return;
-							}
-							if (height < 1 || height > 1024) return;
-						}
-						else
-							return;
-						
-						desiredWidth = width;
-						
-						desiredHeight = height;
-					}					
-				});
-				cancel.addActionListener(new ActionListener() {
-
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						dlg.setVisible(false);
-					}
-				});				
-				dlg.setVisible(true);
 			}
 		});
 		toColor.addActionListener(new ActionListener() {

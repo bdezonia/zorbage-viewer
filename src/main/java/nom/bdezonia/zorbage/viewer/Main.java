@@ -46,7 +46,6 @@ import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algorithm.BoolToUInt1;
-import nom.bdezonia.zorbage.algorithm.ClampToRange;
 import nom.bdezonia.zorbage.algorithm.Copy;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.NdData;
@@ -60,7 +59,7 @@ import nom.bdezonia.zorbage.misc.DataSourceUtils;
 import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
 import nom.bdezonia.zorbage.nifti.Nifti;
-import nom.bdezonia.zorbage.nmr.PipeToTextReader;
+import nom.bdezonia.zorbage.nmr.NmrPipeReader;
 import nom.bdezonia.zorbage.scifio.Scifio;
 import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.storage.file.FileStorage;
@@ -148,7 +147,6 @@ import nom.bdezonia.zorbage.type.real.float32.Float32MatrixMember;
 import nom.bdezonia.zorbage.type.real.float32.Float32VectorMember;
 import nom.bdezonia.zorbage.type.real.float64.Float64CartesianTensorProductMember;
 import nom.bdezonia.zorbage.type.real.float64.Float64MatrixMember;
-import nom.bdezonia.zorbage.type.real.float64.Float64Member;
 import nom.bdezonia.zorbage.type.real.float64.Float64VectorMember;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionCartesianTensorProductMember;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMatrixMember;
@@ -482,7 +480,9 @@ public class Main<T extends Algebra<T,U>, U> {
 				
 					long t0 = System.currentTimeMillis();
 					
-					DataBundle bundle = PipeToTextReader.read(f.getAbsolutePath());
+					//DataBundle bundle = PipeToTextReader.read(f.getAbsolutePath());
+
+					DataBundle bundle = NmrPipeReader.open(f.getAbsolutePath());
 					
 					/*
 					
@@ -532,7 +532,7 @@ public class Main<T extends Algebra<T,U>, U> {
 					}
 					*/
 
-
+					/*
 					// for Ben: clamp real data so that neg and very large pos values don't cause problems.
 					
 					for (int dsNum = 0; dsNum < bundle.dbls.size(); dsNum++) {
@@ -554,6 +554,7 @@ public class Main<T extends Algebra<T,U>, U> {
 
 						ClampToRange.compute(G.DBL, MIN, MAX, data.rawData(), data.rawData());
 					}
+					 */
 					
 					long t1 = System.currentTimeMillis();
 					

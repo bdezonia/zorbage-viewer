@@ -1023,7 +1023,11 @@ public class Main<T extends Algebra<T,U>, U> {
 				R>
 		void displayComplexImage(CA cAlg, RA rAlg, DimensionedDataSource<C> data)
 	{
-		ComplexImageViewer.view(cAlg, rAlg, data);
+		// Black and White
+		//ComplexImageViewer.view(cAlg, rAlg, data);
+		
+		// Color
+		AlternateComplexImageViewer.view(cAlg, rAlg, data);
 	}
 
 	private <AA extends Algebra<AA,A>,A>

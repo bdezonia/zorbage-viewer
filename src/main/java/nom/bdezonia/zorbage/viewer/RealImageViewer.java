@@ -3421,81 +3421,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 				SwapQuadrants.compute(cmplxAlg, output);
 
-				ComplexImageViewer.view(cmplxAlg, realAlg, output);
-
-/*
- 				
- OLD APPROACH: view real and imag channels separately and invert to prove that FFT/INVFFT is working
- 
-				long sz = result.dimension(0);
-
-				IndexedDataSource<R> m = Storage.allocate(realValue, sz*sz);
+				// Black and White
+				//ComplexImageViewer.view(cmplxAlg, realAlg, output);
 				
-				IndexedDataSource<R> p = Storage.allocate(realValue, sz*sz);
-				
-				GetRValues.compute(cmplxAlg, realAlg, result.rawData(), m);
-				
-				GetIValues.compute(cmplxAlg, realAlg, result.rawData(), p);
-				
-				R mag = realAlg.construct();
-				R phas = realAlg.construct();
-				for (long i = 0; i < sz; i++) {
-				
-					m.get(i, realValue);
-					
-					p.get(i, imagValue);
-					
-					PolarCoords.magnitude(realAlg, realValue, imagValue, mag);
-					
-					PolarCoords.phase(realAlg, realValue, imagValue, phas);
-					
-					m.set(i, mag);
-					
-					p.set(i, phas);
-				}
-		
-				DimensionedDataSource<R> magDs = new NdData<R>(new long[] {sz, sz}, m);
-		
-				DimensionedDataSource<R> phasDs = new NdData<R>(new long[] {sz, sz}, p);
-		
-				magDs.setName("Magnitudes of FFT of "+input.getName());
-				
-				phasDs.setName("Phases of FFT of "+input.getName());
-		
-				new RealImageViewer<>(realAlg, magDs);
-		
-				new RealImageViewer<>(realAlg, phasDs);
-
-				// /* Nice FFT/InvFFT debugging code
-
-				// swap quadrants again to undo prev swap
-				
-				SwapQuadrants.compute(cmplxAlg, result);
-				
-				DimensionedDataSource<C> result2 = InvFFT2D.compute(cmplxAlg, realAlg, result);
-
-				IndexedDataSource<R> re = Storage.allocate(realValue, sz*sz);
-		
-				IndexedDataSource<R> im = Storage.allocate(realValue, sz*sz);
-
-				GetRValues.compute(cmplxAlg, realAlg, result2.rawData(), re);
-				
-				GetIValues.compute(cmplxAlg, realAlg, result2.rawData(), im);
-
-				DimensionedDataSource<R> reals =
-						new NdData<R>(new long[] {sz, sz}, re);
-		
-				DimensionedDataSource<R> imags =
-						new NdData<R>(new long[] {sz, sz}, im);
-
-				reals.setName("Real values of InvFFT of FFT xformed data");
-
-				imags.setName("Imag values of InvFFT of FFT xformed data");
-
-				new RealImageViewer<>(realAlg, reals);
-
-				new RealImageViewer<>(realAlg, imags);
-*/
+				// Color
+				AlternateComplexImageViewer.view(cmplxAlg, realAlg, output);
 
 				return true;
 			}

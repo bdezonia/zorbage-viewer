@@ -47,7 +47,9 @@ import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algorithm.BoolToUInt1;
 import nom.bdezonia.zorbage.algorithm.Copy;
+import nom.bdezonia.zorbage.algorithm.GridIterator;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
+import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.data.NdData;
 import nom.bdezonia.zorbage.datasource.ConcatenatedDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
@@ -60,6 +62,8 @@ import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
 import nom.bdezonia.zorbage.nifti.Nifti;
 import nom.bdezonia.zorbage.nmr.NmrPipeReader;
+import nom.bdezonia.zorbage.sampling.IntegerIndex;
+import nom.bdezonia.zorbage.sampling.SamplingIterator;
 import nom.bdezonia.zorbage.scifio.Scifio;
 import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.storage.file.FileStorage;
@@ -67,6 +71,7 @@ import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.bool.BooleanMember;
 import nom.bdezonia.zorbage.type.character.CharMember;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
+import nom.bdezonia.zorbage.type.color.CieLabAlgebra;
 import nom.bdezonia.zorbage.type.color.CieLabMember;
 import nom.bdezonia.zorbage.type.color.RgbMember;
 import nom.bdezonia.zorbage.type.complex.float128.ComplexFloat128Member;
@@ -1007,7 +1012,82 @@ public class Main<T extends Algebra<T,U>, U> {
 	private <AA extends Algebra<AA,A>,A>
 		void displayCieLabColorImage(AA alg, DimensionedDataSource<A> data)
 	{
-		System.out.println("MUST DISPLAY A CIE LAB COLOR IMAGE "+data.getName());
+		CieLabAlgebra cieAlg = (CieLabAlgebra) alg;
+		
+		@SuppressWarnings("unchecked")
+		DimensionedDataSource<CieLabMember> cieData =
+				
+				(DimensionedDataSource<CieLabMember>) data;
+		
+		long[] dims = DataSourceUtils.dimensions(data);
+		
+		DimensionedDataSource<RgbMember> rgbData =
+				
+				DimensionedStorage.allocate(G.RGB.construct(), dims);
+		
+		CieLabMember ciexyz = cieAlg.construct();
+		
+		RgbMember rgb = G.RGB.construct();
+		
+		IntegerIndex idx = new IntegerIndex(dims.length);
+		
+		SamplingIterator<IntegerIndex> iter = GridIterator.compute(dims);
+		
+		while (iter.hasNext()) {
+			
+			iter.next(idx);
+			
+			cieData.get(idx, ciexyz);
+			
+			// In CieLab color model treat (l,a,b) as (x,y,z)
+			//   This might point out a field labeling correction
+			//   I want to make in the Zorbage base classes.
+			
+			// source for equations:
+			//   http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+			
+			double r = (3.2404542)   * ciexyz.l() +
+						(-1.5371385) * ciexyz.a() +
+						(-0.4985314) * ciexyz.b();
+
+			double g = (-0.9692660)  * ciexyz.l() +
+						(1.8760108)  * ciexyz.a() +
+						(0.0415560)  * ciexyz.b();
+			
+			double b = (0.0556434)   * ciexyz.l() +
+						(-0.2040259) * ciexyz.a() +
+						(1.0572252)  * ciexyz.b();
+			 
+			// scale 1.0 based space into 255.0 based space
+			
+			r = r * 255;
+			g = g * 255;
+			b = b * 255;
+	
+			// check for bad values
+			
+			if (r < 0) r = 0;
+			if (g < 0) g = 0;
+			if (b < 0) b = 0;
+			
+			// check for bad values
+			
+			if (r > 255) r = 255;
+			if (g > 255) g = 255;
+			if (b > 255) b = 255;
+			
+			// set the rgb values
+			
+			rgb.setR( (int) (r + 0.5) );
+			rgb.setG( (int) (g + 0.5) );
+			rgb.setB( (int) (b + 0.5) );
+			
+			// store the value
+			
+			rgbData.set(idx, rgb);
+		}
+		
+		displayRgbColorImage(G.RGB, rgbData);
 	}
 
 	// how would you display complex data? a channel for r and i? otherwise it's not

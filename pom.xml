@@ -91,7 +91,7 @@
     <dependency>
       <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-nmr</artifactId>
-      <version>0.0.3.2</version>
+      <version>0.0.4-SNAPSHOT</version>
     </dependency>
   
     <dependency>

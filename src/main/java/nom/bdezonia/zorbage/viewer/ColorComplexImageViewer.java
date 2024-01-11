@@ -61,11 +61,11 @@ import nom.bdezonia.zorbage.type.color.ArgbMember;
  * @author Barry DeZonia
  *
  */
-public class AlternateComplexImageViewer
+public class ColorComplexImageViewer
 {
 	// do not instantiate
 	
-	private AlternateComplexImageViewer() { }
+	private ColorComplexImageViewer() { }
 	
 	/**
 	 * 

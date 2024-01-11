@@ -53,11 +53,11 @@ import nom.bdezonia.zorbage.sampling.SamplingIterator;
  * @author Barry DeZonia
  *
  */
-public class ComplexImageViewer
+public class GrayscaleComplexImageViewer
 {
 	// do not instantiate
 	
-	private ComplexImageViewer() { }
+	private GrayscaleComplexImageViewer() { }
 	
 	/**
 	 * 

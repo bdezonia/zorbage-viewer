@@ -3422,10 +3422,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				SwapQuadrants.compute(cmplxAlg, output);
 
 				// Black and White
-				//ComplexImageViewer.view(cmplxAlg, realAlg, output);
+				//GrayscaleComplexImageViewer.view(cmplxAlg, realAlg, output);
 				
 				// Color
-				AlternateComplexImageViewer.view(cmplxAlg, realAlg, output);
+				ColorComplexImageViewer.view(cmplxAlg, realAlg, output);
 
 				return true;
 			}

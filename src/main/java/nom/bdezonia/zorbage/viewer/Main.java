@@ -1060,6 +1060,10 @@ public class Main<T extends Algebra<T,U>, U> {
 			g = g * 255;
 			b = b * 255;
 	
+			r = (int) (r + 0.5);
+			g = (int) (g + 0.5);
+			b = (int) (b + 0.5);
+
 			// check for bad values
 			
 			if (r < 0) r = 0;
@@ -1074,9 +1078,9 @@ public class Main<T extends Algebra<T,U>, U> {
 			
 			// set the rgb values
 			
-			rgb.setR( (int) (r + 0.5) );
-			rgb.setG( (int) (g + 0.5) );
-			rgb.setB( (int) (b + 0.5) );
+			rgb.setR( (int) r );
+			rgb.setG( (int) g );
+			rgb.setB( (int) b );
 			
 			// store the value
 			
@@ -1086,13 +1090,6 @@ public class Main<T extends Algebra<T,U>, U> {
 		displayRgbColorImage(G.RGB, rgbData);
 	}
 
-	// how would you display complex data? a channel for r and i? otherwise it's not
-	//   bounded and it's not ordered so you can't get a display range from it. Also
-	//   similar things for quat and oct images. Maybe one window per "channel" and
-	//   you can get bounds on a channel. For now I will display complex magnitude
-	//   data.
-	
-	//@SuppressWarnings("unchecked")
 	private <CA extends Algebra<CA,C>,
 				C,
 				RA extends Algebra<RA, R>,
@@ -1100,10 +1097,10 @@ public class Main<T extends Algebra<T,U>, U> {
 		void displayComplexImage(CA cAlg, RA rAlg, DimensionedDataSource<C> data)
 	{
 		// Black and White
-		//ComplexImageViewer.view(cAlg, rAlg, data);
+		//GrayscaleComplexImageViewer.view(cAlg, rAlg, data);
 		
 		// Color
-		AlternateComplexImageViewer.view(cAlg, rAlg, data);
+		ColorComplexImageViewer.view(cAlg, rAlg, data);
 	}
 
 	private <AA extends Algebra<AA,A>,A>

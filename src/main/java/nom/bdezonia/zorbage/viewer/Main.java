@@ -71,8 +71,8 @@ import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.bool.BooleanMember;
 import nom.bdezonia.zorbage.type.character.CharMember;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
-import nom.bdezonia.zorbage.type.color.CieLabAlgebra;
-import nom.bdezonia.zorbage.type.color.CieLabMember;
+import nom.bdezonia.zorbage.type.color.CieXyzAlgebra;
+import nom.bdezonia.zorbage.type.color.CieXyzMember;
 import nom.bdezonia.zorbage.type.color.RgbMember;
 import nom.bdezonia.zorbage.type.complex.float128.ComplexFloat128Member;
 import nom.bdezonia.zorbage.type.complex.float128.ComplexFloat128CartesianTensorProductMember;
@@ -844,7 +844,7 @@ public class Main<T extends Algebra<T,U>, U> {
 			
 			displayTextData(algebra, data);
 		}
-		else if (type instanceof CieLabMember) {
+		else if (type instanceof CieXyzMember) {
 
 			displayCieLabColorImage(algebra, data);
 		}
@@ -1012,12 +1012,12 @@ public class Main<T extends Algebra<T,U>, U> {
 	private <AA extends Algebra<AA,A>,A>
 		void displayCieLabColorImage(AA alg, DimensionedDataSource<A> data)
 	{
-		CieLabAlgebra cieAlg = (CieLabAlgebra) alg;
+		CieXyzAlgebra cieAlg = (CieXyzAlgebra) alg;
 		
 		@SuppressWarnings("unchecked")
-		DimensionedDataSource<CieLabMember> cieData =
+		DimensionedDataSource<CieXyzMember> cieData =
 				
-				(DimensionedDataSource<CieLabMember>) data;
+				(DimensionedDataSource<CieXyzMember>) data;
 		
 		long[] dims = DataSourceUtils.dimensions(data);
 		
@@ -1025,7 +1025,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				
 				DimensionedStorage.allocate(G.RGB.construct(), dims);
 		
-		CieLabMember ciexyz = cieAlg.construct();
+		CieXyzMember ciexyz = cieAlg.construct();
 		
 		RgbMember rgb = G.RGB.construct();
 		
@@ -1046,17 +1046,17 @@ public class Main<T extends Algebra<T,U>, U> {
 			// source for equations:
 			//   http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
 			
-			double r = (3.2404542)   * ciexyz.l() +
-						(-1.5371385) * ciexyz.a() +
-						(-0.4985314) * ciexyz.b();
+			double r = (3.2404542)   * ciexyz.x() +
+						(-1.5371385) * ciexyz.y() +
+						(-0.4985314) * ciexyz.z();
 
-			double g = (-0.9692660)  * ciexyz.l() +
-						(1.8760108)  * ciexyz.a() +
-						(0.0415560)  * ciexyz.b();
+			double g = (-0.9692660)  * ciexyz.x() +
+						(1.8760108)  * ciexyz.y() +
+						(0.0415560)  * ciexyz.z();
 			
-			double b = (0.0556434)   * ciexyz.l() +
-						(-0.2040259) * ciexyz.a() +
-						(1.0572252)  * ciexyz.b();
+			double b = (0.0556434)   * ciexyz.x() +
+						(-0.2040259) * ciexyz.y() +
+						(1.0572252)  * ciexyz.z();
 			 
 			// scale 1.0 based space into 255.0 based space
 			

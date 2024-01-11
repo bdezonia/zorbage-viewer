@@ -846,7 +846,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		}
 		else if (type instanceof CieXyzMember) {
 
-			displayCieLabColorImage(algebra, data);
+			displayCieXyzColorImage(algebra, data);
 		}
 		else if ((type instanceof RgbMember) || (type instanceof ArgbMember)) {
 
@@ -1010,7 +1010,7 @@ public class Main<T extends Algebra<T,U>, U> {
 	}
 	
 	private <AA extends Algebra<AA,A>,A>
-		void displayCieLabColorImage(AA alg, DimensionedDataSource<A> data)
+		void displayCieXyzColorImage(AA alg, DimensionedDataSource<A> data)
 	{
 		CieXyzAlgebra cieAlg = (CieXyzAlgebra) alg;
 		
@@ -1038,10 +1038,6 @@ public class Main<T extends Algebra<T,U>, U> {
 			iter.next(idx);
 			
 			cieData.get(idx, ciexyz);
-			
-			// In CieLab color model treat (l,a,b) as (x,y,z)
-			//   This might point out a field labeling correction
-			//   I want to make in the Zorbage base classes.
 			
 			// source for equations:
 			//   http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html

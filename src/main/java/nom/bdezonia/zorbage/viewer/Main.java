@@ -1012,6 +1012,8 @@ public class Main<T extends Algebra<T,U>, U> {
 	private <AA extends Algebra<AA,A>,A>
 		void displayCieXyzColorImage(AA alg, DimensionedDataSource<A> data)
 	{
+		// make an RGB image from the CIEXYZ image
+		
 		CieXyzAlgebra cieAlg = (CieXyzAlgebra) alg;
 		
 		@SuppressWarnings("unchecked")
@@ -1021,15 +1023,19 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		long[] dims = DataSourceUtils.dimensions(data);
 		
-		DimensionedDataSource<RgbMember> rgbData =
-				
-				DimensionedStorage.allocate(G.RGB.construct(), dims);
-		
 		CieXyzMember ciexyz = cieAlg.construct();
 		
 		RgbMember rgb = G.RGB.construct();
 		
 		IntegerIndex idx = new IntegerIndex(dims.length);
+		
+		// allocate the rgb data
+		
+		DimensionedDataSource<RgbMember> rgbData =
+				
+				DimensionedStorage.allocate(G.RGB.construct(), dims);
+		
+		// fill the rgb data fro the ciexyz data
 		
 		SamplingIterator<IntegerIndex> iter = GridIterator.compute(dims);
 		
@@ -1038,6 +1044,8 @@ public class Main<T extends Algebra<T,U>, U> {
 			iter.next(idx);
 			
 			cieData.get(idx, ciexyz);
+			
+			// transform CIEXYZ values to sRGB values
 			
 			// source for equations:
 			//   http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
@@ -1054,38 +1062,42 @@ public class Main<T extends Algebra<T,U>, U> {
 						(-0.2040259) * ciexyz.y() +
 						(1.0572252)  * ciexyz.z();
 			 
-			// scale 1.0 based space into 255.0 based space
+			// scale 1.0 based sRGB space into 255.0 RGB based space
 			
 			r = r * 255;
 			g = g * 255;
 			b = b * 255;
-	
-			r = (int) (r + 0.5);
-			g = (int) (g + 0.5);
-			b = (int) (b + 0.5);
 
-			// check for bad values
+			// bring each component to an integral value
+			
+			r = Math.round(r);
+			g = Math.round(g);
+			b = Math.round(b);
+
+			// clamp bad values
 			
 			if (r < 0) r = 0;
 			if (g < 0) g = 0;
 			if (b < 0) b = 0;
 			
-			// check for bad values
+			// clamp bad values
 			
 			if (r > 255) r = 255;
 			if (g > 255) g = 255;
 			if (b > 255) b = 255;
 			
-			// set the rgb values
+			// assign each rgb component
 			
 			rgb.setR( (int) r );
 			rgb.setG( (int) g );
 			rgb.setB( (int) b );
 			
-			// store the value
+			// store the value in the RGB image
 			
 			rgbData.set(idx, rgb);
 		}
+		
+		// view the rgb data
 		
 		displayRgbColorImage(G.RGB, rgbData);
 	}

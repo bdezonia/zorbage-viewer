@@ -242,7 +242,7 @@ public class Main<T extends Algebra<T,U>, U> {
 
 				if (f != null) {
 				
-					DataBundle bundle = Ecat.loadAllDatasets(f.getAbsolutePath());
+					DataBundle bundle = Ecat.readAllDatasets(f.getAbsolutePath());
 				
 					displayAll(bundle);
 				}
@@ -289,7 +289,7 @@ public class Main<T extends Algebra<T,U>, U> {
 	
 					if (f != null) {
 						
-						DataBundle bundle = Gdal.loadAllDatasets(f.getAbsolutePath());
+						DataBundle bundle = Gdal.readAllDatasets(f.getAbsolutePath());
 					
 						displayAll(bundle);
 					}
@@ -326,7 +326,7 @@ public class Main<T extends Algebra<T,U>, U> {
 
 				if (f != null) {
 				
-					DataBundle bundle = JAudio.read(f.getAbsolutePath());
+					DataBundle bundle = JAudio.readAllDatasets(f.getAbsolutePath());
 				
 					displayAll(bundle);
 				}
@@ -362,7 +362,7 @@ public class Main<T extends Algebra<T,U>, U> {
 
 				if (f != null) {
 				
-					DataBundle bundle = NetCDF.loadAllDatasets(f.getAbsolutePath());
+					DataBundle bundle = NetCDF.readAllDatasets(f.getAbsolutePath());
 				
 					displayAll(bundle);
 				}
@@ -399,7 +399,7 @@ public class Main<T extends Algebra<T,U>, U> {
 
 				if (f != null) {
 					
-					DataBundle bundle = Scifio.loadAllDatasets(f.getAbsolutePath());
+					DataBundle bundle = Scifio.readAllDatasets(f.getAbsolutePath());
 				
 					displayAll(bundle);
 				}
@@ -438,7 +438,7 @@ public class Main<T extends Algebra<T,U>, U> {
 				
 					long t0 = System.currentTimeMillis();
 					
-					DataBundle bundle = Nifti.open(f.getAbsolutePath());
+					DataBundle bundle = Nifti.readAllDatasets(f.getAbsolutePath());
 				
 					long t1 = System.currentTimeMillis();
 					
@@ -487,7 +487,7 @@ public class Main<T extends Algebra<T,U>, U> {
 					
 					//DataBundle bundle = PipeToTextReader.read(f.getAbsolutePath());
 
-					DataBundle bundle = NmrPipeReader.open(f.getAbsolutePath());
+					DataBundle bundle = NmrPipeReader.readAllDatasets(f.getAbsolutePath());
 					
 					/*
 					
@@ -610,7 +610,7 @@ public class Main<T extends Algebra<T,U>, U> {
 					
 					// read the first file (presumably into ram) in a DataBundle
 					
-					DataBundle bundle = Nifti.open(files[0].getAbsolutePath());
+					DataBundle bundle = Nifti.readAllDatasets(files[0].getAbsolutePath());
 
 					List<Tuple2<T, DimensionedDataSource<U>>> datasources = bundle.bundle();
 					
@@ -641,7 +641,7 @@ public class Main<T extends Algebra<T,U>, U> {
 
 							// open the each file one at a time (presumably into ram)
 							
-							bundle = Nifti.open(files[i].getAbsolutePath());
+							bundle = Nifti.readAllDatasets(files[i].getAbsolutePath());
 
 							data = (DimensionedDataSource<U>) bundle.bundle().get(0).b();
 							

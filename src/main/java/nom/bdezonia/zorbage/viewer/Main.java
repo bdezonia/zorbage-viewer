@@ -37,6 +37,7 @@ import java.awt.Panel;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -289,8 +290,20 @@ public class Main<T extends Algebra<T,U>, U> {
 	
 					if (f != null) {
 						
+						/*
+						URI uri = null;
+						
+						try {
+							uri = new URI("https","s.yimg.com","/uu/api/res/1.2/jOjqi8qRIu4lraQb6ghXlA--~B/Zmk9c3RyaW07aD0xODA7cT04MDt3PTM1NjthcHBpZD15dGFjaHlvbg--/https://s.yimg.com/os/creatr-uploaded-images/2024-01/7cc7adf0-ba13-11ee-bd7f-2268d62985a2.cf.webp","");
+						}
+						catch (Exception exc) {
+							
+						}
+						DataBundle bundle = Gdal.readAllDatasets(uri);
+						*/
+						
 						DataBundle bundle = Gdal.readAllDatasets(f.getAbsolutePath());
-					
+						
 						displayAll(bundle);
 					}
 				}

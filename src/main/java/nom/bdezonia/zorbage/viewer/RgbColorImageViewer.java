@@ -664,7 +664,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 					}
 					sb.append(", ");
 					sb.append(dataSource.getAxisType(axisNumber1));
-					sb.append("= ");
+					sb.append(" = ");
 					sb.append(i1);
 					// only display calibrated values if they are not == 1.0 * uncalibrated values
 					if (axisNumber1 < dataSource.numDimensions()) {

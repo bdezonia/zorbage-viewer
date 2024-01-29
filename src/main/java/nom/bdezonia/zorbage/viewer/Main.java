@@ -169,6 +169,12 @@ import nom.bdezonia.zorbage.type.string.StringMember;
 //   handle all these differences. Zorbage types might need some identifying info
 //   embedded in their types.
 
+// TODO
+//
+//   - make the slider axes show Z 13/39 (14.383) where that value is Z value for slice 13.
+//   - the complex image viewers of nmrpipe data don't have axis origin info retained.
+//   - some of the color viewers have a broken pan capability. maybe just rgbcolorviewer.
+
 /**
  * 
  * @author Barry DeZonia
@@ -1122,10 +1128,10 @@ public class Main<T extends Algebra<T,U>, U> {
 		void displayComplexImage(CA cAlg, RA rAlg, DimensionedDataSource<C> data)
 	{
 		// Black and White
-		//GrayscaleComplexImageViewer.view(cAlg, rAlg, data);
+		GrayscaleComplexImageViewer.view(cAlg, rAlg, data);
 		
 		// Color
-		ColorComplexImageViewer.view(cAlg, rAlg, data);
+		//ColorComplexImageViewer.view(cAlg, rAlg, data);
 	}
 
 	private <AA extends Algebra<AA,A>,A>

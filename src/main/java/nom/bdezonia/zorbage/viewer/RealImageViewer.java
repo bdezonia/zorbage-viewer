@@ -1931,7 +1931,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						
 						sb.append(", ");
 						sb.append(dataSource.getAxisType(axisNumber1));
-						sb.append("= ");
+						sb.append(" = ");
 						sb.append(i1);
 					}
 					
@@ -3422,10 +3422,10 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				SwapQuadrants.compute(cmplxAlg, output);
 
 				// Black and White
-				//GrayscaleComplexImageViewer.view(cmplxAlg, realAlg, output);
+				GrayscaleComplexImageViewer.view(cmplxAlg, realAlg, output);
 				
 				// Color
-				ColorComplexImageViewer.view(cmplxAlg, realAlg, output);
+				//ColorComplexImageViewer.view(cmplxAlg, realAlg, output);
 
 				return true;
 			}

@@ -237,10 +237,21 @@ public class ColorComplexImageViewer
 			argbData.set(location, value);
 		}
 		
-		argbData.setName("Coolorization of "+data.getName());
+		argbData.setName("Colorization of "+data.getName());
 
 		argbData.setSource(data.getSource());
 		
+		for (int i = 0; i < argbData.numDimensions(); i++) {
+
+			String type = input.getAxisType(i);
+			
+			String unit = input.getAxisUnit(i);
+
+			argbData.setAxisType(i, type);
+			
+			argbData.setAxisUnit(i, unit);
+		}
+
 		return new RgbColorImageViewer<>(G.ARGB, argbData);
 	}
 }

@@ -131,6 +131,17 @@ public class GrayscaleComplexImageViewer
 
 		complexMagnitudes.setSource(data.getSource());
 		
+		for (int i = 0; i < complexMagnitudes.numDimensions(); i++) {
+
+			String type = input.getAxisType(i);
+			
+			String unit = input.getAxisUnit(i);
+			
+			complexMagnitudes.setAxisType(i, type);
+			
+			complexMagnitudes.setAxisUnit(i, unit);
+		}
+		
 		return new RealImageViewer<>(realAlgebra, complexMagnitudes);
 	}
 }

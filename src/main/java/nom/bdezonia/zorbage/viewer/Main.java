@@ -37,7 +37,6 @@ import java.awt.Panel;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
-import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
 

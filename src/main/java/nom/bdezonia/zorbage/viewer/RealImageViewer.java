@@ -271,7 +271,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		box.add(sourceLabel);
 		JLabel a = new JLabel("Data type: " + alg.typeDescription());
 		JLabel b = new JLabel("Data family: " + valueType);
-		JLabel c = new JLabel("Data unit: " + valueUnit);
+		JLabel c = new JLabel("Data unit: " + (valueUnit.equals("") ? "<none>" : valueUnit));
 		a.setFont(font);
 		b.setFont(font);
 		c.setFont(font);

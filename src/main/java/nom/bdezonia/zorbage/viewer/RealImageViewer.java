@@ -2201,7 +2201,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 			extendedDims = " at";
 			
-			int count = 0;;
+			int count = 0;
 			
 			for (int i = 0; i < origDs.numDimensions(); i++) {
 			
@@ -2645,7 +2645,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			this.originX = ctrX - ctrViewX;
 			
-			this.originY = ctrY - ctrViewY;;
+			this.originY = ctrY - ctrViewY;
 		}
 
 		private void calcPaneSize() {
@@ -2834,70 +2834,66 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			return changed;
 		}
 
+		// NOTE on panning:
+		//   panLeft implementation mirrors panUp
+		//   panRight implementation mirrors panDown
+		//   but there is not 4 way symmetry.
+		//   this is confusing and probably points out a bug.
+		
+		// Image smaller and bigger than pane
+		//   - works at 1x, 1/3x, 3x
+		
 		public boolean panLeft(int numPixels) {
 			
-			long numModelUnits = pixelToModel(numPixels, 0);
-			
-			long newPos = originX - numModelUnits;
-			
-			if ((newPos <= 5 - planeData.d0()))
+			if (pz.getVirtualOriginX() - numPixels < -(pz.getVirtualWidth()-1)) {
 				return false;
+			}
 			
-			if ((newPos >= planeData.d0() - 5))
-				return false;
-			
-			originX = newPos;
+			originX -= pixelToModel(numPixels, 0);
 			
 			return true;
 		}
+
+		// Image smaller and bigger than pane
+		//   - works at 1x, 1/3x, 3x
 
 		public boolean panRight(int numPixels) {
 			
-			long numModelUnits = pixelToModel(numPixels, 0);
-			
-			long newPos = originX + numModelUnits;
-			
-			if ((newPos <= 5 - planeData.d0()))
+			if (pz.getVirtualOriginX() + numPixels > (planeData.d0()-1)) {
 				return false;
+			}
 			
-			if ((newPos >= planeData.d0() - 5))
-				return false;
-			
-			originX = newPos;
+			originX += pixelToModel(numPixels, 0);
 			
 			return true;
 		}
+
+		// Image smaller and bigger than pane
+		//   - works at 1x, 1/3x, 3x
+		//   - off by 1 or 2 pans when zoomed out
 
 		public boolean panUp(int numPixels) {
 			
-			long numModelUnits = pixelToModel(numPixels, 0);
-			
-			long newPos = originY - numModelUnits;
-			
-			if ((newPos <= 5 - planeData.d1()))
+			if (pz.getVirtualOriginY() - numPixels < -(pz.getVirtualHeight()-1)) {
 				return false;
+			}
 			
-			if ((newPos >= planeData.d1() - 5))
-				return false;
-			
-			originY = newPos;
+			originY -= pixelToModel(numPixels, 0);
 			
 			return true;
 		}
 
-		public boolean panDown(int numPixels) {
+		// Image smaller and bigger than pane
+		//   - works at 1x, 1/3x, 3x
+		//   - off by 1 or 2 pans when zoomed out
 
-			long numModelUnits = pixelToModel(numPixels, 0);
-			
-			long newPos = originY + numModelUnits;
-			
-			if ((newPos <= 5 - planeData.d1()))
+		public boolean panDown(int numPixels) {
+	
+			if (pz.getVirtualOriginY() + numPixels > (planeData.d1()-1)) {
 				return false;
+			}
 			
-			if ((newPos >= planeData.d1() - 5))
-				return false;
-			
-			originY = newPos;
+			originY += pixelToModel(numPixels, 0);
 			
 			return true;
 		}

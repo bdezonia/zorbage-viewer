@@ -55,6 +55,8 @@ import java.math.BigInteger;
 import java.math.MathContext;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -114,6 +116,7 @@ import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
 import nom.bdezonia.zorbage.procedure.Procedure2;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
+import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
 import nom.bdezonia.zorbage.type.color.RgbUtils;
@@ -297,6 +300,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		graphicsPanel.add(scrollPane, BorderLayout.CENTER);
 
 		JPanel buttonPanel = new JPanel();
+		JButton metadata = new JButton("Metadata ...");
 		JButton loadLut = new JButton("Load LUT ...");
 		JButton resetLut = new JButton("Reset LUT");
 		JButton swapAxes = new JButton("Swap Axes ...");
@@ -316,6 +320,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton fft = new JButton("FFT");
 		JButton transform = new JButton("Transform ...");
 		Dimension size = new Dimension(150, 40);
+		metadata.setMinimumSize(size);
 		loadLut.setMinimumSize(size);
 		resetLut.setMinimumSize(size);
 		incZoom.setMinimumSize(size);
@@ -334,6 +339,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		explode.setMinimumSize(size);
 		fft.setMinimumSize(size);
 		transform.setMinimumSize(size);
+		metadata.setMaximumSize(size);
 		loadLut.setMaximumSize(size);
 		resetLut.setMaximumSize(size);
 		incZoom.setMaximumSize(size);
@@ -353,6 +359,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		fft.setMaximumSize(size);
 		transform.setMaximumSize(size);
 		Box vertBox = Box.createVerticalBox();
+		vertBox.add(metadata);
 		vertBox.add(loadLut);
 		vertBox.add(resetLut);
 		vertBox.add(incZoom);
@@ -372,6 +379,33 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		vertBox.add(fft);
 		vertBox.add(transform);
 		buttonPanel.add(vertBox);
+		metadata.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				
+				Tuple2<String, String>[] data = (Tuple2<String, String>[]) new Tuple2[0];
+				
+				data = dataSource.metadata().keySet().toArray(data);
+				
+				Arrays.sort(data, new Comparator<Tuple2<String, String>>() {
+					
+					@Override
+					public int compare(Tuple2<String, String> first, Tuple2<String, String> second) {
+						
+						return first.a().compareTo(second.a());
+					}
+				});
+				
+				System.out.println("Metadata follows:");
+
+				for (Tuple2<String, String> key : data) {
+					
+					System.out.println("  key: (" + key.a() + ")  type: (" + key.b() + ")");
+				}
+			}
+			
+		});
 		loadLut.addActionListener(new ActionListener() {
 			
 			@Override

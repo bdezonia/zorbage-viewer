@@ -46,6 +46,8 @@ import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -79,6 +81,7 @@ import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.misc.DataSourceUtils;
+import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
 import nom.bdezonia.zorbage.type.color.RgbAlgebra;
@@ -193,6 +196,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		graphicsPanel.add(scrollPane, BorderLayout.CENTER);
 
 		JPanel buttonPanel = new JPanel();
+		JButton metadata = new JButton("Metadata ...");
 		JButton swapAxes = new JButton("Swap Axes");
 		JButton snapshot = new JButton("Snapshot");
 		JButton grabPlane = new JButton("Grab Plane");
@@ -207,6 +211,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		JButton explode = new JButton("Explode ...");
 		JButton saveAs = new JButton("Save As ...");
 		Dimension size = new Dimension(150, 40);
+		metadata.setMinimumSize(size);
 		incZoom.setMinimumSize(size);
 		decZoom.setMinimumSize(size);
 		panLeft.setMinimumSize(size);
@@ -220,6 +225,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		swapAxes.setMinimumSize(size);
 		explode.setMinimumSize(size);
 		saveAs.setMinimumSize(size);
+		metadata.setMaximumSize(size);
 		incZoom.setMaximumSize(size);
 		decZoom.setMaximumSize(size);
 		panLeft.setMaximumSize(size);
@@ -234,6 +240,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		explode.setMaximumSize(size);
 		saveAs.setMaximumSize(size);
 		Box vertBox = Box.createVerticalBox();
+		vertBox.add(metadata);
 		vertBox.add(incZoom);
 		vertBox.add(decZoom);
 		vertBox.add(panLeft);
@@ -248,6 +255,33 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		vertBox.add(explode);
 		vertBox.add(saveAs);
 		buttonPanel.add(vertBox);
+		metadata.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				
+				Tuple2<String, String>[] data = (Tuple2<String, String>[]) new Tuple2[0];
+				
+				data = dataSource.metadata().keySet().toArray(data);
+				
+				Arrays.sort(data, new Comparator<Tuple2<String, String>>() {
+					
+					@Override
+					public int compare(Tuple2<String, String> first, Tuple2<String, String> second) {
+						
+						return first.a().compareTo(second.a());
+					}
+				});
+				
+				System.out.println("Metadata follows:");
+
+				for (Tuple2<String, String> key : data) {
+					
+					System.out.println("  key: (" + key.a() + ")  type: (" + key.b() + ")");
+				}
+			}
+			
+		});
 		swapAxes.addActionListener(new ActionListener() {
 			
 			boolean cancelled = false;

@@ -259,7 +259,8 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				
+
+				@SuppressWarnings("unchecked")
 				Tuple2<String, String>[] data = (Tuple2<String, String>[]) new Tuple2[0];
 				
 				data = dataSource.metadata().keySet().toArray(data);

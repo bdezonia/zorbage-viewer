@@ -101,6 +101,9 @@ import nom.bdezonia.zorbage.algebra.SetR;
 import nom.bdezonia.zorbage.algebra.Trigonometric;
 import nom.bdezonia.zorbage.algebra.Unity;
 import nom.bdezonia.zorbage.algebra.type.markers.IntegerType;
+import nom.bdezonia.zorbage.algorithm.ClampToMax;
+import nom.bdezonia.zorbage.algorithm.ClampToMin;
+import nom.bdezonia.zorbage.algorithm.ClampToRange;
 import nom.bdezonia.zorbage.algorithm.FFT2D;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
@@ -111,12 +114,16 @@ import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
 import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
+import nom.bdezonia.zorbage.data.NdData;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
+import nom.bdezonia.zorbage.misc.DataSourceUtils;
+import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.procedure.Procedure2;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
+import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
@@ -1302,11 +1309,19 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			Algebra<?,?> intAlg = null;
 			
 			@Override
-			public void actionPerformed(ActionEvent e) {
-				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+			public void actionPerformed(ActionEvent e)
+			{
+				JDialog dlg = new JDialog(frame, "Choose output parameters", Dialog.ModalityType.DOCUMENT_MODAL);
 				dlg.setLocationByPlatform(true);
 				dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
-				dlg.add(new JLabel("Choose number of desired colors in output"));
+				JTextField minCutoffField = new JTextField(20);
+				JTextField maxCutoffField = new JTextField(20);
+				JPanel minStuff = new JPanel();
+				JPanel maxStuff = new JPanel();
+				minStuff.add(new JLabel("Enter min value (optional)"));
+				maxStuff.add(new JLabel("Enter max value (optional)"));
+				minStuff.add(minCutoffField);
+				maxStuff.add(maxCutoffField);
 				ButtonGroup  bg   = new ButtonGroup();
 				JRadioButton u8   = new JRadioButton("8 bit unsigned int");
 				JRadioButton u16  = new JRadioButton("16 bit unsigned int");
@@ -1320,12 +1335,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				bg.add(u64);
 				bg.add(u128);
 				bg.add(unbound);
+				dlg.add(new JLabel("Output bits per pixel:"));
 				dlg.add(u8);
 				dlg.add(u16);
 				dlg.add(u32);
 				dlg.add(u64);
 				dlg.add(u128);
 				dlg.add(unbound);
+				dlg.add(minStuff);
+				dlg.add(maxStuff);
 				u8.addActionListener(new ActionListener() {
 					
 					@Override
@@ -1396,7 +1414,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				dlg.setVisible(true);
 				if (!cancelled && intAlg != null) {
 
-					convertToInt(intAlg, alg, planeData.getDataSource());
+					DimensionedDataSource<U> tmp =
+							
+						(DimensionedDataSource<U>)
+						
+							massageIntData(alg, minCutoffField.getText(), maxCutoffField.getText());
+					
+					convertToInt(intAlg, alg, tmp);
 				}
 			}
 		});
@@ -3622,14 +3646,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				    JOptionPane.WARNING_MESSAGE);
 		}
 
-		int numD = input.numDimensions();
-		
-		long[] dims = new long[numD];
-		
-		for (int i = 0; i < numD; i++) {
-		
-			dims[i] = input.dimension(i);
-		}
+		long[] dims = DataSourceUtils.dimensions(input);
 		
 		IntegerIndex tmp1 = new IntegerIndex(0);
 		
@@ -3665,10 +3682,162 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		output.setName("Type conversion of "+input.getSource());
 		
-		// TODO: copy metadata to output!
+		output.metadata().merge(input.metadata());
 		
+		output.setCoordinateSpace(input.getCoordinateSpace());
+
+		output.setValueType(input.getValueType());
+		
+		output.setValueUnit(input.getValueUnit());
+		
+		for (int d = 0; d < dims.length; d++) {
+			
+			output.setAxisType(d, input.getAxisType(d));
+
+			output.setAxisUnit(d, input.getAxisUnit(d));
+		}
+
 		new RealImageViewer<L,M>(outAlg, output);
 	}
+	
+	@SuppressWarnings("unchecked")
+	private <QA extends Algebra<QA,Q> & Ordered<Q>, Q extends Allocatable<Q>>
+	
+		DimensionedDataSource<Q>
+		
+			massageIntData(Object algebra, String minString, String maxString)
+	{
+		QA alg = (QA) algebra;
+		
+		DimensionedDataSource<Q> input =
+				
+			(DimensionedDataSource<Q>) planeData.getDataSource();
+		
+		IndexedDataSource<Q> inputList = input.rawData();
+		
+		long[] dims = DataSourceUtils.dimensions(input);
+		
+		Q min = null;
+		
+		Q max = null;
+		
+		if (minString != null && minString.length() > 0) {
+
+			try {
+				
+				min = alg.construct(minString);
+				
+			} catch (Exception ex) {
+				
+			}
+		}
+		
+		if (maxString != null && maxString.length() > 0) {
+
+			try {
+				
+				max = alg.construct(maxString);
+				
+			} catch (Exception ex) {
+				
+			}
+		}
+
+		long numElems = LongUtils.numElements(dims);
+		
+		IndexedDataSource<Q> list = null;
+
+		final DimensionedDataSource<Q> tmp;
+
+		if (min != null && max != null) {
+			
+			list = Storage.allocate(alg.construct(), numElems);
+			
+			tmp = new NdData<Q>(dims, list);
+			
+			tmp.setSource(input.getSource());
+			
+			tmp.setName(input.getName());
+			
+			tmp.metadata().merge(input.metadata());
+			
+			tmp.setCoordinateSpace(input.getCoordinateSpace());
+
+			tmp.setValueType(input.getValueType());
+			
+			tmp.setValueUnit(input.getValueUnit());
+			
+			for (int d = 0; d < dims.length; d++) {
+				
+				tmp.setAxisType(d, input.getAxisType(d));
+
+				tmp.setAxisUnit(d, input.getAxisUnit(d));
+			}
+			
+			ClampToRange.compute(alg, min, max, inputList, list);
+		}
+		else if (min != null) {
+			
+			list = Storage.allocate(alg.construct(), numElems);
+			
+			tmp = new NdData<Q>(dims, list);
+			
+			tmp.setSource(input.getSource());
+			
+			tmp.setName(input.getName());
+			
+			tmp.metadata().merge(input.metadata());
+			
+			tmp.setCoordinateSpace(input.getCoordinateSpace());
+
+			tmp.setValueType(input.getValueType());
+			
+			tmp.setValueUnit(input.getValueUnit());
+			
+			for (int d = 0; d < dims.length; d++) {
+				
+				tmp.setAxisType(d, input.getAxisType(d));
+
+				tmp.setAxisUnit(d, input.getAxisUnit(d));
+			}
+
+			ClampToMin.compute(alg, min, inputList, list);
+		}
+		else if (max != null) {
+			
+			list = Storage.allocate(alg.construct(), numElems);
+			
+			tmp = new NdData<Q>(dims, list);
+
+			tmp.setSource(input.getSource());
+			
+			tmp.setName(input.getName());
+			
+			tmp.metadata().merge(input.metadata());
+			
+			tmp.setCoordinateSpace(input.getCoordinateSpace());
+
+			tmp.setValueType(input.getValueType());
+			
+			tmp.setValueUnit(input.getValueUnit());
+			
+			for (int d = 0; d < dims.length; d++) {
+				
+				tmp.setAxisType(d, input.getAxisType(d));
+
+				tmp.setAxisUnit(d, input.getAxisUnit(d));
+			}
+			
+			ClampToMax.compute(alg, max, inputList, list);
+		}
+		else {
+			
+			tmp = (DimensionedDataSource<Q>) planeData.getDataSource();
+		}
+		
+		return tmp;
+	}
+	
 	
 	<L extends Algebra<L,M>, M extends PrimitiveConversion & Allocatable<M>, N extends Algebra<N,O>, O>
 		void convertToInt(Algebra<?,?> oAlg, N inAlg, DimensionedDataSource<O> input)
@@ -3690,14 +3859,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				    JOptionPane.WARNING_MESSAGE);
 		}
 
-		int numD = input.numDimensions();
-		
-		long[] dims = new long[numD];
-		
-		for (int i = 0; i < numD; i++) {
-		
-			dims[i] = input.dimension(i);
-		}
+		long[] dims = DataSourceUtils.dimensions(input);
 		
 		IntegerIndex tmp1 = new IntegerIndex(0);
 		
@@ -3731,10 +3893,23 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		output.setSource("Type conversion of "+input.getSource());
 		
-		output.setName("Type conversion of "+input.getSource());
+		output.setName("Type conversion of "+input.getName());
 		
-		// TODO: copy metadata to output!
+		output.metadata().merge(input.metadata());
 		
+		output.setCoordinateSpace(input.getCoordinateSpace());
+
+		output.setValueType(input.getValueType());
+		
+		output.setValueUnit(input.getValueUnit());
+		
+		for (int d = 0; d < dims.length; d++) {
+			
+			output.setAxisType(d, input.getAxisType(d));
+
+			output.setAxisUnit(d, input.getAxisUnit(d));
+		}
+
 		new RealImageViewer<L,M>(outAlg, output);
 	}
 	

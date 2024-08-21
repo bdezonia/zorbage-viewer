@@ -100,6 +100,7 @@ import nom.bdezonia.zorbage.algebra.SetI;
 import nom.bdezonia.zorbage.algebra.SetR;
 import nom.bdezonia.zorbage.algebra.Trigonometric;
 import nom.bdezonia.zorbage.algebra.Unity;
+import nom.bdezonia.zorbage.algebra.type.markers.IntegerType;
 import nom.bdezonia.zorbage.algorithm.FFT2D;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
@@ -316,6 +317,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton dispRange = new JButton("Display Range ...");
 		JButton toColor = new JButton("To Color");
 		JButton toFloat = new JButton("To Float ...");
+		JButton toInt = new JButton("To Int ...");
 		JButton explode = new JButton("Explode ...");
 		JButton fft = new JButton("FFT");
 		JButton transform = new JButton("Transform ...");
@@ -333,6 +335,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		dispRange.setMinimumSize(size);
 		toColor.setMinimumSize(size);
 		toFloat.setMinimumSize(size);
+		toInt.setMinimumSize(size);
 		snapshot.setMinimumSize(size);
 		grabPlane.setMinimumSize(size);
 		swapAxes.setMinimumSize(size);
@@ -352,6 +355,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		dispRange.setMaximumSize(size);
 		toColor.setMaximumSize(size);
 		toFloat.setMaximumSize(size);
+		toInt.setMaximumSize(size);
 		snapshot.setMaximumSize(size);
 		grabPlane.setMaximumSize(size);
 		swapAxes.setMaximumSize(size);
@@ -372,6 +376,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		vertBox.add(dispRange);
 		vertBox.add(toColor);
 		vertBox.add(toFloat);
+		vertBox.add(toInt);
 		vertBox.add(snapshot);
 		vertBox.add(grabPlane);
 		vertBox.add(swapAxes);
@@ -1196,6 +1201,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					new RgbColorImageViewer<ArgbAlgebra,ArgbMember>(G.ARGB, dataSource);
 			}
 		});
+        
 		toFloat.addActionListener(new ActionListener() {
 
 			boolean cancelled = false;
@@ -1289,6 +1295,112 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				}
 			}
 		});
+
+		toInt.addActionListener(new ActionListener() {
+
+			boolean cancelled = false;
+			Algebra<?,?> intAlg = null;
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+				dlg.setLocationByPlatform(true);
+				dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
+				dlg.add(new JLabel("Choose number of desired colors in output"));
+				ButtonGroup  bg   = new ButtonGroup();
+				JRadioButton u8   = new JRadioButton("8 bit unsigned int");
+				JRadioButton u16  = new JRadioButton("16 bit unsigned int");
+				JRadioButton u32  = new JRadioButton("32 bit unsigned int");
+				JRadioButton u64  = new JRadioButton("64 bit unsigned int");
+				JRadioButton u128 = new JRadioButton("128 bit unsigned int");
+				JRadioButton unbound  = new JRadioButton("unbounded int");
+				bg.add(u8);
+				bg.add(u16);
+				bg.add(u32);
+				bg.add(u64);
+				bg.add(u128);
+				bg.add(unbound);
+				dlg.add(u8);
+				dlg.add(u16);
+				dlg.add(u32);
+				dlg.add(u64);
+				dlg.add(u128);
+				dlg.add(unbound);
+				u8.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						intAlg = G.UINT8;
+					}
+				});
+				u16.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						intAlg = G.UINT16;
+					}
+				});
+				u32.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						intAlg = G.UINT32;
+					}
+				});
+				u64.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						intAlg = G.UINT64;
+					}
+				});
+				u128.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						intAlg = G.UINT128;
+					}
+				});
+				unbound.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						intAlg = G.UNBOUND;
+					}
+				});
+				JButton ok = new JButton("Ok");
+				ok.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+
+						cancelled = false;
+						
+						dlg.setVisible(false);
+					}
+				});
+				JButton cancel = new JButton("Cancel");
+				cancel.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+
+                        intAlg = null;
+                        
+						cancelled = true;
+						
+						dlg.setVisible(false);
+					}
+				});
+				dlg.add(ok);
+				dlg.add(cancel);
+				dlg.pack();
+				dlg.setVisible(true);
+				if (!cancelled && intAlg != null) {
+
+					convertToInt(intAlg, alg, planeData.getDataSource());
+				}
+			}
+		});
+
 		explode.addActionListener(new ActionListener() {
 
 			@Override
@@ -3506,6 +3618,74 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 			JOptionPane.showMessageDialog(frame,
 				    "To float command input type does not support primitive conversion",
+				    "WARNING",
+				    JOptionPane.WARNING_MESSAGE);
+		}
+
+		int numD = input.numDimensions();
+		
+		long[] dims = new long[numD];
+		
+		for (int i = 0; i < numD; i++) {
+		
+			dims[i] = input.dimension(i);
+		}
+		
+		IntegerIndex tmp1 = new IntegerIndex(0);
+		
+		IntegerIndex tmp2 = new IntegerIndex(0);
+		
+		IntegerIndex tmp3 = new IntegerIndex(0);
+		
+		@SuppressWarnings("unchecked")
+		L outAlg = (L) oAlg;
+		
+		DimensionedDataSource<M> output = DimensionedStorage.allocate(outAlg.construct(), dims);
+
+		IndexedDataSource<O> inList = input.rawData();  
+		
+		IndexedDataSource<M> outList = output.rawData();
+
+		O in  = inAlg.construct();
+		
+		M out = outAlg.construct();
+
+		long size = inList.size();
+		
+		for (long i = 0; i < size; i++) {
+			
+			inList.get(i, in);
+			
+			PrimitiveConverter.convert(tmp1, tmp2, tmp3, (PrimitiveConversion) in, out);
+			
+			outList.set(i, out);
+		}
+		
+		output.setSource("Type conversion of "+input.getSource());
+		
+		output.setName("Type conversion of "+input.getSource());
+		
+		// TODO: copy metadata to output!
+		
+		new RealImageViewer<L,M>(outAlg, output);
+	}
+	
+	<L extends Algebra<L,M>, M extends PrimitiveConversion & Allocatable<M>, N extends Algebra<N,O>, O>
+		void convertToInt(Algebra<?,?> oAlg, N inAlg, DimensionedDataSource<O> input)
+	{
+		if (!(oAlg instanceof IntegerType)) {
+
+			JOptionPane.showMessageDialog(frame,
+				    "To int command not passed an integer algebra to use for the output type",
+				    "WARNING",
+				    JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		
+		if (!(inAlg.construct() instanceof PrimitiveConversion)) {
+
+			JOptionPane.showMessageDialog(frame,
+				    "To intt command input type does not support primitive conversion",
 				    "WARNING",
 				    JOptionPane.WARNING_MESSAGE);
 		}

@@ -1418,7 +1418,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 						(DimensionedDataSource<U>)
 						
-							massageIntData(alg, minCutoffField.getText(), maxCutoffField.getText());
+							clampedIntData(alg, minCutoffField.getText(), maxCutoffField.getText());
 					
 					convertToInt(intAlg, alg, tmp);
 				}
@@ -3705,7 +3705,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	
 		DimensionedDataSource<Q>
 		
-			massageIntData(Object algebra, String minString, String maxString)
+			clampedIntData(Algebra<?,?> algebra, String minString, String maxString)
 	{
 		QA alg = (QA) algebra;
 		

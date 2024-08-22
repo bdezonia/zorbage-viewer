@@ -101,9 +101,6 @@ import nom.bdezonia.zorbage.algebra.SetR;
 import nom.bdezonia.zorbage.algebra.Trigonometric;
 import nom.bdezonia.zorbage.algebra.Unity;
 import nom.bdezonia.zorbage.algebra.type.markers.IntegerType;
-import nom.bdezonia.zorbage.algorithm.ClampToMax;
-import nom.bdezonia.zorbage.algorithm.ClampToMin;
-import nom.bdezonia.zorbage.algorithm.ClampToRange;
 import nom.bdezonia.zorbage.algorithm.FFT2D;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
@@ -114,16 +111,13 @@ import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
 import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
-import nom.bdezonia.zorbage.data.NdData;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
 import nom.bdezonia.zorbage.misc.DataSourceUtils;
-import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.procedure.Procedure2;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
-import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
@@ -324,7 +318,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton dispRange = new JButton("Display Range ...");
 		JButton toColor = new JButton("To Color");
 		JButton toFloat = new JButton("To Float ...");
-		JButton toInt = new JButton("To Int ...");
+		JButton scaleToInt = new JButton("Scale To Int ...");
 		JButton explode = new JButton("Explode ...");
 		JButton fft = new JButton("FFT");
 		JButton transform = new JButton("Transform ...");
@@ -342,7 +336,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		dispRange.setMinimumSize(size);
 		toColor.setMinimumSize(size);
 		toFloat.setMinimumSize(size);
-		toInt.setMinimumSize(size);
+		scaleToInt.setMinimumSize(size);
 		snapshot.setMinimumSize(size);
 		grabPlane.setMinimumSize(size);
 		swapAxes.setMinimumSize(size);
@@ -362,7 +356,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		dispRange.setMaximumSize(size);
 		toColor.setMaximumSize(size);
 		toFloat.setMaximumSize(size);
-		toInt.setMaximumSize(size);
+		scaleToInt.setMaximumSize(size);
 		snapshot.setMaximumSize(size);
 		grabPlane.setMaximumSize(size);
 		swapAxes.setMaximumSize(size);
@@ -383,7 +377,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		vertBox.add(dispRange);
 		vertBox.add(toColor);
 		vertBox.add(toFloat);
-		vertBox.add(toInt);
+		vertBox.add(scaleToInt);
 		vertBox.add(snapshot);
 		vertBox.add(grabPlane);
 		vertBox.add(swapAxes);
@@ -1303,10 +1297,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			}
 		});
 
-		toInt.addActionListener(new ActionListener() {
+		scaleToInt.addActionListener(new ActionListener() {
 
 			boolean cancelled = false;
-			Algebra<?,?> intAlg = null;
+			Algebra<?,?> outAlg = null;
+			BigDecimal numColors = null;
 			
 			@Override
 			public void actionPerformed(ActionEvent e)
@@ -1328,62 +1323,57 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				JRadioButton u32  = new JRadioButton("32 bit unsigned int");
 				JRadioButton u64  = new JRadioButton("64 bit unsigned int");
 				JRadioButton u128 = new JRadioButton("128 bit unsigned int");
-				JRadioButton unbound  = new JRadioButton("unbounded int");
 				bg.add(u8);
 				bg.add(u16);
 				bg.add(u32);
 				bg.add(u64);
 				bg.add(u128);
-				bg.add(unbound);
 				dlg.add(new JLabel("Output bits per pixel:"));
 				dlg.add(u8);
 				dlg.add(u16);
 				dlg.add(u32);
 				dlg.add(u64);
 				dlg.add(u128);
-				dlg.add(unbound);
 				dlg.add(minStuff);
 				dlg.add(maxStuff);
 				u8.addActionListener(new ActionListener() {
 					
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						intAlg = G.UINT8;
+						outAlg = G.UINT8;
+						numColors = new BigDecimal("256");
 					}
 				});
 				u16.addActionListener(new ActionListener() {
 					
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						intAlg = G.UINT16;
+						outAlg = G.UINT16;
+						numColors = new BigDecimal("65536");
 					}
 				});
 				u32.addActionListener(new ActionListener() {
 					
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						intAlg = G.UINT32;
+						outAlg = G.UINT32;
+						numColors = new BigDecimal("4294967296");
 					}
 				});
 				u64.addActionListener(new ActionListener() {
 					
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						intAlg = G.UINT64;
+						outAlg = G.UINT64;
+						numColors = new BigDecimal("18446744073709551616");
 					}
 				});
 				u128.addActionListener(new ActionListener() {
 					
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						intAlg = G.UINT128;
-					}
-				});
-				unbound.addActionListener(new ActionListener() {
-					
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						intAlg = G.UNBOUND;
+						outAlg = G.UINT128;
+						numColors = new BigDecimal("340282366920938463463374607431768211456");
 					}
 				});
 				JButton ok = new JButton("Ok");
@@ -1401,7 +1391,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					@Override
 					public void actionPerformed(ActionEvent e) {
 
-                        intAlg = null;
+                        outAlg = null;
                         
 						cancelled = true;
 						
@@ -1412,15 +1402,39 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				dlg.add(cancel);
 				dlg.pack();
 				dlg.setVisible(true);
-				if (!cancelled && intAlg != null) {
+				if (!cancelled && outAlg != null) {
 
-					DimensionedDataSource<U> tmp =
-							
-						(DimensionedDataSource<U>)
-						
-							clampedIntData(alg, minCutoffField.getText(), maxCutoffField.getText());
+					U altMin = null;
 					
-					convertToInt(intAlg, alg, tmp);
+					U altMax = null;
+					
+					String altMinString = minCutoffField.getText();
+					
+					String altMaxString = minCutoffField.getText();
+					
+					if (altMinString != null && altMinString.length() > 0) {
+
+						try {
+							
+							altMin = alg.construct(altMinString);
+							
+						} catch (Exception ex) {
+							
+						}
+					}
+					
+					if (altMaxString != null && altMaxString.length() > 0) {
+
+						try {
+							
+							altMax = alg.construct(altMaxString);
+							
+						} catch (Exception ex) {
+							
+						}
+					}
+
+					scaleToInt(alg, outAlg, numColors, altMin, altMax, planeData.getDataSource());
 				}
 			}
 		});
@@ -3699,13 +3713,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		new RealImageViewer<L,M>(outAlg, output);
 	}
-	
+
+/*
 	@SuppressWarnings("unchecked")
-	private <QA extends Algebra<QA,Q> & Ordered<Q>, Q extends Allocatable<Q>>
+	<QA extends Algebra<QA,Q> & Ordered<Q>, Q extends Allocatable<Q>>
 	
 		DimensionedDataSource<Q>
 		
-			clampedIntData(Algebra<?,?> algebra, String minString, String maxString)
+			clampedData(Algebra<?,?> algebra, Object minQ, Object maxQ)
 	{
 		QA alg = (QA) algebra;
 		
@@ -3717,176 +3732,158 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		long[] dims = DataSourceUtils.dimensions(input);
 		
-		Q min = null;
-		
-		Q max = null;
-		
-		if (minString != null && minString.length() > 0) {
-
-			try {
-				
-				min = alg.construct(minString);
-				
-			} catch (Exception ex) {
-				
-			}
-		}
-		
-		if (maxString != null && maxString.length() > 0) {
-
-			try {
-				
-				max = alg.construct(maxString);
-				
-			} catch (Exception ex) {
-				
-			}
-		}
-
 		long numElems = LongUtils.numElements(dims);
 		
-		IndexedDataSource<Q> list = null;
+		IndexedDataSource<Q> list = Storage.allocate(alg.construct(), numElems);
+		
+		DimensionedDataSource<Q> tmp = new NdData<Q>(dims, list);
 
-		final DimensionedDataSource<Q> tmp;
+		tmp.setSource(input.getSource());
+		
+		tmp.setName(input.getName());
+		
+		tmp.metadata().merge(input.metadata());
+		
+		tmp.setCoordinateSpace(input.getCoordinateSpace());
+
+		tmp.setValueType(input.getValueType());
+		
+		tmp.setValueUnit(input.getValueUnit());
+		
+		for (int d = 0; d < dims.length; d++) {
+			
+			tmp.setAxisType(d, input.getAxisType(d));
+
+			tmp.setAxisUnit(d, input.getAxisUnit(d));
+		}
+
+		Q min = (Q) minQ;
+		
+		Q max = (Q) maxQ;
 
 		if (min != null && max != null) {
-			
-			list = Storage.allocate(alg.construct(), numElems);
-			
-			tmp = new NdData<Q>(dims, list);
-			
-			tmp.setSource(input.getSource());
-			
-			tmp.setName(input.getName());
-			
-			tmp.metadata().merge(input.metadata());
-			
-			tmp.setCoordinateSpace(input.getCoordinateSpace());
-
-			tmp.setValueType(input.getValueType());
-			
-			tmp.setValueUnit(input.getValueUnit());
-			
-			for (int d = 0; d < dims.length; d++) {
-				
-				tmp.setAxisType(d, input.getAxisType(d));
-
-				tmp.setAxisUnit(d, input.getAxisUnit(d));
-			}
 			
 			ClampToRange.compute(alg, min, max, inputList, list);
 		}
 		else if (min != null) {
-			
-			list = Storage.allocate(alg.construct(), numElems);
-			
-			tmp = new NdData<Q>(dims, list);
-			
-			tmp.setSource(input.getSource());
-			
-			tmp.setName(input.getName());
-			
-			tmp.metadata().merge(input.metadata());
-			
-			tmp.setCoordinateSpace(input.getCoordinateSpace());
-
-			tmp.setValueType(input.getValueType());
-			
-			tmp.setValueUnit(input.getValueUnit());
-			
-			for (int d = 0; d < dims.length; d++) {
-				
-				tmp.setAxisType(d, input.getAxisType(d));
-
-				tmp.setAxisUnit(d, input.getAxisUnit(d));
-			}
 
 			ClampToMin.compute(alg, min, inputList, list);
 		}
 		else if (max != null) {
 			
-			list = Storage.allocate(alg.construct(), numElems);
-			
-			tmp = new NdData<Q>(dims, list);
-
-			tmp.setSource(input.getSource());
-			
-			tmp.setName(input.getName());
-			
-			tmp.metadata().merge(input.metadata());
-			
-			tmp.setCoordinateSpace(input.getCoordinateSpace());
-
-			tmp.setValueType(input.getValueType());
-			
-			tmp.setValueUnit(input.getValueUnit());
-			
-			for (int d = 0; d < dims.length; d++) {
-				
-				tmp.setAxisType(d, input.getAxisType(d));
-
-				tmp.setAxisUnit(d, input.getAxisUnit(d));
-			}
-			
 			ClampToMax.compute(alg, max, inputList, list);
 		}
 		else {
 			
-			tmp = (DimensionedDataSource<Q>) planeData.getDataSource();
+			Copy.compute(alg, (IndexedDataSource<Q>) planeData.getDataSource().rawData(), list);
 		}
 		
 		return tmp;
 	}
+*/
 	
+	// TODO convert this code to not rely on slow BigDecimals
 	
-	<L extends Algebra<L,M>, M extends PrimitiveConversion & Allocatable<M>, N extends Algebra<N,O>, O>
-		void convertToInt(Algebra<?,?> oAlg, N inAlg, DimensionedDataSource<O> input)
+	@SuppressWarnings("unchecked")
+	<IA extends Algebra<IA,I> & Ordered<I>,
+		I extends HighPrecRepresentation,
+		OA extends Algebra<OA,O>,
+		O extends Allocatable<O> & HighPrecRepresentation>
+	
+		void scaleToInt(Algebra<?,?> iAlg, Algebra<?,?> oAlg, BigDecimal numColors, Object altMin, Object altMax, DimensionedDataSource<?> input)
+
 	{
 		if (!(oAlg instanceof IntegerType)) {
 
 			JOptionPane.showMessageDialog(frame,
-				    "To int command not passed an integer algebra to use for the output type",
+				    "Scale To Int command not passed an integer algebra to use for the output type",
 				    "WARNING",
 				    JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 		
-		if (!(inAlg.construct() instanceof PrimitiveConversion)) {
-
-			JOptionPane.showMessageDialog(frame,
-				    "To intt command input type does not support primitive conversion",
-				    "WARNING",
-				    JOptionPane.WARNING_MESSAGE);
-		}
-
 		long[] dims = DataSourceUtils.dimensions(input);
 		
-		IntegerIndex tmp1 = new IntegerIndex(0);
-		
-		IntegerIndex tmp2 = new IntegerIndex(0);
-		
-		IntegerIndex tmp3 = new IntegerIndex(0);
-		
-		@SuppressWarnings("unchecked")
-		L outAlg = (L) oAlg;
-		
-		DimensionedDataSource<M> output = DimensionedStorage.allocate(outAlg.construct(), dims);
+		IA inAlg = (IA) iAlg;
 
-		IndexedDataSource<O> inList = input.rawData();  
+		OA outAlg = (OA) oAlg;
 		
-		IndexedDataSource<M> outList = output.rawData();
+		DimensionedDataSource<O> output =
+				
+			DimensionedStorage.allocate(outAlg.construct(), dims);
 
-		O in  = inAlg.construct();
+		IndexedDataSource<I> inList = (IndexedDataSource<I>) input.rawData();  
 		
-		M out = outAlg.construct();
+		IndexedDataSource<O> outList = output.rawData();
 
+		I in  = inAlg.construct();
+		
+		O out = outAlg.construct();
+		
+		I altMinI = (I) altMin;
+		
+		I altMaxI = (I) altMax;
+		
 		long size = inList.size();
+
+		I minI = inAlg.construct();
+
+		I maxI = inAlg.construct();
+		
+		MinMaxElement.compute(inAlg, inList , minI, maxI);
+		
+		if (altMinI != null && inAlg.isGreater().call(altMinI, minI))
+			
+			inAlg.assign().call(altMinI, minI);
+		
+		if (altMaxI != null && inAlg.isLess().call(altMaxI, maxI))
+			
+			inAlg.assign().call(altMaxI, maxI);
+		
+		HighPrecisionMember currHP = G.HP.construct();
+		
+		HighPrecisionMember minHP = G.HP.construct();
+		
+		HighPrecisionMember maxHP = G.HP.construct();
+		
+		minI.toHighPrec(minHP);
+		
+		maxI.toHighPrec(maxHP);
+		
+		BigDecimal denom = maxHP.v().subtract(minHP.v());
+		
+		if (denom.compareTo(BigDecimal.ZERO) == 0) {
+			
+			denom = BigDecimal.ONE;
+		}
+		
+		BigDecimal scale = numColors.subtract(BigDecimal.ONE);
 		
 		for (long i = 0; i < size; i++) {
 			
 			inList.get(i, in);
 			
-			PrimitiveConverter.convert(tmp1, tmp2, tmp3, (PrimitiveConversion) in, out);
+			in.toHighPrec(currHP);
+			
+			BigDecimal numer = currHP.v().subtract(minHP.v());
+			
+			BigDecimal scaledVal =
+					
+					numer.divide(denom, HighPrecisionAlgebra.getContext());
+
+			if (scaledVal.compareTo(BigDecimal.ZERO) < 0)
+				
+				scaledVal = BigDecimal.ZERO;
+			
+			if (scaledVal.compareTo(BigDecimal.ONE) > 0)
+				
+				scaledVal = BigDecimal.ONE;
+			
+			scaledVal = scaledVal.multiply(scale);
+			
+			currHP.setV(scaledVal);
+			
+			out.fromHighPrec(currHP);
 			
 			outList.set(i, out);
 		}
@@ -3910,7 +3907,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			output.setAxisUnit(d, input.getAxisUnit(d));
 		}
 
-		new RealImageViewer<L,M>(outAlg, output);
+		new RealImageViewer<OA,O>(outAlg, output);
 	}
 	
 	@SuppressWarnings("unchecked")

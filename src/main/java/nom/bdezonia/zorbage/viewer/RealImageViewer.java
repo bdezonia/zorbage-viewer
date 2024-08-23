@@ -96,6 +96,7 @@ import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algebra.Power;
 import nom.bdezonia.zorbage.algebra.RealConstants;
 import nom.bdezonia.zorbage.algebra.Roots;
+import nom.bdezonia.zorbage.algebra.SetFromLongs;
 import nom.bdezonia.zorbage.algebra.SetI;
 import nom.bdezonia.zorbage.algebra.SetR;
 import nom.bdezonia.zorbage.algebra.Trigonometric;
@@ -103,10 +104,13 @@ import nom.bdezonia.zorbage.algebra.Unity;
 import nom.bdezonia.zorbage.algebra.type.markers.IntegerType;
 import nom.bdezonia.zorbage.algorithm.FFT2D;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
+import nom.bdezonia.zorbage.algorithm.Mean;
+import nom.bdezonia.zorbage.algorithm.Median;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.algorithm.NdSplit;
 import nom.bdezonia.zorbage.algorithm.SwapQuadrants;
 import nom.bdezonia.zorbage.algorithm.Transform2;
+import nom.bdezonia.zorbage.algorithm.Variance;
 import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
 import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
@@ -322,6 +326,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		JButton explode = new JButton("Explode ...");
 		JButton fft = new JButton("FFT");
 		JButton transform = new JButton("Transform ...");
+		JButton stats = new JButton("Stats");
 		Dimension size = new Dimension(150, 40);
 		metadata.setMinimumSize(size);
 		loadLut.setMinimumSize(size);
@@ -343,6 +348,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		explode.setMinimumSize(size);
 		fft.setMinimumSize(size);
 		transform.setMinimumSize(size);
+		stats.setMinimumSize(size);
 		metadata.setMaximumSize(size);
 		loadLut.setMaximumSize(size);
 		resetLut.setMaximumSize(size);
@@ -363,6 +369,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		explode.setMaximumSize(size);
 		fft.setMaximumSize(size);
 		transform.setMaximumSize(size);
+		stats.setMaximumSize(size);
 		Box vertBox = Box.createVerticalBox();
 		vertBox.add(metadata);
 		vertBox.add(loadLut);
@@ -384,6 +391,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		vertBox.add(explode);
 		vertBox.add(fft);
 		vertBox.add(transform);
+		vertBox.add(stats);
 		buttonPanel.add(vertBox);
 		metadata.addActionListener(new ActionListener() {
 			
@@ -1919,6 +1927,31 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 					pz.draw();
 				}
+			}
+		});
+		
+		stats.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+
+				U mean = alg.construct();
+				
+				U median = alg.construct();
+				
+				U variance = alg.construct();
+				
+				collectStats(alg, planeData.getDataSource().rawData(), mean, median, variance);
+
+				HighPrecisionMember stddev = G.HP.construct();
+				
+				((HighPrecRepresentation) variance).toHighPrec(stddev);
+				
+				G.HP.sqrt().call(stddev, stddev);
+				
+				System.out.println("mean   = "+mean);
+				System.out.println("median = "+median);
+				System.out.println("stddev = "+stddev);
 			}
 		});
 		
@@ -3924,5 +3957,20 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 			new RealImageViewer<V,W>(enhancedAlg, dataset);
 		}
+	}
+
+	//TODO are int based data going to cause truncation probs here? Do we need to
+	//		convert all the data to highprec before calcing stats?
+					
+	@SuppressWarnings("unchecked")
+	<A,
+		BA extends Algebra<BA,B> & Addition<B> & Ordered<B> & Unity<B> & Multiplication<B>,
+		B extends Allocatable<B> & SetFromLongs>
+	
+		void collectStats(Algebra<?,A> alg, IndexedDataSource<A> data, A mean, A median, A variance)
+	{
+		Mean.compute((BA) alg, (IndexedDataSource<B>) data, (B) mean);
+		Median.compute((BA) alg, (IndexedDataSource<B>) data, (B) median);
+		Variance.compute((BA) alg, (IndexedDataSource<B>) data, (B) variance);
 	}
 }

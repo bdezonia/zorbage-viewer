@@ -85,6 +85,7 @@ import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.Bounded;
 import nom.bdezonia.zorbage.algebra.Exponential;
 import nom.bdezonia.zorbage.algebra.G;
+import nom.bdezonia.zorbage.algebra.GetAsBigDecimal;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
 import nom.bdezonia.zorbage.algebra.Hyperbolic;
 import nom.bdezonia.zorbage.algebra.Infinite;
@@ -96,7 +97,7 @@ import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algebra.Power;
 import nom.bdezonia.zorbage.algebra.RealConstants;
 import nom.bdezonia.zorbage.algebra.Roots;
-import nom.bdezonia.zorbage.algebra.SetFromLongs;
+import nom.bdezonia.zorbage.algebra.SetFromBigDecimals;
 import nom.bdezonia.zorbage.algebra.SetI;
 import nom.bdezonia.zorbage.algebra.SetR;
 import nom.bdezonia.zorbage.algebra.Trigonometric;
@@ -104,7 +105,6 @@ import nom.bdezonia.zorbage.algebra.Unity;
 import nom.bdezonia.zorbage.algebra.type.markers.IntegerType;
 import nom.bdezonia.zorbage.algorithm.FFT2D;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
-import nom.bdezonia.zorbage.algorithm.Mean;
 import nom.bdezonia.zorbage.algorithm.Median;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.algorithm.NdSplit;
@@ -116,6 +116,7 @@ import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
+import nom.bdezonia.zorbage.datasource.TransformedDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
@@ -1939,16 +1940,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 				U median = alg.construct();
 				
-				U variance = alg.construct();
+				U stddev = alg.construct();
 				
-				collectStats(alg, planeData.getDataSource().rawData(), mean, median, variance);
+				collectStats(alg, planeData.getDataSource().rawData(), mean, median, stddev);
 
-				HighPrecisionMember stddev = G.HP.construct();
-				
-				((HighPrecRepresentation) variance).toHighPrec(stddev);
-				
-				G.HP.sqrt().call(stddev, stddev);
-				
+				System.out.println("===============================");
 				System.out.println("mean   = "+mean);
 				System.out.println("median = "+median);
 				System.out.println("stddev = "+stddev);
@@ -3959,18 +3955,53 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		}
 	}
 
-	//TODO are int based data going to cause truncation probs here? Do we need to
-	//		convert all the data to highprec before calcing stats?
-					
 	@SuppressWarnings("unchecked")
 	<A,
-		BA extends Algebra<BA,B> & Addition<B> & Ordered<B> & Unity<B> & Multiplication<B>,
-		B extends Allocatable<B> & SetFromLongs>
+		BA extends Algebra<BA,B>,
+		B extends GetAsBigDecimal & SetFromBigDecimals>
 	
-		void collectStats(Algebra<?,A> alg, IndexedDataSource<A> data, A mean, A median, A variance)
+		void collectStats(Algebra<?,A> inAlg, IndexedDataSource<A> storage, A mean, A median, A stddev)
 	{
-		Mean.compute((BA) alg, (IndexedDataSource<B>) data, (B) mean);
-		Median.compute((BA) alg, (IndexedDataSource<B>) data, (B) median);
-		Variance.compute((BA) alg, (IndexedDataSource<B>) data, (B) variance);
+		BA bAlg = (BA) inAlg;
+		
+		Procedure2<B,HighPrecisionMember> bToHP =
+				new Procedure2<B, HighPrecisionMember>()
+		{
+			@Override
+			public void call(B b, HighPrecisionMember hp) {
+				
+				hp.setV(b.getAsBigDecimal());
+			}
+		};
+		
+		Procedure2<HighPrecisionMember,B> hpToB =
+				new Procedure2<HighPrecisionMember,B>()
+		{
+			@Override
+			public void call(HighPrecisionMember hp, B b) {
+				
+				b.setFromBigDecimals(hp.v());
+			}
+		};
+		
+		TransformedDataSource<B, HighPrecisionMember> data =
+
+				new TransformedDataSource<>(bAlg, (IndexedDataSource<B>) storage,
+												bToHP, hpToB);
+		
+		HighPrecisionMember meanHP = G.HP.construct();
+		HighPrecisionMember medianHP = G.HP.construct();
+		HighPrecisionMember varianceHP = G.HP.construct();
+		HighPrecisionMember stddevHP = G.HP.construct();
+
+		Median.compute(G.HP, data, medianHP);
+
+		Variance.compute(G.HP, data, meanHP, varianceHP);
+		
+		G.HP.sqrt().call(varianceHP, stddevHP);
+		
+		((B) mean).setFromBigDecimals(meanHP.v());
+		((B) median).setFromBigDecimals(medianHP.v());
+		((B) stddev).setFromBigDecimals(stddevHP.v());
 	}
 }

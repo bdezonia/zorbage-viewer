@@ -85,7 +85,6 @@ import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.Bounded;
 import nom.bdezonia.zorbage.algebra.Exponential;
 import nom.bdezonia.zorbage.algebra.G;
-import nom.bdezonia.zorbage.algebra.GetAsBigDecimal;
 import nom.bdezonia.zorbage.algebra.HighPrecRepresentation;
 import nom.bdezonia.zorbage.algebra.Hyperbolic;
 import nom.bdezonia.zorbage.algebra.Infinite;
@@ -97,7 +96,6 @@ import nom.bdezonia.zorbage.algebra.Ordered;
 import nom.bdezonia.zorbage.algebra.Power;
 import nom.bdezonia.zorbage.algebra.RealConstants;
 import nom.bdezonia.zorbage.algebra.Roots;
-import nom.bdezonia.zorbage.algebra.SetFromBigDecimals;
 import nom.bdezonia.zorbage.algebra.SetI;
 import nom.bdezonia.zorbage.algebra.SetR;
 import nom.bdezonia.zorbage.algebra.Trigonometric;
@@ -116,7 +114,7 @@ import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
-import nom.bdezonia.zorbage.datasource.TransformedDataSource;
+import nom.bdezonia.zorbage.datasource.ReadOnlyHighPrecisionDataSource;
 import nom.bdezonia.zorbage.dataview.PlaneView;
 import nom.bdezonia.zorbage.dataview.TwoDView;
 import nom.bdezonia.zorbage.misc.BigDecimalUtils;
@@ -3853,8 +3851,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		I altMaxI = (I) altMax;
 		
-		long size = inList.size();
-
 		I minI = inAlg.construct();
 
 		I maxI = inAlg.construct();
@@ -3888,6 +3884,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		BigDecimal scale = numColors.subtract(BigDecimal.ONE);
 		
+		long size = inList.size();
+
 		for (long i = 0; i < size; i++) {
 			
 			inList.get(i, in);
@@ -3896,19 +3894,19 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			BigDecimal numer = currHP.v().subtract(minHP.v());
 			
-			BigDecimal scaledVal =
+			BigDecimal relativeVal =
 					
 					numer.divide(denom, HighPrecisionAlgebra.getContext());
 
-			if (scaledVal.compareTo(BigDecimal.ZERO) < 0)
+			if (relativeVal.compareTo(BigDecimal.ZERO) < 0)
 				
-				scaledVal = BigDecimal.ZERO;
+				relativeVal = BigDecimal.ZERO;
 			
-			if (scaledVal.compareTo(BigDecimal.ONE) > 0)
+			if (relativeVal.compareTo(BigDecimal.ONE) > 0)
 				
-				scaledVal = BigDecimal.ONE;
+				relativeVal = BigDecimal.ONE;
 			
-			scaledVal = scaledVal.multiply(scale);
+			BigDecimal scaledVal = relativeVal.multiply(scale);
 			
 			currHP.setV(scaledVal);
 			
@@ -3958,37 +3956,16 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	@SuppressWarnings("unchecked")
 	<A,
 		BA extends Algebra<BA,B>,
-		B extends GetAsBigDecimal & SetFromBigDecimals>
+		B extends HighPrecRepresentation>
 	
 		void collectStats(Algebra<?,A> inAlg, IndexedDataSource<A> storage, A mean, A median, A stddev)
 	{
 		BA bAlg = (BA) inAlg;
 		
-		Procedure2<B,HighPrecisionMember> bToHP =
-				new Procedure2<B, HighPrecisionMember>()
-		{
-			@Override
-			public void call(B b, HighPrecisionMember hp) {
+		ReadOnlyHighPrecisionDataSource<BA, B> data =
 				
-				hp.setV(b.getAsBigDecimal());
-			}
-		};
-		
-		Procedure2<HighPrecisionMember,B> hpToB =
-				new Procedure2<HighPrecisionMember,B>()
-		{
-			@Override
-			public void call(HighPrecisionMember hp, B b) {
-				
-				b.setFromBigDecimals(hp.v());
-			}
-		};
-		
-		TransformedDataSource<B, HighPrecisionMember> data =
+				new ReadOnlyHighPrecisionDataSource<BA,B>(bAlg, (IndexedDataSource<B>) storage);
 
-				new TransformedDataSource<>(bAlg, (IndexedDataSource<B>) storage,
-												bToHP, hpToB);
-		
 		HighPrecisionMember meanHP = G.HP.construct();
 		HighPrecisionMember medianHP = G.HP.construct();
 		HighPrecisionMember varianceHP = G.HP.construct();
@@ -4000,8 +3977,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		G.HP.sqrt().call(varianceHP, stddevHP);
 		
-		((B) mean).setFromBigDecimals(meanHP.v());
-		((B) median).setFromBigDecimals(medianHP.v());
-		((B) stddev).setFromBigDecimals(stddevHP.v());
+		((B) mean).fromHighPrec(meanHP);
+		((B) median).fromHighPrec(medianHP);
+		((B) stddev).fromHighPrec(stddevHP);
 	}
 }

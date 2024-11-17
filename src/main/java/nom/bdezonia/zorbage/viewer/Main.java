@@ -154,7 +154,6 @@ import nom.bdezonia.zorbage.type.real.float32.Float32MatrixMember;
 import nom.bdezonia.zorbage.type.real.float32.Float32VectorMember;
 import nom.bdezonia.zorbage.type.real.float64.Float64CartesianTensorProductMember;
 import nom.bdezonia.zorbage.type.real.float64.Float64MatrixMember;
-import nom.bdezonia.zorbage.type.real.float64.Float64Member;
 import nom.bdezonia.zorbage.type.real.float64.Float64VectorMember;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionCartesianTensorProductMember;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMatrixMember;
@@ -514,14 +513,9 @@ public class Main<T extends Algebra<T,U>, U> {
 
 						bundle = NmrPipeReader.readAllDatasets(f.getAbsolutePath());
 					
-					if (bundle.bundle().size() == 0) {
+					if (bundle.bundle().size() == 0)
 					
-						DimensionedDataSource<Float64Member> data = PipeToTextReader.read(f.getAbsolutePath(), G.DBL);
-
-						if (data != null)
-						
-							bundle.dbls.add(data);
-					}
+						bundle = PipeToTextReader.readAllDatasets(f.getAbsolutePath());
 					
 					/*
 					

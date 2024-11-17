@@ -62,6 +62,8 @@ import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
 import nom.bdezonia.zorbage.nifti.Nifti;
 import nom.bdezonia.zorbage.nmr.NmrPipeReader;
+import nom.bdezonia.zorbage.nmr.PipeToTextReader;
+import nom.bdezonia.zorbage.nmr.UcsfReader;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
 import nom.bdezonia.zorbage.scifio.Scifio;
@@ -152,6 +154,7 @@ import nom.bdezonia.zorbage.type.real.float32.Float32MatrixMember;
 import nom.bdezonia.zorbage.type.real.float32.Float32VectorMember;
 import nom.bdezonia.zorbage.type.real.float64.Float64CartesianTensorProductMember;
 import nom.bdezonia.zorbage.type.real.float64.Float64MatrixMember;
+import nom.bdezonia.zorbage.type.real.float64.Float64Member;
 import nom.bdezonia.zorbage.type.real.float64.Float64VectorMember;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionCartesianTensorProductMember;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMatrixMember;
@@ -503,9 +506,22 @@ public class Main<T extends Algebra<T,U>, U> {
 				
 					long t0 = System.currentTimeMillis();
 					
-					//DataBundle bundle = PipeToTextReader.read(f.getAbsolutePath());
+					DataBundle bundle =
+							
+						UcsfReader.readAllDatasets(f.getAbsolutePath());
+					
+					if (bundle.bundle().size() == 0)
 
-					DataBundle bundle = NmrPipeReader.readAllDatasets(f.getAbsolutePath());
+						bundle = NmrPipeReader.readAllDatasets(f.getAbsolutePath());
+					
+					if (bundle.bundle().size() == 0) {
+					
+						DimensionedDataSource<Float64Member> data = PipeToTextReader.read(f.getAbsolutePath(), G.DBL);
+
+						if (data != null)
+						
+							bundle.dbls.add(data);
+					}
 					
 					/*
 					

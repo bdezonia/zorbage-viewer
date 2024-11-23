@@ -416,6 +416,20 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 					System.out.println("  key: (" + key.a() + ")  type: (" + key.b() + ")");
 				}
+
+				long[] corner1 = new long[] {0,0};
+				long[] corner2 = new long[] {1,1};
+				long[] corner3 = new long[] {dataSource.dimension(0)-1, dataSource.dimension(1)-1};
+				long[] corner4 = new long[] {dataSource.dimension(0), dataSource.dimension(1)};
+				
+				System.out.println("corner 1 x " +dataSource.getCoordinateSpace().project(corner1, 0));
+				System.out.println("corner 2 x " +dataSource.getCoordinateSpace().project(corner2, 0));
+				System.out.println("corner 3 x " +dataSource.getCoordinateSpace().project(corner3, 0));
+				System.out.println("corner 4 x " +dataSource.getCoordinateSpace().project(corner4, 0));
+				System.out.println("corner 1 y " +dataSource.getCoordinateSpace().project(corner1, 1));
+				System.out.println("corner 2 y " +dataSource.getCoordinateSpace().project(corner2, 1));
+				System.out.println("corner 3 y " +dataSource.getCoordinateSpace().project(corner3, 1));
+				System.out.println("corner 4 y " +dataSource.getCoordinateSpace().project(corner4, 1));
 			}
 			
 		});

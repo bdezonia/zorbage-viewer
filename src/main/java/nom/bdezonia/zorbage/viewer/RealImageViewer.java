@@ -42,17 +42,12 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.MathContext;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.Arrays;
@@ -73,7 +68,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
@@ -672,511 +666,134 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		});
 		dispRange.addActionListener(new ActionListener() {
 			
+			boolean cancelled = false;
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				
-				SwingWorker<Object,Object> worker = new SwingWorker<Object, Object>() {
+				String origMinStrVal = effectiveMinToStr();
+				
+				String origMaxStrVal = effectiveMaxToStr();
+				
+				JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+				
+				dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
+				
+				dlg.add(new JLabel("Choose two values that specify the range of values to display"));
+				
+				JButton resetButton = new JButton("Reset");
+				
+				dlg.add(resetButton);
+				
+				dlg.add(new JLabel("Min displayable value"));
+				
+				JTextField minField = new JTextField(20);
+				
+				minField.setText(origMinStrVal);
+				
+				dlg.add(minField);
+
+				dlg.add(new JLabel("Max displayable value"));
+
+				JTextField maxField = new JTextField(20);
+				
+				maxField.setText(origMaxStrVal);
+				
+				dlg.add(maxField);
+
+				resetButton.addActionListener(new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent e) {
 					
-					boolean cancelled = false;
-					String origMinStrVal = effectiveMinToStr(); 
-					String origMaxStrVal = effectiveMaxToStr(); 
-					MathContext context = new MathContext(7);
+						dispMin = null;
+						
+						dispMax = null;
+						
+						minField.setText(min.toString());
+						
+						maxField.setText(max.toString());
+					}
+				});
+				JButton ok = new JButton("Ok");
+				ok.addActionListener(new ActionListener() {
 					
 					@Override
-					protected Object doInBackground() throws Exception {
-
-						JDialog dlg = new JDialog(frame, "", Dialog.ModalityType.DOCUMENT_MODAL);
+					public void actionPerformed(ActionEvent e) {
+					
+						cancelled = false;
 						
-						dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.Y_AXIS));
-						
-						dlg.add(new JLabel("Choose two values that specify the range of values to display"));
-						
-						JButton resetButton = new JButton("Reset");
-						
-						dlg.add(resetButton);
-						
-						dlg.add(new JLabel("Min displayable value"));
-						
-						JTextField minField = new JTextField(20);
-						
-						minField.setText(effectiveMinToStr());
-						
-						dlg.add(minField);
-						
-						BigDecimal dataRange = actualMax().subtract(actualMin());
-						
-						JScrollBar minScroll = new JScrollBar(JScrollBar.HORIZONTAL);
-						
-						minScroll.setMinimum(0);
-						
-						minScroll.setMaximum(999);
-						
-						minScroll.setUnitIncrement(1);
-						
-						minScroll.getModel().setExtent(10);
-						
-						BigDecimal effMin = effectiveMin();
-						
-						BigDecimal fraction = effMin.subtract(actualMin());
-						
-						int sliderPos = BigDecimal.valueOf(minScroll.getMaximum()).multiply(fraction).divide(dataRange, context).intValue();
-						
-						minScroll.setValue(sliderPos);
-						
-						minScroll.addAdjustmentListener(
-						
-							new AdjustmentListener() {
-
-								@Override
-								public void adjustmentValueChanged(AdjustmentEvent e) {
-						
-									HighPrecisionMember minHP = G.HP.construct();
-									
-									HighPrecisionMember maxHP = G.HP.construct();
-									
-									((HighPrecRepresentation) min).toHighPrec(minHP);
-									
-									((HighPrecRepresentation) max).toHighPrec(maxHP);
-									
-									int sliderMin = minScroll.getMinimum();
-									
-									int sliderMax = minScroll.getMaximum();
-									
-									int sliderValue = minScroll.getValue();
-									
-									if (500 <= sliderValue && sliderValue < 510) {
-									
-										switch (sliderValue) {
-										
-										case 500:
-											sliderValue = 500;
-											break;
-										
-										case 501:
-											sliderValue = 503;
-											break;
-										
-										case 502:
-											sliderValue = 505;
-											break;
-										
-										case 503:
-											sliderValue = 507;
-											break;
-										
-										case 504:
-											sliderValue = 509;
-											break;
-										
-										case 505:
-											sliderValue = 511;
-											break;
-										
-										case 506:
-											sliderValue = 513;
-											break;
-										
-										case 507:
-											sliderValue = 515;
-											break;
-										
-										case 508:
-											sliderValue = 517;
-											break;
-										
-										case 509:
-											sliderValue = 519;
-											break;
-										}
-									}
-									else if (sliderValue >= 510) {
-										
-										sliderValue += minScroll.getModel().getExtent();
-									}
-									
-									BigDecimal percent = BigDecimal.valueOf(sliderValue - sliderMin).divide(BigDecimal.valueOf(sliderMax - sliderMin), context);
-									
-									BigDecimal dataRange = (maxHP.v().subtract(minHP.v()));
-									
-									BigDecimal subrange = percent.multiply(dataRange, context);
-									
-									BigDecimal newValue = minHP.v().add(subrange);
-									
-									minHP.setV(newValue);
-									
-									minField.setText(newValue.toString());
-									
-									if (dispMin == null)
-										dispMin = G.HP.construct();
-									
-									dispMin.fromHighPrec(minHP);
-
-//									String dispMaxStr = effectiveMaxToStr();
-
-									String dispMinStr = effectiveMinToStr();
-									
-									if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
-										dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
-
-//									if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
-//										dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
-
-									dispMinLabel.setText("Disp Min: " + dispMinStr);
-									
-//									dispMaxLabel.setText("Disp Max: " + dispMaxStr);
-									
-									pz.draw();
-									
-									frame.repaint();
-								}
-							}
-						);
-						dlg.add(minScroll);
-						minField.addFocusListener(new FocusListener() {
-							
-							@Override
-							public void focusLost(FocusEvent arg0) {
-
-								String numStr = minField.getText();
-								
-								if (numStr != null && numStr.length() > 0) {
-								
-									BigDecimal num;
-									
-									try { 
-									
-										num = new BigDecimal(numStr);
-									
-									} catch (NumberFormatException exc) {
-										
-										return;
-									}
-
-									BigDecimal numer = num.subtract(actualMin());
-									
-									BigDecimal denom = actualMax().subtract(actualMin());
-									
-									if (denom.compareTo(BigDecimal.ZERO) == 0)
-										denom = BigDecimal.ONE;
-									
-									BigDecimal percent = numer.divide(denom, context);
-									
-									if (percent.compareTo(BigDecimal.ZERO) < 0)
-										percent = BigDecimal.ZERO;
-									
-									if (percent.compareTo(BigDecimal.ONE) > 0)
-										percent = BigDecimal.ONE;
-									
-									int pos = percent.multiply(BigDecimal.valueOf(minScroll.getMaximum())).intValue();
-									
-									minScroll.setValue(pos);
-									
-									if (dispMin == null)
-										dispMin = G.HP.construct();
-									
-									dispMin.setV(percent.multiply(denom));
-									
-									String dispMinStr = effectiveMinToStr();
-									
-									if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
-										dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
-									
-									dispMaxLabel.setText("Disp Min: " + dispMinStr);
-									
-									pz.draw();
-									
-									frame.repaint();
-								}
-							}
-							
-							@Override
-							public void focusGained(FocusEvent arg0) {
-							}
-						});
-						dlg.add(new JLabel("Max displayable value"));
-						JTextField maxField = new JTextField(20);
-						maxField.setText(effectiveMaxToStr());
-						dlg.add(maxField);
-						JScrollBar maxScroll = new JScrollBar(JScrollBar.HORIZONTAL);
-						maxScroll.setMinimum(0);
-						maxScroll.setMaximum(999);
-						maxScroll.setUnitIncrement(1);
-						maxScroll.getModel().setExtent(10);
-						BigDecimal effMax = effectiveMax();
-						fraction = effMax.subtract(actualMin());
-						sliderPos = BigDecimal.valueOf(maxScroll.getMaximum()).multiply(fraction).divide(dataRange, context).intValue();
-						maxScroll.setValue(sliderPos);
-						maxScroll.addAdjustmentListener(
-							
-							new AdjustmentListener() {
-								
-								@Override
-								public void adjustmentValueChanged(AdjustmentEvent e) {
-									
-									HighPrecisionMember minHP = G.HP.construct();
-									
-									HighPrecisionMember maxHP = G.HP.construct();
-									
-									((HighPrecRepresentation) min).toHighPrec(minHP);
-									
-									((HighPrecRepresentation) max).toHighPrec(maxHP);
-									
-									int sliderMin = maxScroll.getMinimum();
-									
-									int sliderMax = maxScroll.getMaximum();
-									
-									int sliderValue = maxScroll.getValue();
-									
-									if (500 <= sliderValue && sliderValue < 510) {
-									
-										switch (sliderValue) {
-										
-										case 500:
-											sliderValue = 500;
-											break;
-										
-										case 501:
-											sliderValue = 503;
-											break;
-										
-										case 502:
-											sliderValue = 505;
-											break;
-										
-										case 503:
-											sliderValue = 507;
-											break;
-										
-										case 504:
-											sliderValue = 509;
-											break;
-										
-										case 505:
-											sliderValue = 511;
-											break;
-										
-										case 506:
-											sliderValue = 513;
-											break;
-										
-										case 507:
-											sliderValue = 515;
-											break;
-										
-										case 508:
-											sliderValue = 517;
-											break;
-										
-										case 509:
-											sliderValue = 519;
-											break;
-										}
-									}
-									else if (sliderValue >= 510) {
-										
-										sliderValue += maxScroll.getModel().getExtent();
-									}
-
-									BigDecimal percent = BigDecimal.valueOf(sliderValue - sliderMin).divide(BigDecimal.valueOf(sliderMax - sliderMin), context);
-									
-									BigDecimal dataRange = (maxHP.v().subtract(minHP.v()));
-									
-									BigDecimal subrange = percent.multiply(dataRange, context);
-									
-									BigDecimal newValue = minHP.v().add(subrange);
-									
-									maxHP.setV(newValue);
-									
-									maxField.setText(newValue.toString());
-									
-									if (dispMax == null)
-										dispMax = G.HP.construct();
-									
-									dispMax.fromHighPrec(maxHP);
-									
-//									String dispMinStr = effectiveMinToStr();
-									
-									String dispMaxStr = effectiveMaxToStr();
-									
-//									if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
-//										dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
-									
-									if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
-										dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
-
-//									dispMinLabel.setText("Disp Min: " + dispMinStr);
-									
-									dispMaxLabel.setText("Disp Max: " + dispMaxStr);
-									
-									pz.draw();
-									
-									frame.repaint();
-								}
-							}
-						);
-						dlg.add(maxScroll);
-						maxField.addFocusListener(new FocusListener() {
-							
-							@Override
-							public void focusLost(FocusEvent arg0) {
-								
-								String numStr = maxField.getText();
-								
-								if (numStr != null && numStr.length() > 0) {
-								
-									BigDecimal num;
-									
-									try { 
-									
-										num = new BigDecimal(numStr);
-									
-									} catch (NumberFormatException exc) {
-									
-										return;
-									}
-									
-									BigDecimal numer = num.subtract(actualMin());
-									
-									BigDecimal denom = actualMax().subtract(actualMin());
-									
-									if (denom.compareTo(BigDecimal.ZERO) == 0)
-										denom = BigDecimal.ONE;
-									
-									BigDecimal percent = numer.divide(denom, context);
-									
-									if (percent.compareTo(BigDecimal.ZERO) < 0)
-										percent = BigDecimal.ZERO;
-									
-									if (percent.compareTo(BigDecimal.ONE) > 0)
-										percent = BigDecimal.ONE;
-									
-									int pos = percent.multiply(BigDecimal.valueOf(maxScroll.getMaximum())).intValue();
-									
-									maxScroll.setValue(pos);
-									
-									if (dispMax == null)
-										dispMax = G.HP.construct();
-									
-									dispMax.setV(percent.multiply(denom));
-									
-									String dispMaxStr = effectiveMaxToStr();
-									
-									if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
-										dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
-									
-									dispMaxLabel.setText("Disp Max: " + dispMaxStr);
-									
-									pz.draw();
-									
-									frame.repaint();
-								}
-							}
-							
-							@Override
-							public void focusGained(FocusEvent arg0) {
-							}
-						});
-						resetButton.addActionListener(new ActionListener() {
-
-							@Override
-							public void actionPerformed(ActionEvent e) {
-							
-								dispMin = null;
-								
-								dispMax = null;
-								
-								minField.setText(min.toString());
-								
-								maxField.setText(max.toString());
-								
-								minScroll.setValue(minScroll.getMinimum());
-								
-								maxScroll.setValue(maxScroll.getMaximum());
-							}
-						});
-						JButton ok = new JButton("Ok");
-						ok.addActionListener(new ActionListener() {
-							
-							@Override
-							public void actionPerformed(ActionEvent e) {
-							
-								cancelled = false;
-								
-								dlg.setVisible(false);
-							}
-						});
-						JButton cancel = new JButton("Cancel");
-						cancel.addActionListener(new ActionListener() {
-							
-							@Override
-							public void actionPerformed(ActionEvent e) {
-								
-								cancelled = true;
-								
-								dlg.setVisible(false);
-							}
-						});
-						dlg.add(ok);
-						dlg.add(cancel);
-						dlg.pack();
-						dlg.setVisible(true);
-						
-						String minStr = minField.getText();
-						
-						String maxStr = maxField.getText();
-						
-						if (cancelled) {
-						
-							minStr = origMinStrVal;
-							maxStr = origMaxStrVal;
-						}
-						else {
-							
-							minStr = minField.getText();
-							maxStr = maxField.getText();
-						}
-						if (minStr == null || minStr.length() == 0 || minStr.equals(min.toString())) {
-							
-							dispMin = null;
-						}
-						else {
-							
-							dispMin = G.HP.construct(minStr);
-						}
-						if (maxStr == null || maxStr.length() == 0 || maxStr.equals(max.toString())) {
-							
-							dispMax = null;
-						}
-						else {
-							
-							dispMax = G.HP.construct(maxStr);
-						}
-
-						String dispMinStr = effectiveMinToStr();
-						
-						String dispMaxStr = effectiveMaxToStr();
-						
-						if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
-							dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
-						
-						if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
-							dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
-						
-						dispMinLabel.setText("Disp Min: " + dispMinStr);
-						
-						dispMaxLabel.setText("Disp Max: " + dispMaxStr);
-						
-						pz.draw();
-						
-						frame.repaint();
-						
-						return true;
+						dlg.setVisible(false);
 					}
-				};
+				});
+				JButton cancel = new JButton("Cancel");
+				cancel.addActionListener(new ActionListener() {
+					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						
+						cancelled = true;
+						
+						dlg.setVisible(false);
+					}
+				});
+				dlg.add(ok);
+				dlg.add(cancel);
+				dlg.pack();
+				dlg.setVisible(true);
+					
+				String minStr = minField.getText();
 				
-				worker.execute();
+				String maxStr = maxField.getText();
+				
+				if (cancelled) {
+				
+					minStr = origMinStrVal;
+					maxStr = origMaxStrVal;
+				}
+				else {
+					
+					minStr = minField.getText();
+					maxStr = maxField.getText();
+				}
+				if (minStr == null || minStr.length() == 0 || minStr.equals(min.toString())) {
+					
+					dispMin = null;
+				}
+				else {
+					
+					dispMin = G.HP.construct(minStr);
+				}
+				if (maxStr == null || maxStr.length() == 0 || maxStr.equals(max.toString())) {
+					
+					dispMax = null;
+				}
+				else {
+					
+					dispMax = G.HP.construct(maxStr);
+				}
+
+				String dispMinStr = effectiveMinToStr();
+				
+				String dispMaxStr = effectiveMaxToStr();
+				
+				if (dispMinStr.length() > DISP_MIN_MAX_CHAR_COUNT)
+					dispMinStr = dispMinStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+				
+				if (dispMaxStr.length() > DISP_MIN_MAX_CHAR_COUNT)
+					dispMaxStr = dispMaxStr.substring(0,DISP_MIN_MAX_CHAR_COUNT) + "...";
+				
+				dispMinLabel.setText("Disp Min: " + dispMinStr);
+				
+				dispMaxLabel.setText("Disp Max: " + dispMaxStr);
+				
+				pz.draw();
+				
+				frame.repaint();
 			}
+			
 		});
+		
 		toColor.addActionListener(new ActionListener() {
 			
 			@Override

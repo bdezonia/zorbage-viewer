@@ -97,12 +97,12 @@ import nom.bdezonia.zorbage.algebra.Unity;
 import nom.bdezonia.zorbage.algebra.type.markers.IntegerType;
 import nom.bdezonia.zorbage.algorithm.FFT2D;
 import nom.bdezonia.zorbage.algorithm.MakeColorDatasource;
+import nom.bdezonia.zorbage.algorithm.MeanAndVariance;
 import nom.bdezonia.zorbage.algorithm.Median;
 import nom.bdezonia.zorbage.algorithm.MinMaxElement;
 import nom.bdezonia.zorbage.algorithm.NdSplit;
 import nom.bdezonia.zorbage.algorithm.SwapQuadrants;
 import nom.bdezonia.zorbage.algorithm.Transform2;
-import nom.bdezonia.zorbage.algorithm.Variance;
 import nom.bdezonia.zorbage.coordinates.CoordinateSpace;
 import nom.bdezonia.zorbage.coordinates.LinearNdCoordinateSpace;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
@@ -3604,7 +3604,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 
 		Median.compute(G.HP, data, medianHP);
 
-		Variance.compute(G.HP, data, meanHP, varianceHP);
+		MeanAndVariance.compute(G.HP, data, meanHP, varianceHP);
 		
 		G.HP.sqrt().call(varianceHP, stddevHP);
 		

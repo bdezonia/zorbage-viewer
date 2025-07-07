@@ -35,7 +35,7 @@ BLX – Magellan BLX Topo File Format
 BMP – Microsoft Windows Device Independent Bitmap
 BSB – Maptech/NOAA BSB Nautical Chart Format
 BT – VTP .bt Binary Terrain Format
-BYN - Natural Resources Canada’s Geoid file format (.byn)
+BYN – Natural Resources Canada’s Geoid file format (.byn)
 CAD – AutoCAD DWG raster layer
 CALS – CALS Type 1
 CEOS – CEOS Image
@@ -45,7 +45,7 @@ COSAR – TerraSAR-X Complex SAR Data Product
 CPG – Convair PolGASP data
 CTable2 – CTable2 Datum Grid Shift
 CTG – USGS LULC Composite Theme Grid
-DAAS (Airbus DS Intelligence Data As A Service driver)
+DAAS – (Airbus DS Intelligence Data As A Service driver)
 DB2 raster
 DDS – DirectDraw Surface
 DERIVED – Derived subdatasets driver
@@ -58,10 +58,10 @@ DOQ2 – New Labelled USGS DOQ
 DTED – Military Elevation Data
 ECRGTOC – ECRG Table Of Contents (TOC.xml)
 ECW – Enhanced Compressed Wavelets (.ecw)
-EEDAI - Google Earth Engine Data API Image
+EEDAI – Google Earth Engine Data API Image
 EHdr – ESRI .hdr Labelled
 EIR – Erdas Imagine Raw
-ELAS - Earth Resources Laboratory Applications Software
+ELAS – Earth Resources Laboratory Applications Software
 ENVI – ENVI .hdr Labelled Raster
 EPS – Encapsulated PostScript 
 ESAT – Envisat Image Product
@@ -86,7 +86,7 @@ GS7BG – Golden Software Surfer 7 Binary Grid File Format
 GSAG – Golden Software ASCII Grid File Format
 GSBG – Golden Software Binary Grid File Format
 GSC – GSC Geogrid
-GTA - Generic Tagged Arrays
+GTA – Generic Tagged Arrays
 GTiff – GeoTIFF File Format
 GXF – Grid eXchange File
 HDF4 – Hierarchical Data Format Release 4 (HDF4)
@@ -113,7 +113,7 @@ JP2OpenJPEG – JPEG2000 driver based on OpenJPEG library
 JPEG2000 – Implementation of the JPEG-2000 part 1
 JPEGLS
 JPEG – JPEG JFIF File Format
-JPIPKAK - JPIP Streaming
+JPIPKAK – JPIP Streaming
 KEA
 KMLSuperoverlay – KMLSuperoverlay
 KRO – KOLOR Raw format
@@ -123,6 +123,7 @@ LCP – FARSITE v.4 LCP Format
 Leveller – Daylon Leveller Heightfield
 LOSLAS – NADCON .los/.las Datum Grid Shift
 MAP – OziExplorer .MAP
+MRC – MRC files for Cryo EM and Electron Tomography and Structural Biology
 MRF – Meta Raster Format
 MBTiles
 MEM – In Memory Raster
@@ -135,12 +136,12 @@ MrSID – Multi-resolution Seamless Image Database
 MSG – Meteosat Second Generation
 MSGN – Meteosat Second Generation (MSG) Native Archive Format (.nat)
 NDF – NLAPS Data Format
-NetCDF: Network Common Data Form
-NGSGEOID - NOAA NGS Geoid Height Grids
+NetCDF – Network Common Data Form
+NGSGEOID – NOAA NGS Geoid Height Grids
 NGW – NextGIS Web
-NIFTI - Neuroimaging Informatics Technology Initiative
+NIFTI – Neuroimaging Informatics Technology Initiative
 NITF – National Imagery Transmission Format
-NMRPIPE - various file types supported by the NMRPipe software
+NMRPIPE – various file types supported by the NMRPipe software
 NRRD – Nearly Raw Raster Data
 NTv2 – NTv2 Datum Grid Shift
 NWT_GRD/NWT_GRC – Northwood/Vertical Mapper File Format
@@ -163,11 +164,11 @@ PostGISRaster – PostGIS Raster driver
 PHOTOMOD Raster File
 QuickTime – QuickTime File Format
 Rasdaman GDAL driver
-Rasterlite - Rasters in SQLite DB
-RasterLite2 - Rasters in SQLite DB
+Rasterlite – Rasters in SQLite DB
+RasterLite2 – Rasters in SQLite DB
 R – R Object Data Store
 RDA (DigitalGlobe Raster Data Access)
-RDB - RIEGL Database
+RDB – RIEGL Database
 RIK – Swedish Grid Maps
 RMF – Raster Matrix Format
 ROI_PAC – ROI_PAC
@@ -184,19 +185,19 @@ SIGDEM – Scaled Integer Gridded DEM
 SNODAS – Snow Data Assimilation System
 SRP – Standard Product Format (ASRP/USRP) (.gen)
 SRTMHGT – SRTM HGT Format
-STACTA - Spatio-Temporal Asset Catalog Tiled Assets
+STACTA – Spatio-Temporal Asset Catalog Tiled Assets
 Terragen – Terragen™ Terrain File
 TGA – TARGA Image File Format
 TIFF – Tagged Image File Format
 TIL – EarthWatch/DigitalGlobe .TIL
-TileDB - TileDB
+TileDB – TileDB
 TSX – TerraSAR-X Product
 USGSDEM – USGS ASCII DEM (and CDED)
 VICAR – VICAR
 VRT – GDAL Virtual Format
 WAV – WAVE audio files
 WCS – OGC Web Coverage Service
-WEBP - WEBP
+WEBP – WEBP
 WMS – Web Map Services
 WMTS – OGC Web Map Tile Service
 XPM – X11 Pixmap

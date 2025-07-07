@@ -48,6 +48,7 @@ import nom.bdezonia.zorbage.algebra.G;
 import nom.bdezonia.zorbage.algorithm.BoolToUInt1;
 import nom.bdezonia.zorbage.algorithm.Copy;
 import nom.bdezonia.zorbage.algorithm.GridIterator;
+import nom.bdezonia.zorbage.cryoem.MrcReader;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.data.NdData;
@@ -221,6 +222,42 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
  
+		JButton loadCryoEM = new JButton("Load using cryo EM");
+		loadCryoEM.addMouseListener(new MouseListener() {
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+			}
+			
+			public void mousePressed(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+
+				JFileChooser chooser = new JFileChooser();
+				
+				chooser.showOpenDialog(frame);
+				
+				File f = chooser.getSelectedFile();
+
+				if (f != null) {
+				
+					DataBundle bundle = MrcReader.readAllDatasets(f.getAbsolutePath());
+				
+					displayAll(bundle);
+				}
+			}
+		});
+
 		JButton loadEcat = new JButton("Load using ecat");
 		loadEcat.addMouseListener(new MouseListener() {
 			
@@ -757,6 +794,8 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		Dimension buttonSize = new Dimension(180,40);
 		
+		loadCryoEM.setMinimumSize(buttonSize);
+		loadCryoEM.setMaximumSize(buttonSize);
 		loadEcat.setMinimumSize(buttonSize);
 		loadEcat.setMaximumSize(buttonSize);
 		loadGdal.setMinimumSize(buttonSize);
@@ -774,6 +813,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		loadVStack.setMinimumSize(buttonSize);
 		loadVStack.setMaximumSize(buttonSize);
 		
+		box.add(loadCryoEM);
 		box.add(loadEcat);
 		box.add(loadGdal);
 		box.add(loadJAudio);

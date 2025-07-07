@@ -60,6 +60,12 @@
 
     <dependency>
       <groupId>io.github.bdezonia</groupId>
+      <artifactId>zorbage-cryoem</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.github.bdezonia</groupId>
       <artifactId>zorbage-ecat</artifactId>
       <version>0.1.1-SNAPSHOT</version>
     </dependency>

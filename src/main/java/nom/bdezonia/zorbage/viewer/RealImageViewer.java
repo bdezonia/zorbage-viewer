@@ -2539,14 +2539,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			return scaleNumer / 2;
 		}
 		
-		public int intensityBoxHalfSize() {
-			// old way
-			//return scaleDenom / 2;  // this works well when we only support odd zoom factors
-			
-			// new way: much much faster
-			return 0;
-		}
-		
 		public void reset() {
 			
 			setInitialNumbers();
@@ -2871,9 +2863,11 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						color = RgbUtils.argb(255, 0, 0, 0);
 					}
 					
-					for (int dv = -drawingBoxHalfSize(); dv <= drawingBoxHalfSize(); dv++) {
+					int boxHalfSize = drawingBoxHalfSize();
+					
+					for (int dv = -boxHalfSize; dv <= boxHalfSize; dv++) {
 			
-						for (int du = -drawingBoxHalfSize(); du <= drawingBoxHalfSize(); du++) {
+						for (int du = -boxHalfSize; du <= boxHalfSize; du++) {
 
 							// plot a point
 							plot(color, arrayInt, x+du, y+dv);

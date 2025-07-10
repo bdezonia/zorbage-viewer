@@ -2260,15 +2260,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	}
 	
 	private void getCurrCoords(CoordinateSpace space, BigDecimal[] values) {
-
 		long[] modelCoords = new long[space.numDimensions()];
-		
-		long u = 0;
-
-		long v = 0;
-		
-		planeData.getModelCoords(u, v, modelCoords);
-
+		planeData.getModelCoords(0, 0, modelCoords);
 		space.project(modelCoords, values);
 	}
 	

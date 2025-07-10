@@ -48,6 +48,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.Arrays;
@@ -144,6 +145,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 	
 	private static int desiredWidth = 1024;
 	private static int desiredHeight = 1024;
+	
+	private static MathContext roundContext = new MathContext(6);
 	
 	private final T alg;
 	private final PlaneView<U> planeData;
@@ -1596,13 +1599,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			JButton chooseButton = new JButton("Choose ...");
 			int axisPos = i;
 			long maxVal = planeData.getDataSourceAxisSize(i);
-			positionLabels[i].setText(""+(planeData.getPositionValue(i)+1)+" / "+maxVal);
+			CoordinateSpace space = planeData.getDataSource().getCoordinateSpace();	
+			BigDecimal[] currCoords = new BigDecimal[space.numDimensions()];
+			getCurrCoords(space, currCoords);
+			positionLabels[axisPos].setText(""+(planeData.getPositionValue(i)+1)+" / "+maxVal+" ("+currCoords[axisPos].round(roundContext)+")");
 			int pos = planeData.getDataSourceAxisNumber(i);
 			String axisLabel = planeData.getDataSource().getAxisType(pos) + " : ";
 			JLabel jax = new JLabel(axisLabel);
 			jax.setFont(font);
-			miniPanel.add(jax);
-			miniPanel.add(positionLabels[i]);
 			miniPanel.add(homeButton);
 			miniPanel.add(decrementButton);
 			miniPanel.add(incrementButton);
@@ -1610,6 +1614,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			miniPanel.add(animButton);
 			miniPanel.add(stopButton);
 			miniPanel.add(chooseButton);
+			miniPanel.add(jax);
+			miniPanel.add(positionLabels[i]);
 			positions.add(miniPanel);
 			decrementButton.addActionListener(new Decrementer(i));
 			incrementButton.addActionListener(new Incrementer(i));
@@ -1686,7 +1692,13 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 							
 							planeData.setPositionValue(axisPos, idx-1);
 							
-							positionLabels[axisPos].setText(""+(idx)+" / "+maxVal);
+							CoordinateSpace space = planeData.getDataSource().getCoordinateSpace();
+							
+							BigDecimal[] currCoords = new BigDecimal[space.numDimensions()];
+
+							getCurrCoords(space, currCoords);
+								
+							positionLabels[axisPos].setText(""+(idx)+" / "+maxVal+" ("+currCoords[axisPos].round(roundContext)+")");
 							
 							pz.draw();
 							
@@ -2155,7 +2167,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 				planeData.setPositionValue(extraPos, pos);
 				
-				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
+				CoordinateSpace space = planeData.getDataSource().getCoordinateSpace();
+				
+				BigDecimal[] currCoords = new BigDecimal[space.numDimensions()];
+				
+				getCurrCoords(space, currCoords);
+					
+				int axisPos = planeData.getDataSourceAxisNumber(extraPos);
+					
+				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal+" ("+currCoords[axisPos].round(roundContext)+")");
 				
 				pz.draw();
 				
@@ -2177,6 +2197,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
+
 			long maxVal = planeData.getDataSourceAxisSize(extraPos);
 			
 			long pos = planeData.getPositionValue(extraPos);
@@ -2187,7 +2208,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 				planeData.setPositionValue(extraPos, pos);
 				
-				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal);
+				CoordinateSpace space = planeData.getDataSource().getCoordinateSpace();
+				
+				BigDecimal[] currCoords = new BigDecimal[space.numDimensions()];
+				
+				getCurrCoords(space, currCoords);
+					
+				int axisPos = planeData.getDataSourceAxisNumber(extraPos);
+					
+				positionLabels[extraPos].setText(""+(pos+1)+" / "+maxVal+" ("+currCoords[axisPos].round(roundContext)+")");
 				
 				pz.draw();
 				
@@ -2214,12 +2243,33 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			planeData.setPositionValue(extraPos, 0);
 			
-			positionLabels[extraPos].setText(""+(1)+" / "+maxVal);
+			CoordinateSpace space = planeData.getDataSource().getCoordinateSpace();
+			
+			BigDecimal[] currCoords = new BigDecimal[space.numDimensions()];
+			
+			getCurrCoords(space, currCoords);
+				
+			int axisPos = planeData.getDataSourceAxisNumber(extraPos);
+				
+			positionLabels[extraPos].setText(""+(1)+" / "+maxVal+" ("+currCoords[axisPos].round(roundContext)+")");
 			
 			pz.draw();
 			
 			frame.repaint();
 		}
+	}
+	
+	private void getCurrCoords(CoordinateSpace space, BigDecimal[] values) {
+
+		long[] modelCoords = new long[space.numDimensions()];
+		
+		long u = 0;
+
+		long v = 0;
+		
+		planeData.getModelCoords(u, v, modelCoords);
+
+		space.project(modelCoords, values);
 	}
 	
 	// code to set a slider to its max value and react
@@ -2240,7 +2290,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			planeData.setPositionValue(extraPos, maxVal-1);
 			
-			positionLabels[extraPos].setText(""+(maxVal)+" / "+maxVal);
+			CoordinateSpace space = planeData.getDataSource().getCoordinateSpace();
+			
+			BigDecimal[] currCoords = new BigDecimal[space.numDimensions()];
+			
+			getCurrCoords(space, currCoords);
+				
+			int axisPos = planeData.getDataSourceAxisNumber(extraPos);
+				
+			positionLabels[extraPos].setText(""+(maxVal)+" / "+maxVal+" ("+currCoords[axisPos].round(roundContext)+")");
 			
 			pz.draw();
 			
@@ -2286,7 +2344,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 						
 						planeData.setPositionValue(extraPos, i);
 						
-						positionLabels[extraPos].setText(""+(i+1)+" / "+maxVal);
+						CoordinateSpace space = planeData.getDataSource().getCoordinateSpace();
+						
+						BigDecimal[] currCoords = new BigDecimal[space.numDimensions()];
+						
+						getCurrCoords(space, currCoords);
+						
+						int axisPos = planeData.getDataSourceAxisNumber(extraPos);
+						
+						positionLabels[extraPos].setText(""+(i+1)+" / "+maxVal+" ("+currCoords[axisPos].round(roundContext)+")");
 						
 						pz.draw();
 						
@@ -3332,7 +3398,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 		
 		DimensionedDataSource<M> output = DimensionedStorage.allocate(outAlg.construct(), dims);
 
-		IndexedDataSource<O> inList = input.rawData();  
+		IndexedDataSource<O> inList = input.rawData();
 		
 		IndexedDataSource<M> outList = output.rawData();
 
@@ -3471,7 +3537,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 			DimensionedStorage.allocate(outAlg.construct(), dims);
 
-		IndexedDataSource<I> inList = (IndexedDataSource<I>) input.rawData();  
+		IndexedDataSource<I> inList = (IndexedDataSource<I>) input.rawData();
 		
 		IndexedDataSource<O> outList = output.rawData();
 

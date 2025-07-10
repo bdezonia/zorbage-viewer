@@ -2808,6 +2808,8 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			
 			for (int y = 0; y < paneHeight; y++) {
 			
+				long my = pixelToModel(y, originY);
+
 				for (int x = 0; x < paneWidth; x++) {
 				
 					G.HP.zero().call(sum);
@@ -2823,8 +2825,6 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					boolean modelCoordsInBounds = false;
 					
 					long mx = pixelToModel(x, originX);
-					
-					long my = pixelToModel(y, originY);
 					
 					if (mx >= 0 && mx < maxDimX && my >= 0 && my < maxDimY) {
 					
@@ -2866,11 +2866,15 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					int boxHalfSize = drawingBoxHalfSize();
 					
 					for (int dv = -boxHalfSize; dv <= boxHalfSize; dv++) {
-			
+						
+						int w = y + dv;
+						
 						for (int du = -boxHalfSize; du <= boxHalfSize; du++) {
 
+							int u = x + du;
+							
 							// plot a point
-							plot(color, arrayInt, x+du, y+dv);
+							plot(color, arrayInt, u, w);
 						}
 					}
 				}
@@ -3021,7 +3025,7 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			// yellow
 			
 			int COLOR = RgbUtils.argb(180, 0xff, 0xff, 0);
-			
+
 			BigInteger pX0 = modelToPixel(modelX0, originX);
 			BigInteger pX1 = modelToPixel(modelX1, originX);
 			BigInteger pY0 = modelToPixel(modelY0, originY);
@@ -3032,17 +3036,19 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			if (pX0.compareTo(BigInteger.ZERO) < 0 &&
 					pX1.compareTo(BigInteger.ZERO) < 0)
 				return;
+
+			BigInteger width = BigInteger.valueOf(paneWidth-1);
 			
-			if (pX0.compareTo(BigInteger.valueOf(paneWidth-1)) > 0 &&
-					pX1.compareTo(BigInteger.valueOf(paneWidth-1)) > 0)
+			if (pX0.compareTo(width) > 0 && pX1.compareTo(width) > 0)
 				return;
 			
 			if (pY0.compareTo(BigInteger.ZERO) < 0 &&
 					pY1.compareTo(BigInteger.ZERO) < 0)
 				return;
 			
-			if (pY0.compareTo(BigInteger.valueOf(paneHeight-1)) > 0 &&
-					pY1.compareTo(BigInteger.valueOf(paneHeight-1)) > 0)
+			BigInteger height = BigInteger.valueOf(paneHeight-1);
+			
+			if (pY0.compareTo(height) > 0 && pY1.compareTo(height) > 0)
 				return;
 			
 			// clip line if necessary
@@ -3050,34 +3056,26 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 			if (pX0.compareTo(BigInteger.ZERO) < 0)
 				pX0 = BigInteger.ZERO;
 
-			if (pX1.compareTo(BigInteger.valueOf(paneWidth-1)) > 0)
-				pX1 = BigInteger.valueOf(paneWidth-1);
+			if (pX1.compareTo(width) > 0)
+				pX1 = width;
 
 			if (pY0.compareTo(BigInteger.ZERO) < 0)
 				pY0 = BigInteger.ZERO;
 
-			if (pY1.compareTo(BigInteger.valueOf(paneHeight-1)) > 0)
-				pY1 = BigInteger.valueOf(paneHeight-1);
+			if (pY1.compareTo(height) > 0)
+				pY1 = height;
 			
 			if (pX0.compareTo(pX1) == 0) {
-				
 				int x = pX0.intValue();
-				
 				int minY = Math.min(pY0.intValue(), pY1.intValue());
-				
 				int maxY = Math.max(pY0.intValue(), pY1.intValue());
-				
 				for (int y = minY; y <= maxY; y++)
 					plot(COLOR, arrayInt, x, y);
 			}
 			else if (pY0.compareTo(pY1) == 0) {
-			
 				int y = pY0.intValue();
-				
 				int minX = Math.min(pX0.intValue(), pX1.intValue());
-				
 				int maxX = Math.max(pX0.intValue(), pX1.intValue());
-				
 				for (int x = minX; x <= maxX; x++)
 					plot(COLOR, arrayInt, x, y);
 			}

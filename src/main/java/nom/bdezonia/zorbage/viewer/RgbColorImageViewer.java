@@ -1321,10 +1321,10 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			long maxDimX = planeData.d0();
 			long maxDimY = planeData.d1();
 			for (int y = 0; y < paneHeight; y++) {
+				long my = pixelToModel(y, originY);
 				for (int x = 0; x < paneWidth; x++) {
 					boolean modelCoordsInBounds = false;
 					long mx = pixelToModel(x, originX);
-					long my = pixelToModel(y, originY);
 					if (mx >= 0 && mx < maxDimX && my >= 0 && my < maxDimY) {
 						modelCoordsInBounds = true;
 						planeData.get(mx, my, value);
@@ -1347,12 +1347,17 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 					}
 					
 					int boxHalfSize = drawingBoxHalfSize();
-					
+
 					for (int dv = -boxHalfSize; dv <= boxHalfSize; dv++) {
+
+						int w = y + dv;
+
 						for (int du = -boxHalfSize; du <= boxHalfSize; du++) {
 
+							int u = x + du;
+
 							// plot a point
-							plot(color, arrayInt, x+du, y+dv);
+							plot(color, arrayInt, u, w);
 						}
 					}
 					
@@ -1391,17 +1396,19 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			if (pX0.compareTo(BigInteger.ZERO) < 0 &&
 					pX1.compareTo(BigInteger.ZERO) < 0)
 				return;
+
+			BigInteger width = BigInteger.valueOf(paneWidth-1);
 			
-			if (pX0.compareTo(BigInteger.valueOf(paneWidth-1)) > 0 &&
-					pX1.compareTo(BigInteger.valueOf(paneWidth-1)) > 0)
+			if (pX0.compareTo(width) > 0 && pX1.compareTo(width) > 0)
 				return;
 			
 			if (pY0.compareTo(BigInteger.ZERO) < 0 &&
 					pY1.compareTo(BigInteger.ZERO) < 0)
 				return;
 			
-			if (pY0.compareTo(BigInteger.valueOf(paneHeight-1)) > 0 &&
-					pY1.compareTo(BigInteger.valueOf(paneHeight-1)) > 0)
+			BigInteger height = BigInteger.valueOf(paneHeight-1);
+			
+			if (pY0.compareTo(height) > 0 && pY1.compareTo(height) > 0)
 				return;
 			
 			// clip line if necessary
@@ -1409,14 +1416,14 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 			if (pX0.compareTo(BigInteger.ZERO) < 0)
 				pX0 = BigInteger.ZERO;
 
-			if (pX1.compareTo(BigInteger.valueOf(paneWidth-1)) > 0)
-				pX1 = BigInteger.valueOf(paneWidth-1);
+			if (pX1.compareTo(width) > 0)
+				pX1 = width;
 
 			if (pY0.compareTo(BigInteger.ZERO) < 0)
 				pY0 = BigInteger.ZERO;
 
-			if (pY1.compareTo(BigInteger.valueOf(paneHeight-1)) > 0)
-				pY1 = BigInteger.valueOf(paneHeight-1);
+			if (pY1.compareTo(height) > 0)
+				pY1 = height;
 			
 			if (pX0.compareTo(pX1) == 0) {
 				int x = pX0.intValue();

@@ -679,8 +679,20 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 
 			@Override
 			public void mouseMoved(MouseEvent e) {
-				long i0 = pz.pixelToModel(e.getX(), pz.getVirtualOriginX());
-				long i1 = pz.pixelToModel(e.getY(), pz.getVirtualOriginY());
+
+				// model X and mouse X move in the same direction
+				
+				int pixelX = e.getX();
+
+				// This weird math is because model "Y" runs bottom to
+				// top but mouse coords run top to bottom.
+
+				int pixelY = pz.paneHeight - e.getY() - 1;
+				
+				long i0 = pz.pixelToModel(pixelX, pz.getVirtualOriginX());
+
+				long i1 = pz.pixelToModel(pixelY, pz.getVirtualOriginY());
+
 				if (i0 >= 0 && i0 < planeData.d0() && i1 >= 0 && i1 < planeData.d1()) {
 					planeData.getModelCoords(i0, i1, modelCoords);
 					dataSource.getCoordinateSpace().project(modelCoords, realWorldCoords);

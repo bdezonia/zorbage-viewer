@@ -2933,16 +2933,16 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 					
 					int boxHalfSize = drawingBoxHalfSize();
 					
-					for (int dv = -boxHalfSize; dv <= boxHalfSize; dv++) {
+					for (int dy = -boxHalfSize; dy <= boxHalfSize; dy++) {
 						
-						int w = y + dv;
+						int v = y + dy;
 						
-						for (int du = -boxHalfSize; du <= boxHalfSize; du++) {
+						for (int dx = -boxHalfSize; dx <= boxHalfSize; dx++) {
 
-							int u = x + du;
+							int u = x + dx;
 							
 							// plot a point
-							plot(color, arrayInt, u, w);
+							plot(color, arrayInt, u, v);
 						}
 					}
 				}

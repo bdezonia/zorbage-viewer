@@ -1384,25 +1384,18 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 							throw new IllegalArgumentException("Unknown color type "+value.getClass().getSimpleName());
 					}
 					else {
-						
 						color = RgbUtils.argb(255, 0, 0, 0);
 					}
 					
 					int boxHalfSize = drawingBoxHalfSize();
-
-					for (int dv = -boxHalfSize; dv <= boxHalfSize; dv++) {
-
-						int w = y + dv;
-
-						for (int du = -boxHalfSize; du <= boxHalfSize; du++) {
-
-							int u = x + du;
-
+					for (int dy = -boxHalfSize; dy <= boxHalfSize; dy++) {
+						int v = y + dy;
+						for (int dx = -boxHalfSize; dx <= boxHalfSize; dx++) {
+							int u = x + dx;
 							// plot a point
-							plot(color, arrayInt, u, w);
+							plot(color, arrayInt, u, v);
 						}
 					}
-					
 				}
 			}
 			long maxX1 = planeData.d0()-1;

@@ -1,11 +1,23 @@
-zorbage-viewer: utility app for loading and viewing various image data formats
+zorbage-viewer: utility app for loading and viewing various numeric data formats
 
 To learn more about Zorbage please visit https://github.com/bdezonia/zorbage
 
 The zorbage-viewer uses the NetCDF, GDAL, SCIFIO file format translation
-libraries as well as zorbage-nifti, zorbage-ecat, and zorbage-nmr in order
-to open many image types into zorbage structures. It is a simple file viewer
-that will be undergoing continued development.
+libraries as well as zorbage-cryoem, zorbage-ecat, zorbage-jaudio,
+zorbage-nifti, and zorbage-nmr in order to open many numeric file types into
+zorbage structures. It is a simple file viewer that will be undergoing
+continued development.
+
+You can find the zorbage-viewer binary here:
+
+https://mvnrepository.com/artifact/io.github.bdezonia/zorbage-viewer
+
+You can choose a version number, look on the that page for the jar
+link for that version, and download the .jar file.
+
+You run zorbage-viewer by typing the following at a command prompt:
+
+java -jar <name of zorbage.jar file you downloaded>
 
 Note that the viewer uses GDAL if it is present. If not it runs without
 GDAL functionality. To use GDAL functionality you need to first install

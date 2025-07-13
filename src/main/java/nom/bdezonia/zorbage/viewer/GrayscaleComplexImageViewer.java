@@ -65,9 +65,9 @@ public class GrayscaleComplexImageViewer
 	 * @param <C>
 	 * @param <RA>
 	 * @param <R>
-	 * @param complexAlgebra
-	 * @param realAlgebra
-	 * @param data
+	 * @param cAlg
+	 * @param rAlg
+	 * @param input
 	 * @return
 	 */
 	public static <CA extends Algebra<CA,C>,

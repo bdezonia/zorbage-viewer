@@ -52,6 +52,7 @@ public class ImageSaver {
 	
 	/**
 	 * 
+	 * @param frame
 	 * @param image
 	 */
 	public ImageSaver(Component frame, BufferedImage image) {
@@ -74,7 +75,6 @@ public class ImageSaver {
 
 	/**
 	 * 
-	 * @param format
 	 */
 	public void save() {
 		Object format = JOptionPane.showInputDialog(frame,

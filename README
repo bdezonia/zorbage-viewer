@@ -8,16 +8,13 @@ zorbage-nifti, and zorbage-nmr in order to open many numeric file types into
 zorbage structures. It is a simple file viewer that will be undergoing
 continued development.
 
-You can find the zorbage-viewer binary here:
-
-https://mvnrepository.com/artifact/io.github.bdezonia/zorbage-viewer
-
-You can choose a version number, look on the that page for the jar
-link for that version, and download the .jar file.
+You can find the zorbage-viewer binary in the latest Release in this
+github project. Look for the Releases link, choose the latest, and
+download zorbage-viewer-x.y.z-jar-with-dependencies.jar.
 
 You run zorbage-viewer by typing the following at a command prompt:
 
-java -jar <name of zorbage.jar file you downloaded>
+java -jar <name of zorbage viewer jar file with dependencies that you downloaded>
 
 Note that the viewer uses GDAL if it is present. If not it runs without
 GDAL functionality. To use GDAL functionality you need to first install

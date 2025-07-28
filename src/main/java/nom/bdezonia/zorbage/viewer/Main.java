@@ -31,6 +31,7 @@
 package nom.bdezonia.zorbage.viewer;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -46,6 +47,10 @@ import javax.swing.*;
 import nom.bdezonia.zorbage.algebra.Algebra;
 import nom.bdezonia.zorbage.algebra.Allocatable;
 import nom.bdezonia.zorbage.algebra.G;
+import nom.bdezonia.zorbage.algebra.GetAsBigDecimal;
+import nom.bdezonia.zorbage.algebra.GetComplex;
+import nom.bdezonia.zorbage.algebra.GetReal;
+import nom.bdezonia.zorbage.algebra.SetFromBigDecimals;
 import nom.bdezonia.zorbage.algorithm.BoolToUInt1;
 import nom.bdezonia.zorbage.algorithm.Copy;
 import nom.bdezonia.zorbage.algorithm.GridIterator;
@@ -188,6 +193,8 @@ public class Main<T extends Algebra<T,U>, U> {
 	private JFrame frame = null;
 	
 	public static int GDAL_STATUS = 0;
+
+	public static boolean complexColor = false;
 	
 	@SuppressWarnings("rawtypes")
 	public static void main(String[] args) {
@@ -789,6 +796,43 @@ public class Main<T extends Algebra<T,U>, U> {
 			}
 		});
 		
+		JButton colorButton = new JButton("Complex: B&W");
+		colorButton.setBackground(Color.white);
+		colorButton.addMouseListener(new MouseListener() {
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+			}
+			
+			public void mousePressed(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+
+				complexColor = !complexColor;
+				
+				if (complexColor) {
+					
+					colorButton.setText("Complex: Color");
+					colorButton.setBackground(Color.green);
+				}
+				else {
+					
+					colorButton.setText("Complex: B&W");
+					colorButton.setBackground(Color.white);
+				}
+			}
+		});
+
 		Font font = new Font("Arial", Font.PLAIN, 30);
 		
 		Panel bp = new Panel();
@@ -833,6 +877,10 @@ public class Main<T extends Algebra<T,U>, U> {
 		loadVStack.setMaximumSize(buttonSize);
 		loadVStack.setFont(font);
 		
+		colorButton.setMinimumSize(buttonSize);
+		colorButton.setMaximumSize(buttonSize);
+		colorButton.setFont(font);
+		
 		box.add(loadCryoEM);
 		box.add(loadEcat);
 		box.add(loadGdal);
@@ -842,6 +890,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		box.add(loadNMR);
 		box.add(loadScifio);
 		box.add(loadVStack);
+		box.add(colorButton);
 		
 		bp.add(box);
 
@@ -1076,13 +1125,25 @@ public class Main<T extends Algebra<T,U>, U> {
 			else
 				System.out.println("Unknown complex type found: " + type);
 		}
-		else if ((type instanceof GaussianInt8Member) ||
-				(type instanceof GaussianInt16Member) ||
-				(type instanceof GaussianInt32Member) ||
-				(type instanceof GaussianInt64Member) ||
-				(type instanceof GaussianIntUnboundedMember)) {
+		else if (type instanceof GaussianInt8Member) {
+
+			displayGaussianImage(G.GAUSS8, G.INT8, G.CFLT, G.FLT, (DimensionedDataSource<GaussianInt8Member>) data);
+		}
+		else if (type instanceof GaussianInt16Member) {
 			
-			System.out.println("Must display gaussian integer based data somehow");
+			displayGaussianImage(G.GAUSS16, G.INT16, G.CFLT, G.FLT, (DimensionedDataSource<GaussianInt16Member>) data);
+		}
+		else if (type instanceof GaussianInt32Member) {
+			
+			displayGaussianImage(G.GAUSS32, G.INT32, G.CDBL, G.DBL, (DimensionedDataSource<GaussianInt32Member>) data);
+		}
+		else if (type instanceof GaussianInt64Member) {
+			
+			displayGaussianImage(G.GAUSS64, G.INT64, G.CQUAD, G.QUAD, (DimensionedDataSource<GaussianInt64Member>) data);
+		}
+		else if (type instanceof GaussianIntUnboundedMember) {
+			
+			displayGaussianImage(G.GAUSSU, G.UNBOUND, G.CHP, G.HP, (DimensionedDataSource<GaussianIntUnboundedMember>) data);
 		}
 		else {
 			// signed and unsigned ints
@@ -1107,7 +1168,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		@SuppressWarnings("unchecked")
 		DimensionedDataSource<CieXyzMember> cieData =
 				
-				(DimensionedDataSource<CieXyzMember>) data;
+			(DimensionedDataSource<CieXyzMember>) data;
 		
 		long[] dims = DataSourceUtils.dimensions(data);
 		
@@ -1121,7 +1182,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		
 		DimensionedDataSource<RgbMember> rgbData =
 				
-				DimensionedStorage.allocate(G.RGB.construct(), dims);
+			DimensionedStorage.allocate(G.RGB.construct(), dims);
 		
 		// fill the rgb data fro the ciexyz data
 		
@@ -1196,11 +1257,61 @@ public class Main<T extends Algebra<T,U>, U> {
 				R>
 		void displayComplexImage(CA cAlg, RA rAlg, DimensionedDataSource<C> data)
 	{
-		// Black and White
-		GrayscaleComplexImageViewer.view(cAlg, rAlg, data);
+		if (complexColor) {
+			
+			// Color
+			ColorComplexImageViewer.view(cAlg, rAlg, data);
+		}
+		else {
+			
+			// Black and White
+			GrayscaleComplexImageViewer.view(cAlg, rAlg, data);
+		}
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private <GA extends Algebra<GA,GI>,
+				GI extends GetReal<I> & GetComplex<I>,
+				IA extends Algebra<IA, I>,
+				I extends GetAsBigDecimal,
+				CA extends Algebra<CA, C>,
+				C extends SetFromBigDecimals,
+				RA extends Algebra<RA,A>,
+				A>
+		void displayGaussianImage(GA gAlg, IA iAlg, CA compAlg, RA realAlg, DimensionedDataSource<GI> data)
+	{
+		long[] dims = DataSourceUtils.dimensions(data);
 		
-		// Color
-		//ColorComplexImageViewer.view(cAlg, rAlg, data);
+		GI gval = gAlg.construct();
+		
+		I rval = iAlg.construct();
+		
+		I ival = iAlg.construct();
+		
+		C cval = compAlg.construct();
+		
+		DimensionedDataSource<C> complexData = DimensionedStorage.allocate((Allocatable) cval, dims);
+		
+		IntegerIndex idx = new IntegerIndex(dims.length);
+		
+		SamplingIterator<IntegerIndex> iter = GridIterator.compute(dims);
+		
+		while (iter.hasNext()) {
+			
+			iter.next(idx);
+			
+			data.get(idx, gval);
+
+			gval.getR(rval);
+			
+			gval.getI(ival);
+			
+			cval.setFromBigDecimals(rval.getAsBigDecimal(), ival.getAsBigDecimal());
+			
+			complexData.set(idx, cval);
+		}
+		
+		displayComplexImage(compAlg, realAlg, complexData);
 	}
 
 	private <AA extends Algebra<AA,A>,A>
@@ -1218,7 +1329,6 @@ public class Main<T extends Algebra<T,U>, U> {
 	private <AA extends Algebra<AA,A>,A>
 		void displayTextData(AA alg, DimensionedDataSource<A> data)
 	{
-
 		new TextViewer<AA,A>(alg, data);
 	}
 
@@ -1231,7 +1341,6 @@ public class Main<T extends Algebra<T,U>, U> {
 	private <AA extends Algebra<AA,A>,A>
 		void displayRealImage(AA alg, DimensionedDataSource<A> data)
 	{
-		
 		new RealImageViewer<AA,A>(alg, data);
 	}
 	

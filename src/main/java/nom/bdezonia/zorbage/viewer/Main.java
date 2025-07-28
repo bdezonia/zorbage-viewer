@@ -33,6 +33,7 @@ package nom.bdezonia.zorbage.viewer;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Panel;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -788,30 +789,49 @@ public class Main<T extends Algebra<T,U>, U> {
 			}
 		});
 		
+		Font font = new Font("Arial", Font.PLAIN, 30);
+		
 		Panel bp = new Panel();
 		
 		Box box = Box.createVerticalBox();
 		
-		Dimension buttonSize = new Dimension(180,40);
+		Dimension buttonSize = new Dimension(350,100);
 		
 		loadCryoEM.setMinimumSize(buttonSize);
 		loadCryoEM.setMaximumSize(buttonSize);
+		loadCryoEM.setFont(font);
+		
 		loadEcat.setMinimumSize(buttonSize);
 		loadEcat.setMaximumSize(buttonSize);
+		loadEcat.setFont(font);
+		
 		loadGdal.setMinimumSize(buttonSize);
 		loadGdal.setMaximumSize(buttonSize);
+		loadGdal.setFont(font);
+		
 		loadJAudio.setMinimumSize(buttonSize);
 		loadJAudio.setMaximumSize(buttonSize);
+		loadJAudio.setFont(font);
+		
 		loadNetcdf.setMinimumSize(buttonSize);
 		loadNetcdf.setMaximumSize(buttonSize);
+		loadNetcdf.setFont(font);
+		
 		loadNifti.setMinimumSize(buttonSize);
 		loadNifti.setMaximumSize(buttonSize);
+		loadNifti.setFont(font);
+		
 		loadNMR.setMinimumSize(buttonSize);
 		loadNMR.setMaximumSize(buttonSize);
+		loadNMR.setFont(font);
+		
 		loadScifio.setMinimumSize(buttonSize);
 		loadScifio.setMaximumSize(buttonSize);
+		loadScifio.setFont(font);
+		
 		loadVStack.setMinimumSize(buttonSize);
 		loadVStack.setMaximumSize(buttonSize);
+		loadVStack.setFont(font);
 		
 		box.add(loadCryoEM);
 		box.add(loadEcat);

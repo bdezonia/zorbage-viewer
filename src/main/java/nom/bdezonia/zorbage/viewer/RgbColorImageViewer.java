@@ -96,8 +96,8 @@ import nom.bdezonia.zorbage.type.color.RgbUtils;
  */
 public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 
-	private static int desiredWidth = 3*512;
-	private static int desiredHeight = 3*512;
+	private static int desiredWidth = 1024;
+	private static int desiredHeight = 1024;
 	
 	private static MathContext roundContext = new MathContext(6);
 	
@@ -179,7 +179,7 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		sourceLabel.setFont(font);
 		sourceLabel.setOpaque(true);
 
-		JPanel headerPanel = new JPanel();
+		JPanel headerPanelLeft = new JPanel();
 		Box box = Box.createVerticalBox();
 		box.add(sourceLabel);
 		JLabel a = new JLabel("Data type: " + alg.typeDescription());
@@ -191,8 +191,12 @@ public class RgbColorImageViewer<T extends Algebra<T,U>, U> {
 		box.add(a);
 		box.add(b);
 		box.add(c);
-		headerPanel.add(box);
+		headerPanelLeft.add(box);
 		
+		JPanel headerPanel = new JPanel();
+		headerPanel.setLayout(new BorderLayout());
+		headerPanel.add(headerPanelLeft, BorderLayout.WEST);
+
 		JPanel graphicsPanel = new JPanel();
 		JLabel image = new JLabel(new ImageIcon(argbData));
 		JScrollPane scrollPane = new JScrollPane(image);

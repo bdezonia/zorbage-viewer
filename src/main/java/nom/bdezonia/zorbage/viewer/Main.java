@@ -916,7 +916,7 @@ public class Main<T extends Algebra<T,U>, U> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private	void displayData(Tuple2<T, DimensionedDataSource<U>> tuple)
+	public void displayData(Tuple2<T, DimensionedDataSource<U>> tuple)
 	{
 		// TODO: there now are all kinds of multidim data sources theoretically possible:
 		//   (though no reader yet creates them). For instance:
@@ -1251,7 +1251,7 @@ public class Main<T extends Algebra<T,U>, U> {
 		displayRgbColorImage(G.RGB, rgbData);
 	}
 
-	private <CA extends Algebra<CA,C>,
+	public static <CA extends Algebra<CA,C>,
 				C,
 				RA extends Algebra<RA, R>,
 				R>

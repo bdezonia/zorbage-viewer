@@ -39,7 +39,6 @@ import java.awt.Panel;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
-import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.*;
@@ -52,20 +51,17 @@ import nom.bdezonia.zorbage.algebra.GetComplex;
 import nom.bdezonia.zorbage.algebra.GetReal;
 import nom.bdezonia.zorbage.algebra.SetFromBigDecimals;
 import nom.bdezonia.zorbage.algorithm.BoolToUInt1;
-import nom.bdezonia.zorbage.algorithm.Copy;
 import nom.bdezonia.zorbage.algorithm.GridIterator;
 import nom.bdezonia.zorbage.cryoem.MrcReader;
 import nom.bdezonia.zorbage.data.DimensionedDataSource;
 import nom.bdezonia.zorbage.data.DimensionedStorage;
 import nom.bdezonia.zorbage.data.NdData;
-import nom.bdezonia.zorbage.datasource.ConcatenatedDataSource;
 import nom.bdezonia.zorbage.datasource.IndexedDataSource;
 import nom.bdezonia.zorbage.ecat.Ecat;
 import nom.bdezonia.zorbage.gdal.Gdal;
 import nom.bdezonia.zorbage.jaudio.JAudio;
 import nom.bdezonia.zorbage.misc.DataBundle;
 import nom.bdezonia.zorbage.misc.DataSourceUtils;
-import nom.bdezonia.zorbage.misc.LongUtils;
 import nom.bdezonia.zorbage.netcdf.NetCDF;
 import nom.bdezonia.zorbage.nifti.Nifti;
 import nom.bdezonia.zorbage.nmr.NmrPipeReader;
@@ -75,7 +71,6 @@ import nom.bdezonia.zorbage.sampling.IntegerIndex;
 import nom.bdezonia.zorbage.sampling.SamplingIterator;
 import nom.bdezonia.zorbage.scifio.Scifio;
 import nom.bdezonia.zorbage.storage.Storage;
-import nom.bdezonia.zorbage.storage.file.FileStorage;
 import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.bool.BooleanMember;
 import nom.bdezonia.zorbage.type.character.CharMember;
@@ -647,155 +642,6 @@ public class Main<T extends Algebra<T,U>, U> {
 			}
 		});
 
-		JButton loadVStack = new JButton("Test Nifti VSTACK");
-		loadVStack.addMouseListener(new MouseListener() {
-			
-			@Override
-			public void mouseReleased(MouseEvent e) {
-			}
-			
-			public void mousePressed(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseExited(MouseEvent e) {
-			}
-			
-			@Override
-			public void mouseEntered(MouseEvent e) {
-			}
-			
-			@SuppressWarnings({ "unchecked", "rawtypes" })
-			@Override
-			public void mouseClicked(MouseEvent e) {
-
-				JFileChooser chooser = new JFileChooser();
-				
-				chooser.setMultiSelectionEnabled(true);  // allow multiple files to be chosen
-				
-				chooser.showOpenDialog(frame);
-				
-				File[] files = chooser.getSelectedFiles();
-				
-				// if user chose some files
-				
-				if (files != null && files.length != 0) {
-					
-					// read the first file (presumably into ram) in a DataBundle
-					
-					DataBundle bundle = Nifti.readAllDatasets(files[0].getAbsolutePath());
-
-					List<Tuple2<T, DimensionedDataSource<U>>> datasources = bundle.bundle();
-					
-					// if a file was read ...
-					
-					if (datasources.size() > 0) {
-						
-						List<IndexedDataSource<U>> sources = new LinkedList<>();
-
-						// gather info about the first source. following sources will use
-						//   it as a template.
-						
-						Tuple2<T, DimensionedDataSource<U>> dataInfo = datasources.get(0);
-
-						T algebra = dataInfo.a();
-						
-						DimensionedDataSource<U> data = dataInfo.b();
-						
-						IndexedDataSource<U> fileData = null;
-						
-						// then gather dims from that first one as a template for others to follow
-						
-						long[] dims = DataSourceUtils.dimensions(data);
-						
-						int i = 0;
-						
-						do {
-
-							// open the each file one at a time (presumably into ram)
-							
-							bundle = Nifti.readAllDatasets(files[i].getAbsolutePath());
-
-							data = (DimensionedDataSource<U>) bundle.bundle().get(0).b();
-							
-							bundle = null; // help out the GC
-
-							// make sure it is a compatible size in comparison to the template data source
-							
-							if (data.numElements() != LongUtils.numElements(dims)) {
-								
-								System.out.println("Skipping file "+files[i].getName()+": it does not match dims of file "+files[0].getName());
-								i++;
-								continue;
-							}
-
-							// make a file backed data list with same size as template image's data array
-							
-							fileData = FileStorage.allocate((Allocatable) algebra.construct(), data.numElements());
-						
-							// copy the (presumably) ram values to the list that is disk backed
-							
-							Copy.compute(algebra, data.rawData(), fileData);
-
-							// TODO what about all that glorious metadata? Do I need a copy() algo of some kind?
-
-							// save this populated file data to a list of sources
-							
-							sources.add(fileData);
-							
-							data = null; // help the GC know we can get rid of it
-							
-							i++;
-							
-						} while (i < files.length);
-
-						if (sources.size() == 1) {
-							
-							// we got one data source
-
-							// wrap the the result so it is a DimensionedDataSource
-							
-							NdData<U> ndData = new NdData<>(dims, fileData); 
-
-							displayData(new Tuple2<T,DimensionedDataSource<U>>(algebra, ndData));
-						}
-						else {
-
-							// we got multiple data sources
-							
-							// calc a bigger set of dims that represent the concatenated result
-							
-							long[] newDims = new long[dims.length+1];
-							
-							for (int d = 0; d < dims.length; d++) {
-								newDims[d] = dims[d];
-							}
-							
-							newDims[dims.length] = sources.size();
-							
-							// concat all the file data lists into one big list
-							
-							IndexedDataSource<U> concatenatedVirtualDataSource =
-									ConcatenatedDataSource.optimalConcat(sources);
-							
-							// wrap the the result so it is a DimensionedDataSource
-							
-							NdData<U> ndData =
-									new NdData<>(newDims, concatenatedVirtualDataSource); 
-							
-							// TODO is this where we copy metadata from one of the files?
-
-							// at this point we have a data source that is completely file
-							// backed on a per image basis, The mem use is very small. how
-							// performant is it? animating. fft. 
-							
-							displayData(new Tuple2<T,DimensionedDataSource<U>>(algebra, ndData));
-						}
-					}
-				}
-			}
-		});
-		
 		JButton colorButton = new JButton("Complex: B&W");
 		colorButton.setBackground(Color.white);
 		colorButton.addMouseListener(new MouseListener() {
@@ -873,10 +719,6 @@ public class Main<T extends Algebra<T,U>, U> {
 		loadScifio.setMaximumSize(buttonSize);
 		loadScifio.setFont(font);
 		
-		loadVStack.setMinimumSize(buttonSize);
-		loadVStack.setMaximumSize(buttonSize);
-		loadVStack.setFont(font);
-		
 		colorButton.setMinimumSize(buttonSize);
 		colorButton.setMaximumSize(buttonSize);
 		colorButton.setFont(font);
@@ -889,7 +731,6 @@ public class Main<T extends Algebra<T,U>, U> {
 		box.add(loadNifti);
 		box.add(loadNMR);
 		box.add(loadScifio);
-		box.add(loadVStack);
 		box.add(colorButton);
 		
 		bp.add(box);

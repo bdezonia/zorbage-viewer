@@ -79,23 +79,23 @@ import nom.bdezonia.zorbage.type.color.CieXyzAlgebra;
 import nom.bdezonia.zorbage.type.color.CieXyzMember;
 import nom.bdezonia.zorbage.type.color.RgbMember;
 import nom.bdezonia.zorbage.type.complex.float128.ComplexFloat128Member;
-import nom.bdezonia.zorbage.type.complex.float128.ComplexFloat128CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.complex.float128.ComplexFloat128GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.complex.float128.ComplexFloat128MatrixMember;
 import nom.bdezonia.zorbage.type.complex.float128.ComplexFloat128VectorMember;
 import nom.bdezonia.zorbage.type.complex.float16.ComplexFloat16Member;
-import nom.bdezonia.zorbage.type.complex.float16.ComplexFloat16CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.complex.float16.ComplexFloat16GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.complex.float16.ComplexFloat16MatrixMember;
 import nom.bdezonia.zorbage.type.complex.float16.ComplexFloat16VectorMember;
 import nom.bdezonia.zorbage.type.complex.float32.ComplexFloat32Member;
-import nom.bdezonia.zorbage.type.complex.float32.ComplexFloat32CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.complex.float32.ComplexFloat32GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.complex.float32.ComplexFloat32MatrixMember;
 import nom.bdezonia.zorbage.type.complex.float32.ComplexFloat32VectorMember;
 import nom.bdezonia.zorbage.type.complex.float64.ComplexFloat64Member;
-import nom.bdezonia.zorbage.type.complex.float64.ComplexFloat64CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.complex.float64.ComplexFloat64GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.complex.float64.ComplexFloat64MatrixMember;
 import nom.bdezonia.zorbage.type.complex.float64.ComplexFloat64VectorMember;
 import nom.bdezonia.zorbage.type.complex.highprec.ComplexHighPrecisionMember;
-import nom.bdezonia.zorbage.type.complex.highprec.ComplexHighPrecisionCartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.complex.highprec.ComplexHighPrecisionGeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.complex.highprec.ComplexHighPrecisionMatrixMember;
 import nom.bdezonia.zorbage.type.complex.highprec.ComplexHighPrecisionVectorMember;
 import nom.bdezonia.zorbage.type.gaussian.int16.GaussianInt16Member;
@@ -106,58 +106,58 @@ import nom.bdezonia.zorbage.type.gaussian.unbounded.GaussianIntUnboundedMember;
 import nom.bdezonia.zorbage.type.geom.point.Point;
 import nom.bdezonia.zorbage.type.integer.int1.UnsignedInt1Member;
 import nom.bdezonia.zorbage.type.octonion.float128.OctonionFloat128Member;
-import nom.bdezonia.zorbage.type.octonion.float128.OctonionFloat128CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.octonion.float128.OctonionFloat128GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.octonion.float128.OctonionFloat128MatrixMember;
 import nom.bdezonia.zorbage.type.octonion.float128.OctonionFloat128RModuleMember;
 import nom.bdezonia.zorbage.type.octonion.float16.OctonionFloat16Member;
-import nom.bdezonia.zorbage.type.octonion.float16.OctonionFloat16CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.octonion.float16.OctonionFloat16GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.octonion.float16.OctonionFloat16MatrixMember;
 import nom.bdezonia.zorbage.type.octonion.float16.OctonionFloat16RModuleMember;
 import nom.bdezonia.zorbage.type.octonion.float32.OctonionFloat32Member;
-import nom.bdezonia.zorbage.type.octonion.float32.OctonionFloat32CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.octonion.float32.OctonionFloat32GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.octonion.float32.OctonionFloat32MatrixMember;
 import nom.bdezonia.zorbage.type.octonion.float32.OctonionFloat32RModuleMember;
 import nom.bdezonia.zorbage.type.octonion.float64.OctonionFloat64Member;
-import nom.bdezonia.zorbage.type.octonion.float64.OctonionFloat64CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.octonion.float64.OctonionFloat64GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.octonion.float64.OctonionFloat64MatrixMember;
 import nom.bdezonia.zorbage.type.octonion.float64.OctonionFloat64RModuleMember;
 import nom.bdezonia.zorbage.type.octonion.highprec.OctonionHighPrecisionMember;
-import nom.bdezonia.zorbage.type.octonion.highprec.OctonionHighPrecisionCartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.octonion.highprec.OctonionHighPrecisionGeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.octonion.highprec.OctonionHighPrecisionMatrixMember;
 import nom.bdezonia.zorbage.type.octonion.highprec.OctonionHighPrecisionRModuleMember;
 import nom.bdezonia.zorbage.type.quaternion.float128.QuaternionFloat128Member;
-import nom.bdezonia.zorbage.type.quaternion.float128.QuaternionFloat128CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.quaternion.float128.QuaternionFloat128GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.quaternion.float128.QuaternionFloat128MatrixMember;
 import nom.bdezonia.zorbage.type.quaternion.float128.QuaternionFloat128RModuleMember;
 import nom.bdezonia.zorbage.type.quaternion.float16.QuaternionFloat16Member;
-import nom.bdezonia.zorbage.type.quaternion.float16.QuaternionFloat16CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.quaternion.float16.QuaternionFloat16GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.quaternion.float16.QuaternionFloat16MatrixMember;
 import nom.bdezonia.zorbage.type.quaternion.float16.QuaternionFloat16RModuleMember;
 import nom.bdezonia.zorbage.type.quaternion.float32.QuaternionFloat32Member;
-import nom.bdezonia.zorbage.type.quaternion.float32.QuaternionFloat32CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.quaternion.float32.QuaternionFloat32GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.quaternion.float32.QuaternionFloat32MatrixMember;
 import nom.bdezonia.zorbage.type.quaternion.float32.QuaternionFloat32RModuleMember;
 import nom.bdezonia.zorbage.type.quaternion.float64.QuaternionFloat64Member;
-import nom.bdezonia.zorbage.type.quaternion.float64.QuaternionFloat64CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.quaternion.float64.QuaternionFloat64GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.quaternion.float64.QuaternionFloat64MatrixMember;
 import nom.bdezonia.zorbage.type.quaternion.float64.QuaternionFloat64RModuleMember;
 import nom.bdezonia.zorbage.type.quaternion.highprec.QuaternionHighPrecisionMember;
-import nom.bdezonia.zorbage.type.quaternion.highprec.QuaternionHighPrecisionCartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.quaternion.highprec.QuaternionHighPrecisionGeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.quaternion.highprec.QuaternionHighPrecisionMatrixMember;
 import nom.bdezonia.zorbage.type.quaternion.highprec.QuaternionHighPrecisionRModuleMember;
-import nom.bdezonia.zorbage.type.real.float128.Float128CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.real.float128.Float128GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.real.float128.Float128MatrixMember;
 import nom.bdezonia.zorbage.type.real.float128.Float128VectorMember;
-import nom.bdezonia.zorbage.type.real.float16.Float16CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.real.float16.Float16GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.real.float16.Float16MatrixMember;
 import nom.bdezonia.zorbage.type.real.float16.Float16VectorMember;
-import nom.bdezonia.zorbage.type.real.float32.Float32CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.real.float32.Float32GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.real.float32.Float32MatrixMember;
 import nom.bdezonia.zorbage.type.real.float32.Float32VectorMember;
-import nom.bdezonia.zorbage.type.real.float64.Float64CartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.real.float64.Float64GeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.real.float64.Float64MatrixMember;
 import nom.bdezonia.zorbage.type.real.float64.Float64VectorMember;
-import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionCartesianTensorProductMember;
+import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionGeneralTensorProductMember;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionMatrixMember;
 import nom.bdezonia.zorbage.type.real.highprec.HighPrecisionVectorMember;
 import nom.bdezonia.zorbage.type.string.FixedStringMember;
@@ -830,35 +830,35 @@ public class Main<T extends Algebra<T,U>, U> {
 
 			displayRgbColorImage(algebra, data);
 		}
-		else if (type instanceof OctonionFloat128CartesianTensorProductMember ||
-				type instanceof OctonionFloat64CartesianTensorProductMember ||
-				type instanceof OctonionFloat32CartesianTensorProductMember ||
-				type instanceof OctonionFloat16CartesianTensorProductMember ||
-				type instanceof OctonionHighPrecisionCartesianTensorProductMember) {
+		else if (type instanceof OctonionFloat128GeneralTensorProductMember ||
+				type instanceof OctonionFloat64GeneralTensorProductMember ||
+				type instanceof OctonionFloat32GeneralTensorProductMember ||
+				type instanceof OctonionFloat16GeneralTensorProductMember ||
+				type instanceof OctonionHighPrecisionGeneralTensorProductMember) {
 			
 			System.out.println("Must display Octonion tensor based data somehow");
 		}	
-		else if (type instanceof QuaternionFloat128CartesianTensorProductMember ||
-				type instanceof QuaternionFloat64CartesianTensorProductMember ||
-				type instanceof QuaternionFloat32CartesianTensorProductMember ||
-				type instanceof QuaternionFloat16CartesianTensorProductMember ||
-				type instanceof QuaternionHighPrecisionCartesianTensorProductMember) {
+		else if (type instanceof QuaternionFloat128GeneralTensorProductMember ||
+				type instanceof QuaternionFloat64GeneralTensorProductMember ||
+				type instanceof QuaternionFloat32GeneralTensorProductMember ||
+				type instanceof QuaternionFloat16GeneralTensorProductMember ||
+				type instanceof QuaternionHighPrecisionGeneralTensorProductMember) {
 			
 			System.out.println("Must display Quaternion tensor based data somehow");
 		}	
-		else if (type instanceof ComplexFloat128CartesianTensorProductMember ||
-				type instanceof ComplexFloat64CartesianTensorProductMember ||
-				type instanceof ComplexFloat32CartesianTensorProductMember ||
-				type instanceof ComplexFloat16CartesianTensorProductMember ||
-				type instanceof ComplexHighPrecisionCartesianTensorProductMember) {
+		else if (type instanceof ComplexFloat128GeneralTensorProductMember ||
+				type instanceof ComplexFloat64GeneralTensorProductMember ||
+				type instanceof ComplexFloat32GeneralTensorProductMember ||
+				type instanceof ComplexFloat16GeneralTensorProductMember ||
+				type instanceof ComplexHighPrecisionGeneralTensorProductMember) {
 			
 			System.out.println("Must display Complex tensor based data somehow");
 		}	
-		else if (type instanceof Float128CartesianTensorProductMember ||
-				type instanceof Float64CartesianTensorProductMember ||
-				type instanceof Float32CartesianTensorProductMember ||
-				type instanceof Float16CartesianTensorProductMember ||
-				type instanceof HighPrecisionCartesianTensorProductMember) {
+		else if (type instanceof Float128GeneralTensorProductMember ||
+				type instanceof Float64GeneralTensorProductMember ||
+				type instanceof Float32GeneralTensorProductMember ||
+				type instanceof Float16GeneralTensorProductMember ||
+				type instanceof HighPrecisionGeneralTensorProductMember) {
 			
 			System.out.println("Must display Real tensor based data somehow");
 		}	

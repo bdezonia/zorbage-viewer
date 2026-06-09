@@ -116,6 +116,7 @@ import nom.bdezonia.zorbage.misc.BigDecimalUtils;
 import nom.bdezonia.zorbage.misc.DataSourceUtils;
 import nom.bdezonia.zorbage.procedure.Procedure2;
 import nom.bdezonia.zorbage.sampling.IntegerIndex;
+import nom.bdezonia.zorbage.storage.Storage;
 import nom.bdezonia.zorbage.tuple.Tuple2;
 import nom.bdezonia.zorbage.type.color.ArgbAlgebra;
 import nom.bdezonia.zorbage.type.color.ArgbMember;
@@ -3653,11 +3654,14 @@ public class RealImageViewer<T extends Algebra<T,U>, U> {
 				
 				new ReadOnlyHighPrecisionDataSource<BA,B>(bAlg, (IndexedDataSource<B>) storage);
 
+		IndexedDataSource<HighPrecisionMember> workspace =
+				Storage.allocate(G.HP.construct(),data.size());
+		
 		HighPrecisionMember meanHP = G.HP.construct();
 		HighPrecisionMember medianHP = G.HP.construct();
 		HighPrecisionMember stddevHP = G.HP.construct();
 
-		Median.compute(G.HP, data, medianHP);
+		Median.compute(G.HP, workspace, data, medianHP);
 
 		MeanAndStdDev.compute(G.HP, data, meanHP, stddevHP);
 		
